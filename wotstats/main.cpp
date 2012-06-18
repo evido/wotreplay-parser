@@ -7,12 +7,18 @@
 //
 
 #include <iostream>
+#include <string>
+
+#include <boost/asio.hpp>
+
+#include "HttpClient.h"
 
 int main(int argc, const char * argv[])
 {
-
-    // insert code here...
-    std::cout << "Hello, World!\n";
+    
+    boost::asio::io_service io_service;
+    HttpClient httpClient(io_service);
+    httpClient.get("http://localhost/");
     return 0;
 }
 
