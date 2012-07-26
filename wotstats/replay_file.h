@@ -34,6 +34,16 @@ namespace wotstats {
         buffer_t game_end;
         buffer_t replay;
     };
+    
+    
+    enum event_type {
+        
+    };
+    
+    class event {
+    public:
+    private:
+    };
 }
 
 #endif

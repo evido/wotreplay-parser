@@ -1,4 +1,4 @@
-//
+ //
 //  ReplayFile.cpp
 //  wotstats
 //
@@ -9,6 +9,7 @@
 #include "replay_file.h"
 
 #include <sstream>
+
 #include <openssl/blowfish.h>
 #include <zlib.h>
 
@@ -18,6 +19,28 @@ using std::ios;
 using std::istream;
 using std::vector;
 
+#ifdef DEBUG
+
+#include <fstream>
+#include <string>
+
+using std::string;
+using std::ofstream;
+using std::ios;
+
+template <typename T>
+static void debug_stream_content(const string &file_name, T begin, T end) {
+    ofstream os(file_name, ios::binary | ios::ate);
+    std::copy(begin, end, std::ostream_iterator<typename std::iterator_traits<T>::value_type>(os));
+    os.close();
+}
+
+#else
+
+// no-op
+#define debug_stream_content(...)
+
+#endif
 
 const buffer_t &replay_file::get_game_begin() const {
     return game_begin;
@@ -45,7 +68,7 @@ static void read(istream& is, buffer_t &buffer) {
 }
 
 replay_file::replay_file(istream &is) {
-    // 0. fully read file into buffer
+    // fully read file into buffer
     buffer_t buffer;
     read(is, buffer);
     parse(buffer);
@@ -88,15 +111,19 @@ void replay_file::parse(buffer_t &buffer) {
 }
 
 void replay_file::decrypt_replay(buffer_t &replay_data, const unsigned char *key_data) {
+    debug_stream_content("/Users/jantemmerman/wotreplays/replay-ec.dat", replay_data.begin(), replay_data.end());
     
     BF_KEY key = {0};
     BF_set_key(&key, 16, key_data);
     
     const int block_size = 8;
     
-    if (replay_data.size() % block_size != 0) {
-        size_t required_size = replay_data.size() + (block_size - (replay_data.size() % block_size));
+    size_t padding_size = (block_size - (replay_data.size() % block_size));
+    if (padding_size != 0) {
+//        std::cout << replay_data.size()<< std::endl;
+        size_t required_size = replay_data.size() + padding_size;
         replay_data.resize(required_size, 0);
+//        std::cout << replay_data.size()<< std::endl;
     }
     
     unsigned char previous[block_size] = {0};
@@ -107,6 +134,12 @@ void replay_file::decrypt_replay(buffer_t &replay_data, const unsigned char *key
         std::copy_n(decrypted, block_size, previous);
         std::copy_n(decrypted, block_size, reinterpret_cast<unsigned char*>(&(*it)));
     }
+    
+    if (padding_size != 0) {
+        size_t original_size = replay_data.size() - padding_size;
+        replay_data.resize(original_size, 0);
+//        std::cout << replay_data.size()<< std::endl;
+    }
 }
 
 uint32_t replay_file::get_data_block_count(const buffer_t &buffer) const {
@@ -115,14 +148,13 @@ uint32_t replay_file::get_data_block_count(const buffer_t &buffer) const {
     const size_t db_cnt_offset = 4;
     const uint32_t *db_cnt = reinterpret_cast<const uint32_t*>(&buffer[db_cnt_offset]);
     return *db_cnt;
-}
+} 
 
-#include <fstream>
-
-void replay_file::extract_replay(buffer_t &compressed_replay, buffer_t &uncompressed_replay) {
+void replay_file::extract_replay(buffer_t &compressed_replay, buffer_t &replay) {
+    debug_stream_content("/Users/jantemmerman/wotreplays/replay-c.dat", compressed_replay.begin(), compressed_replay.end());
     
     z_stream strm = { 
-        .next_in = reinterpret_cast<unsigned char*>(&(compressed_replay[0])),
+        .next_in  = reinterpret_cast<unsigned char*>(&(compressed_replay[0])),
         .avail_in = static_cast<uInt>(compressed_replay.size())
     };
     
@@ -153,8 +185,8 @@ void replay_file::extract_replay(buffer_t &compressed_replay, buffer_t &uncompre
         }
         
         int have = chunk - strm.avail_out;
-        uncompressed_replay.resize(uncompressed_replay.size() + have);
-        std::copy_n(out.get(), have, uncompressed_replay.end() - have);
+        replay.resize(replay.size() + have);
+        std::copy_n(out.get(), have, replay.end() - have);
         
     } while (strm.avail_out == 0);
     
