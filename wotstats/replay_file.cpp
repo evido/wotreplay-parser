@@ -9,7 +9,7 @@
 #include "replay_file.h"
 
 #include <sstream>
-
+#include <map>
 #include <openssl/blowfish.h>
 #include <zlib.h>
 
@@ -41,6 +41,8 @@ static void debug_stream_content(const string &file_name, T begin, T end) {
 #define debug_stream_content(...)
 
 #endif
+
+using namespace wotstats;
 
 const buffer_t &replay_file::get_game_begin() const {
     return game_begin;
@@ -120,10 +122,8 @@ void replay_file::decrypt_replay(buffer_t &replay_data, const unsigned char *key
     
     size_t padding_size = (block_size - (replay_data.size() % block_size));
     if (padding_size != 0) {
-//        std::cout << replay_data.size()<< std::endl;
         size_t required_size = replay_data.size() + padding_size;
         replay_data.resize(required_size, 0);
-//        std::cout << replay_data.size()<< std::endl;
     }
     
     unsigned char previous[block_size] = {0};
@@ -138,7 +138,6 @@ void replay_file::decrypt_replay(buffer_t &replay_data, const unsigned char *key
     if (padding_size != 0) {
         size_t original_size = replay_data.size() - padding_size;
         replay_data.resize(original_size, 0);
-//        std::cout << replay_data.size()<< std::endl;
     }
 }
 
@@ -208,7 +207,7 @@ void replay_file::get_data_blocks(buffer_t &buffer, vector<slice_t> &data_blocks
     data_blocks.reserve(nr_data_blocks);
     
     // try to create a data block reference for each data block
-    uint32_t data_block_sz_offset = 8;
+    unsigned long data_block_sz_offset = 8;
     for (uint32_t ix = 0; ix < nr_data_blocks; ++ix) {
         // create data block
         const uint32_t *block_size = reinterpret_cast<const uint32_t*>(&buffer[data_block_sz_offset]);
@@ -224,4 +223,103 @@ void replay_file::get_data_blocks(buffer_t &buffer, vector<slice_t> &data_blocks
     // last slice contains encrypted / compressed game replay, seperated by 8 bytes with unknown content
     auto &last_data_block = data_blocks.back();
     data_blocks.emplace_back(last_data_block.end() + 8, buffer.end());
+}
+
+size_t replay_file::get_packets(std::vector<packet_t> &packets) {
+
+    buffer_t &buffer = this->replay;
+    
+    std::map<char, int> packet_lengths = {
+        {0x03, 24},
+        {0x04, 4},
+        {0x05, 54},
+        {0x07, 12},
+        {0x08, 12},
+        {0x0A, 61},
+        {0x0E, 4},
+        {0x0C, 3},
+        {0x12, 16},
+        {0x13, 16},
+        {0x14, 4},
+        {0x15, 44},
+        {0x16, 52},
+        {0x17, 16},
+        {0x18, 16},
+        {0x19, 16},
+        {0x1B, 12},
+        {0x1C, 20},
+        {0x1D, 21},
+        {0x1e, 160},
+        {0x20, 4},
+        {0x31, 4}
+    };
+    
+    size_t offset = 0, ix = 0;
+    
+    while (ix < buffer.size()) {
+
+        if (!packet_lengths.count(buffer[ix + 1])) {
+            size_t count = packets.size();
+            if (count < 100) {
+                ix = static_cast<int>(++offset);
+                continue;
+            } else {
+#ifdef DEBUG
+                const packet_t &last_packet = packets.back();
+                const slice_t &packet_data = last_packet.data;
+                size_t packet_size = packet_data.size();
+                size_t prev_ix = ix - packet_size;
+                std::cerr << "Bytes read: " << ix << std::endl
+                    << "Packets read: " << count << std::endl
+                    << "Last packets start: " << prev_ix << std::endl
+                    << "Bytes unread: " << buffer.size() - ix << std::endl
+                    << "Bytes skipped: " << offset << std::endl;
+#endif
+                break;
+            }
+        }
+
+        int packet_length;
+        
+        switch(buffer[ix + 1]) {
+            case 0x07:
+            case 0x08: {
+                packet_length = packet_lengths[buffer[ix + 1]];
+                packet_length = 24 + *reinterpret_cast<const unsigned short*>(&buffer[ix + 17]);
+                break;
+            }
+            case 0x17: {
+                packet_length = packet_lengths[buffer[ix + 1]];
+                packet_length += buffer[ix + 9];
+                break;
+            }
+            case 0x1B: {
+                packet_length = packet_lengths[buffer[ix + 1]];
+                if (buffer[ix + packet_length + 1] != 0x31) packet_length += 4;
+                break;
+            }
+            case 0x04: {
+                packet_length = packet_lengths[buffer[ix + 1]];
+                if (buffer[ix] < 0x10) packet_length = 16;
+                break;
+            }
+            case 0x05: {
+                packet_length = packet_lengths[buffer[ix + 1]];
+                packet_length += buffer[ix + 47];
+                break;
+            }
+            default: {
+                packet_length = packet_lengths[buffer[ix + 1]];
+                break;
+            }
+        }
+
+        auto packet_begin = buffer.begin() + ix;
+        auto packet_end = packet_begin + packet_length;
+        packets.emplace_back(replay_file::read_packet(packet_begin, packet_end));
+        
+        ix += packet_length;
+    }
+    
+    return ix;
 }
