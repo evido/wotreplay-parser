@@ -260,7 +260,7 @@ size_t replay_file::get_packets(std::vector<packet_t> &packets) {
 
         if (!packet_lengths.count(buffer[ix + 1])) {
             size_t count = packets.size();
-            if (count < 100) {
+            if (count < 500) {
                 ix = static_cast<int>(++offset);
                 continue;
             } else {
