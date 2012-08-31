@@ -12,6 +12,7 @@
 #include <map>
 #include <openssl/blowfish.h>
 #include <zlib.h>
+#include <type_traits>
 
 using namespace wotstats;
 
@@ -66,7 +67,7 @@ static size_t get_size(istream& is) {
 static void read(istream& is, buffer_t &buffer) {
     ios::pos_type size = get_size(is);
     buffer.resize(size);
-    is.read(&buffer[0], size);
+    is.read(reinterpret_cast<char*>(&buffer[0]), size);
 }
 
 replay_file::replay_file(istream &is) {
@@ -85,16 +86,22 @@ void replay_file::parse(buffer_t &buffer) {
     
     switch(data_blocks.size()) {
     case 3:
-            // extra data block is the game result
             game_end.resize(data_blocks[1].size());
             std::copy(data_blocks[1].begin(), data_blocks[1].end(), game_end.begin());
+
+            game_begin.resize(data_blocks[0].size());
+            std::copy(data_blocks[0].begin(), data_blocks[0].end(), game_begin.begin());
+
+            raw_replay.resize(data_blocks[2].size());
+            std::copy(data_blocks[2].begin(), data_blocks[2].end(), raw_replay.begin());
+            break;
     case 2:
             // data blocks contain at least game begin state and replay data
             game_begin.resize(data_blocks[0].size());
             std::copy(data_blocks[0].begin(), data_blocks[0].end(), game_begin.begin());
             
-            raw_replay.resize(data_blocks[2].size());
-            std::copy(data_blocks[2].begin(), data_blocks[2].end(), raw_replay.begin());
+            raw_replay.resize(data_blocks[1].size());
+            std::copy(data_blocks[1].begin(), data_blocks[1].end(), raw_replay.begin());
             
             break;
     default:
@@ -113,7 +120,7 @@ void replay_file::parse(buffer_t &buffer) {
 }
 
 void replay_file::decrypt_replay(buffer_t &replay_data, const unsigned char *key_data) {
-    debug_stream_content("/Users/jantemmerman/wotreplays/replay-ec.dat", replay_data.begin(), replay_data.end());
+    debug_stream_content("/Users/jantemmerman/Development/wotreplays/replay-ec.dat", replay_data.begin(), replay_data.end());
     
     BF_KEY key = {0};
     BF_set_key(&key, 16, key_data);
@@ -150,8 +157,8 @@ uint32_t replay_file::get_data_block_count(const buffer_t &buffer) const {
 } 
 
 void replay_file::extract_replay(buffer_t &compressed_replay, buffer_t &replay) {
-    debug_stream_content("/Users/jantemmerman/wotreplays/replay-c.dat", compressed_replay.begin(), compressed_replay.end());
-    
+    debug_stream_content("/Users/jantemmerman/Development/wotreplays/replay-c.dat", compressed_replay.begin(), compressed_replay.end());
+
     z_stream strm = { 
         .next_in  = reinterpret_cast<unsigned char*>(&(compressed_replay[0])),
         .avail_in = static_cast<uInt>(compressed_replay.size())
@@ -186,7 +193,6 @@ void replay_file::extract_replay(buffer_t &compressed_replay, buffer_t &replay) 
         int have = chunk - strm.avail_out;
         replay.resize(replay.size() + have);
         std::copy_n(out.get(), have, replay.end() - have);
-        
     } while (strm.avail_out == 0);
     
     (void)inflateEnd(&strm);
@@ -231,10 +237,10 @@ size_t replay_file::get_packets(std::vector<packet_t> &packets) {
     
     std::map<char, int> packet_lengths = {
         {0x03, 24},
-        {0x04, 4},
+        {0x04, 16},
         {0x05, 54},
-        {0x07, 12},
-        {0x08, 12},
+        {0x07, 24},
+        {0x08, 24},
         {0x0A, 61},
         {0x0E, 4},
         {0x0C, 3},
@@ -246,22 +252,33 @@ size_t replay_file::get_packets(std::vector<packet_t> &packets) {
         {0x17, 16},
         {0x18, 16},
         {0x19, 16},
-        {0x1B, 12},
+        {0x1B, 16},
         {0x1C, 20},
         {0x1D, 21},
         {0x1e, 160},
         {0x20, 4},
         {0x31, 4}
     };
-    
-    size_t offset = 0, ix = 0;
-    
+
+    size_t offset = 0;
+
+    std::vector<char> marker = {0x2C, 0x01, 0x01, 0x00, 0x00, 0x00};
+
+    auto pos = std::search(buffer.begin(), buffer.end(),marker.begin(), marker.end());
+    if (pos != buffer.end()) {
+        offset = (pos - buffer.begin()) + marker.size();
+        std::cout << "OFFSET: " << offset << "\n";
+    }
+
+    size_t ix = offset;
     while (ix < buffer.size()) {
 
-        if (!packet_lengths.count(buffer[ix + 1])) {
+        if (packet_lengths.count(buffer[ix + 1]) < 1) {
             size_t count = packets.size();
             if (count < 500) {
                 ix = static_cast<int>(++offset);
+                std::cout << ix << "\n";
+                std::cout << "WARNING INCORRECT OFFSET!\n";
                 continue;
             } else {
 #ifdef DEBUG
@@ -279,33 +296,23 @@ size_t replay_file::get_packets(std::vector<packet_t> &packets) {
             }
         }
 
-        int packet_length;
+        size_t packet_length;
         
         switch(buffer[ix + 1]) {
             case 0x07:
             case 0x08: {
                 packet_length = packet_lengths[buffer[ix + 1]];
-                packet_length = 24 + *reinterpret_cast<const unsigned short*>(&buffer[ix + 17]);
+                packet_length += get_field<uint16_t>(buffer.begin(), buffer.end(), ix + 17);
                 break;
             }
             case 0x17: {
                 packet_length = packet_lengths[buffer[ix + 1]];
-                packet_length += buffer[ix + 9];
-                break;
-            }
-            case 0x1B: {
-                packet_length = packet_lengths[buffer[ix + 1]];
-                if (buffer[ix + packet_length + 1] != 0x31) packet_length += 4;
-                break;
-            }
-            case 0x04: {
-                packet_length = packet_lengths[buffer[ix + 1]];
-                if (buffer[ix] < 0x10) packet_length = 16;
+                packet_length += get_field<uint8_t>(buffer.begin(), buffer.end(), ix + 9);
                 break;
             }
             case 0x05: {
                 packet_length = packet_lengths[buffer[ix + 1]];
-                packet_length += buffer[ix + 47];
+                packet_length += get_field<uint8_t>(buffer.begin(), buffer.end(), ix + 47);
                 break;
             }
             default: {
@@ -313,7 +320,7 @@ size_t replay_file::get_packets(std::vector<packet_t> &packets) {
                 break;
             }
         }
-
+        
         auto packet_begin = buffer.begin() + ix;
         auto packet_end = packet_begin + packet_length;
         packets.emplace_back(replay_file::read_packet(packet_begin, packet_end));
@@ -323,3 +330,8 @@ size_t replay_file::get_packets(std::vector<packet_t> &packets) {
     
     return ix;
 }
+
+
+
+
+

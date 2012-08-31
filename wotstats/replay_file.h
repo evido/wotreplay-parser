@@ -11,22 +11,12 @@
 
 #include <iostream>
 #include <vector>
+#include <algorithm>
 
-#include <boost/range/iterator_range.hpp>
+#include "types.h"
+#include "packet.h"
 
 namespace wotstats {
-
-    typedef std::vector<char> buffer_t;
-    typedef boost::iterator_range<buffer_t::iterator> slice_t;
-
-    struct packet_t {
-        unsigned clock;
-        char type;
-        // unsigned player_id;
-        // float position[3];
-        slice_t data;
-    };
-
     class replay_file {
     public:
         replay_file(std::istream &is);
@@ -49,12 +39,9 @@ namespace wotstats {
 
     template <typename iterator>
     packet_t replay_file::read_packet(iterator begin, iterator end) {
-        packet_t packet = {
-            .type = *(begin + 1),
-            .clock = *(begin + 5),
+        return {
             .data = boost::make_iterator_range(begin, end)
         };
-        return packet;
     }
 }
 
