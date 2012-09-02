@@ -70,6 +70,10 @@ void packet_t::set_data(const slice_t &data) {
             }
         }
         default:
+            if (data.size() >= 12) {
+                properties.push_back(property::clock);
+                properties.push_back(property::player_id);
+            }
             properties.push_back(property::type);
             break;
     }

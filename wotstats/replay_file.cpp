@@ -124,7 +124,7 @@ void replay_file::parse(buffer_t &buffer) {
 }
 
 void replay_file::decrypt_replay(buffer_t &replay_data, const unsigned char *key_data) {
-    debug_stream_content("/Users/jantemmerman/Development/wotreplays/out/replay-ec.dat", replay_data.begin(), replay_data.end());
+    debug_stream_content("out/replay-ec.dat", replay_data.begin(), replay_data.end());
     
     BF_KEY key = {0};
     BF_set_key(&key, 16, key_data);
@@ -161,7 +161,7 @@ uint32_t replay_file::get_data_block_count(const buffer_t &buffer) const {
 } 
 
 void replay_file::extract_replay(buffer_t &compressed_replay, buffer_t &replay) {
-    debug_stream_content("/Users/jantemmerman/Development/wotreplays/out/replay-c.dat", compressed_replay.begin(), compressed_replay.end());
+    debug_stream_content("out/replay-c.dat", compressed_replay.begin(), compressed_replay.end());
 
     z_stream strm = { 
         .next_in  = reinterpret_cast<unsigned char*>(&(compressed_replay[0])),

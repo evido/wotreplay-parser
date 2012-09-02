@@ -19,11 +19,11 @@
 #include "json/json.h"
 #include <boost/lexical_cast.hpp>
 #include <boost/filesystem.hpp>
-
-
+#include <tbb/tbb.h>
 
 using namespace std;
 using namespace wotstats;
+using namespace tbb;
 
 struct map_info {
     std::array<std::tuple<int,int>, 2> limits;
@@ -32,6 +32,7 @@ struct map_info {
 
 struct game_info {
     std::string map_name;
+    std::string game_mode;
     std::array<std::vector<int>, 2> teams;
     unsigned recorder_id;
 };
@@ -142,7 +143,7 @@ void create_image(
                        {0, 0}
                    };
 
-                   std::cout << packet.player_id() << "\n";
+                   // std::cout << packet.player_id() << "\n";
                    for (auto offset : offsets) {
                        int x, y;
                        std::tie(x,y) = get_2d_coord(position, map_info, width, height);
@@ -161,19 +162,19 @@ void create_image(
 }
 
 void write_parts_to_file(const replay_file &replay) {
-    ofstream game_begin("/Users/jantemmerman/Development/wotreplays/out/game_begin.txt", ios::binary | ios::ate);
+    ofstream game_begin("out/game_begin.txt", ios::binary | ios::ate);
     std::copy(replay.get_game_begin().begin(),
               replay.get_game_begin().end(),
               ostream_iterator<char>(game_begin));
     game_begin.close();
     
-    ofstream game_end("/Users/jantemmerman/Development/wotreplays/out/game_end.txt", ios::binary | ios::ate);
+    ofstream game_end("out/game_end.txt", ios::binary | ios::ate);
     std::copy(replay.get_game_end().begin(),
               replay.get_game_end().end(),
               ostream_iterator<char>(game_end));
     game_end.close();
     
-    ofstream replay_content("/Users/jantemmerman/Development/wotreplays/out/replay.dat", ios::binary | ios::ate);
+    ofstream replay_content("out/replay.dat", ios::binary | ios::ate);
     std::copy(replay.get_replay().begin(),
               replay.get_replay().end(),
               ostream_iterator<char>(replay_content));
@@ -200,8 +201,8 @@ game_info get_game_info(const replay_file& replay) {
     }
 
     std::string map_name = root["mapName"].asString();
-    
-    return { map_name, teams, recorder_id };
+    std::string game_mode = root["gameplayType"].asString();
+    return { map_name, game_mode, teams, recorder_id };
 }
 
 
@@ -306,7 +307,7 @@ void print_packet(const slice_t &packet) {
 using namespace boost::filesystem;
 
 void process_reference_data() {
-    path directory("/Users/jantemmerman/Development/wotreplays/data/");
+    path directory("data/");
     std::vector<directory_entry> file_names;
     std::copy(directory_iterator(directory),
               directory_iterator(),
@@ -330,10 +331,41 @@ void process_reference_data() {
     }
 }
 
+bool get_map_info(const game_info &game_info, map_info &map_info) {
+    std::map<std::string, std::array<std::tuple<int,int>, 2>> map_boundaries = {
+        {"04_himmelsdorf",
+            {
+                std::make_tuple(-300, 400),
+                std::make_tuple(-300, 400)
+            }            
+        },
+        {"45_north_america", 
+            {
+                std::make_tuple(-500, 500),
+                std::make_tuple(-500, 500)
+            }            
+        },
+        {"02_malinovka", 
+            {
+                std::make_tuple(-500, 500),
+                std::make_tuple(-500, 500)
+            }
+        }};
 
+    auto boundaries = map_boundaries[game_info.map_name];
+
+    string path = "maps/no-border/" + game_info.map_name + "_" + game_info.game_mode + ".png";
+
+    map_info = {boundaries, path};
+
+    return true;
+}
 
 int main(int argc, const char * argv[])
 {
+#ifdef DEBUG
+    chdir("/Users/jantemmerman/Development/wotreplays");
+#endif
     // std::exit(1);
     // process_reference_data();
     
@@ -359,39 +391,28 @@ int main(int argc, const char * argv[])
 
     // display_packet_summary(packets);
     // display_boundaries(game_info, packets);
-    
-    write_parts_to_file(replay);
-    std::map<std::string, map_info> map_info = {
-        {"04_himmelsdorf", {
-            .limits = {
-                std::make_tuple(-300, 400),
-                std::make_tuple(-300, 400)
-            },
-            .mini_map = "/Users/jantemmerman/Development/wotreplays/maps/no-border/04_himmelsdorf_ctf.png"
-        }},
-        {"45_north_america", {
-            .limits = {
-                std::make_tuple(-500, 500),
-                std::make_tuple(-500, 500)
-            },
-            .mini_map = "/Users/jantemmerman/Development/wotreplays/maps/no-border/45_north_america_ctf.png"
-        }},
-        {"02_malinovka", {
-            .mini_map = "/Users/jantemmerman/Development/wotreplays/maps/no-border/02_malinovka_ctf.png",
-            .limits = {
-                std::make_tuple(-500, 500),
-                std::make_tuple(-500, 500)
-            }
-        }}
-    };
 
-    if (map_info.find(game_info.map_name) != map_info.end()) {
+    for (auto packet : replay.get_packets()) {
+        if (packet.has_property(property::player_id)) {
+            if (packet.player_id() == 77686001) {
+                if (packet.has_property(property::health)) {
+                   std::cout << packet.health() << "\n";
+                }
+                // print_packet(packet.get_data());
+            }
+        }
+    }
+
+    write_parts_to_file(replay);
+    
+    map_info map_info;
+    if (get_map_info(game_info, map_info)) {
         png_bytepp row_pointers;
         int width, height, channels;
-        read_png(map_info[game_info.map_name].mini_map, row_pointers, width, height, channels);
+        read_png(map_info.mini_map, row_pointers, width, height, channels);
         bool alpha = channels == 4;
-        create_image(row_pointers, width, height, replay, game_info, map_info[game_info.map_name], alpha);
-        write_png("/Users/jantemmerman/Development/wotreplays/out/replay.png", row_pointers, width, height, alpha);
+        create_image(row_pointers, width, height, replay, game_info, map_info, alpha);
+        write_png("out/replay.png", row_pointers, width, height, alpha);
     }
 
     return EXIT_SUCCESS;
