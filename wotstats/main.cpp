@@ -295,7 +295,7 @@ void read_png(const std::string &in, png_bytepp &image, int &width, int &height,
     return;
 }
 
-void print_packet(const slice_t &packet) 
+void print_packet(const slice_t &packet) {
     for (auto val : packet) {
         unsigned ival = (unsigned)(unsigned char)(val);
         printf("%02X ", ival);
