@@ -10,8 +10,12 @@
 
 using namespace wotstats;
 
+packet_t::packet_t(const slice_t &data) {
+    this->set_data(data);
+}
+
 uint8_t packet_t::type() const {
-    // assert(has_property(property::type));
+    assert(has_property(property::type));
     return get_field<uint8_t>(data.begin(), data.end(), 1);
 }
 
@@ -34,34 +38,43 @@ std::tuple<float, float, float> packet_t::position() const {
 }
 
 uint16_t packet_t::health() const {
-    assert(type() == 0x07);
-    uint8_t sub_type = get_field<uint8_t>(data.begin(), data.end(), 13);
-    assert(sub_type == 0x02);
+    assert(has_property(property::health));
     return get_field<uint16_t>(data.begin(), data.end(), 21);
 }
 
-std::vector<property> packet_t::get_properties() const {
-    std::vector<property> properties;
-    switch(type()) {
-        case 0x0a:
-            properties.push_back(property::position);
-            properties.push_back(property::type);
-            properties.push_back(property::clock);
-            properties.push_back(property::player_id);
-            break;
-        case 0x07:
-            properties.push_back(property::type);
-            properties.push_back(property::clock);
-            properties.push_back(property::health);
-            properties.push_back(property::player_id);
-        default:
-            properties.push_back(property::type);
-            break;
-    }
+const std::vector<property> &packet_t::get_properties() const {
     return properties;
 }
 
 bool packet_t::has_property(property p) const {
     std::vector<property> properties = get_properties();
     return std::find(properties.begin(), properties.end(), p) != properties.end();
+}
+
+void packet_t::set_data(const slice_t &data) {
+    this->data = data;
+    switch(get_field<uint8_t>(data.begin(), data.end(), 1)) {
+        case 0x0a:
+            properties.push_back(property::position);
+            properties.push_back(property::type);
+            properties.push_back(property::clock);
+            properties.push_back(property::player_id);
+            break;
+        case 0x07: {
+            properties.push_back(property::type);
+            properties.push_back(property::clock);            
+            properties.push_back(property::player_id);
+            uint8_t sub_type = get_field<uint8_t>(data.begin(), data.end(), 13);
+            if (sub_type == 0x02) {
+                properties.push_back(property::health);
+            }
+        }
+        default:
+            properties.push_back(property::type);
+            break;
+    }
+}
+
+const slice_t &packet_t::get_data() const {
+    return data;
 }

@@ -22,17 +22,8 @@
 
 
 
-using std::ifstream;
-using std::ios;
-using std::ofstream;
-using std::ostream_iterator;
-using std::string;
-using std::vector;
-
-using wotstats::replay_file;
-using wotstats::buffer_t;
-using wotstats::slice_t;
-using wotstats::packet_t;
+using namespace std;
+using namespace wotstats;
 
 struct map_info {
     std::array<std::tuple<int,int>, 2> limits;
@@ -76,23 +67,22 @@ get_2d_coord(const std::tuple<float, float, float> &position, const map_info &ma
 }
 
 void display_packet_clock(const packet_t &packet) {
-    if (packet.data.size() < 9) return;
-    std::cout << *reinterpret_cast<const int*>(&packet.data[5]) << "\n";
+    std::cout << packet.clock() << "\n";
 }
 
 void create_image(
                   unsigned char **image,
                   int width, int height,
-                  const std::vector<packet_t> &packets,
+                  const replay_file &replay,
                   const game_info &game_info,
                   const map_info &map_info,
                   bool alpha
                   ) {
+    const std::vector<packet_t> &packets = replay.get_packets();
     for (auto it = packets.begin(); it != packets.end(); ++it) {
         const packet_t &packet = *it;
-        switch(packet.type()) {
-            case 0x0a: {
-                int player_id = (*(const unsigned*) &packet.data[9]);
+        if (packet.has_property(property::position)) {
+                int player_id = (*(const unsigned*) &packet.get_data()[9]);
                 auto position = packet.position();
                 int x,y;
                 auto teams = game_info.teams;
@@ -129,69 +119,61 @@ void create_image(
                         image[y][x]= 0xff;
                         image[y][x+1] = image[y][x+2] = 0x00;
                         break;
-                }
+                }              
+        }
 
-                
-            }
-            case 0x07: {
-                char sub_type = packet.data[13];
-                if (sub_type != 0x02)
-                    continue;
-                short health = packet.health();
-                if (health == 0) {
-                    auto result = std::find_if(packets.rbegin(), packets.rend(), [&it](const packet_t &packet) -> bool {
-                        return packet.type() == 0x0a
-                            && packet.has_property(wotstats::property::player_id)
-                            && (*it).has_property(wotstats::property::player_id)
-                            && packet.player_id() == (*it).player_id()
-                            && packet.clock() == (*it).clock();
-                    });
-                    if (result != packets.rend()) {
-                        std::tuple<float, float, float> position = (*result).position();
-                        
-                        int offsets[][2] = {
-                            {-1, -1},
-                            {-1, 0},
-                            {-1, 1},
-                            {0, 1},
-                            {1, 1},
-                            {1, 0},
-                            {1, -1},
-                            {0 , -1},
-                            {0, 0}
-                        };
-                        for (auto offset : offsets) {
-                            int x, y;
-                            std::tie(x,y) = get_2d_coord(position, map_info, width, height);
-                            x += offset[0];
-                            y += offset[1];
-                            x *= alpha ? 4 : 3;
-                            if (alpha) image[y][x+3] = 0xff;
-                            image[y][x] = image[y][x+1] = 0xff;
-                            image[y][x + 2] = 0x00;
-                        }
-                    }
-                }
-            }
+        if (packet.has_property(property::health)) {
+           uint16_t health = packet.health();
+           if (health == 0) {
+               packet_t position_packet;
+               auto packet_id = std::distance(packets.begin(), it);
+               bool found = replay.find_property(packet_id, property::position, position_packet);
+               if (found) {
+                   std::tuple<float, float, float> position = position_packet.position();                   
+                   int offsets[][2] = {
+                       {-1, -1},
+                       {-1, 0},
+                       {-1, 1},
+                       {0, 1},
+                       {1, 1},
+                       {1, 0},
+                       {1, -1},
+                       {0 , -1},
+                       {0, 0}
+                   };
+
+                   std::cout << packet.player_id() << "\n";
+                   for (auto offset : offsets) {
+                       int x, y;
+                       std::tie(x,y) = get_2d_coord(position, map_info, width, height);
+                       x += offset[0];
+                       y += offset[1];
+                       x *= alpha ? 4 : 3;
+                       if (alpha) image[y][x+3] = 0xff;
+                       image[y][x] = image[y][x+1] = 0xff;
+                       image[y][x + 2] = 0x00;
+                   }
+               }
+           }
         }
 
     }
 }
 
 void write_parts_to_file(const replay_file &replay) {
-    ofstream game_begin("/Users/jantemmerman/Development/wotreplays/game_begin.txt", ios::binary | ios::ate);
+    ofstream game_begin("/Users/jantemmerman/Development/wotreplays/out/game_begin.txt", ios::binary | ios::ate);
     std::copy(replay.get_game_begin().begin(),
               replay.get_game_begin().end(),
               ostream_iterator<char>(game_begin));
     game_begin.close();
     
-    ofstream game_end("/Users/jantemmerman/Development/wotreplays/game_end.txt", ios::binary | ios::ate);
+    ofstream game_end("/Users/jantemmerman/Development/wotreplays/out/game_end.txt", ios::binary | ios::ate);
     std::copy(replay.get_game_end().begin(),
               replay.get_game_end().end(),
               ostream_iterator<char>(game_end));
     game_end.close();
     
-    ofstream replay_content("/Users/jantemmerman/Development/wotreplays/replay.dat", ios::binary | ios::ate);
+    ofstream replay_content("/Users/jantemmerman/Development/wotreplays/out/replay.dat", ios::binary | ios::ate);
     std::copy(replay.get_replay().begin(),
               replay.get_replay().end(),
               ostream_iterator<char>(replay_content));
@@ -233,7 +215,7 @@ void display_boundaries(const game_info &game_info, std::vector<packet_t> packet
             continue;
         }
         
-        int player_id = (*(const unsigned*) &packet.data[9]);
+        uint32_t player_id = packet.player_id();
         auto position = packet.position();
 
         int team_id = -1;
@@ -313,22 +295,12 @@ void read_png(const std::string &in, png_bytepp &image, int &width, int &height,
     return;
 }
 
-void print_packet(const slice_t &packet) {
-    char packet_type = packet[1];
-    // if (packet_type != 0x08) return;
-    if (!(packet_type == 0x07)) return;
-    // auto player_id = *(const unsigned int*) &packet[9];
-    // auto val = *(const short int*) &packet[21];
-    // if (player_id != 139174664) return;
-    // int i = 0;
-    // std::cout << val << "\n";
+void print_packet(const slice_t &packet) 
     for (auto val : packet) {
         unsigned ival = (unsigned)(unsigned char)(val);
         printf("%02X ", ival);
-       // ++i;
     }
     printf("\n");
-    // printf("%d\n", i);
 }
 
 using namespace boost::filesystem;
@@ -350,16 +322,15 @@ void process_reference_data() {
 
         try {
         replay_file replay(is);
-        auto game_info = get_game_info(replay);
         is.close();
-
-        std::vector<packet_t> packets;
-        replay.get_packets(packets);
+        
         } catch (const std::exception &e) {
             std::cout << "Error processing file: " << entry << "\n";
         }
     }
 }
+
+
 
 int main(int argc, const char * argv[])
 {
@@ -369,7 +340,7 @@ int main(int argc, const char * argv[])
     // std::exit(1);
     // string replay_file_name("/Users/jantemmerman/Development/wotreplays/20120707_2059_germany-E-75_himmelsdorf.wotreplay");
     // string replay_file_name("/Users/jantemmerman/Development/wotreplays/siegfried_line/20120628_2039_germany-E-75_siegfried_line.wotreplay");
-    string replay_file_name = "/Users/jantemmerman/Development/wotreplays/20120815_0309_germany-E-75_02_malinovka.wotreplay";
+    string replay_file_name = "/Users/jantemmerman/Development/wotreplays/replay-data/20120815_0309_germany-E-75_02_malinovka.wotreplay";
     // string replay_file_name = "/Users/jantemmerman/Development/wotreplays/20120826_0013_france-AMX_13_90_04_himmelsdorf.wotreplay";
     // string replay_file_name = "/Users/jantemmerman/Development/wotreplays/20120826_0019_france-AMX_13_90_45_north_america.wotreplay";
     // replay_file_name = "/Users/jantemmerman/Development/wotreplays/data/20120701_1247_germany-E-75_monastery.wotreplay";
@@ -384,10 +355,7 @@ int main(int argc, const char * argv[])
     
     replay_file replay(is);
     auto game_info = get_game_info(replay);
-    is.close();
-    
-    std::vector<packet_t> packets;
-    replay.get_packets(packets);
+    is.close();   
 
     // display_packet_summary(packets);
     // display_boundaries(game_info, packets);
@@ -399,17 +367,17 @@ int main(int argc, const char * argv[])
                 std::make_tuple(-300, 400),
                 std::make_tuple(-300, 400)
             },
-            .mini_map = "/Users/jantemmerman/Development/wotreplays/himmelsdorf-5.png"
+            .mini_map = "/Users/jantemmerman/Development/wotreplays/maps/no-border/04_himmelsdorf_ctf.png"
         }},
         {"45_north_america", {
             .limits = {
                 std::make_tuple(-500, 500),
                 std::make_tuple(-500, 500)
             },
-            .mini_map = "/Users/jantemmerman/Development/wotreplays/45_north_america_ctf.png"
+            .mini_map = "/Users/jantemmerman/Development/wotreplays/maps/no-border/45_north_america_ctf.png"
         }},
         {"02_malinovka", {
-            .mini_map = "/Users/jantemmerman/Development/wotreplays/02_malinovka_ctf.png",
+            .mini_map = "/Users/jantemmerman/Development/wotreplays/maps/no-border/02_malinovka_ctf.png",
             .limits = {
                 std::make_tuple(-500, 500),
                 std::make_tuple(-500, 500)
@@ -422,8 +390,8 @@ int main(int argc, const char * argv[])
         int width, height, channels;
         read_png(map_info[game_info.map_name].mini_map, row_pointers, width, height, channels);
         bool alpha = channels == 4;
-        create_image(row_pointers, width, height, packets, game_info, map_info[game_info.map_name], alpha);
-        write_png("/Users/jantemmerman/Development/wotreplays/replay.png", row_pointers, width, height, alpha);
+        create_image(row_pointers, width, height, replay, game_info, map_info[game_info.map_name], alpha);
+        write_png("/Users/jantemmerman/Development/wotreplays/out/replay.png", row_pointers, width, height, alpha);
     }
 
     return EXIT_SUCCESS;

@@ -31,7 +31,12 @@ namespace wotstats {
         turret_direction,
     };
 
-    struct packet_t {
+    class packet_t {
+    public:
+        packet_t() = default;
+        packet_t(const slice_t &slice_t);
+
+        // property accessor
         uint8_t type() const;
         uint32_t clock() const;
         uint32_t player_id() const;
@@ -41,8 +46,16 @@ namespace wotstats {
         uint16_t health() const;
         bool is_shot() const;
         bool fired_shot() const;
-        std::vector<property> get_properties() const;
+
+        // property helper methods
+        const std::vector<property> &get_properties() const;
         bool has_property(property p) const;
+
+        // modify / retrieve packet data
+        void set_data(const slice_t &data);
+        const slice_t &get_data() const;
+    private:
+        std::vector<property> properties;
         slice_t data;
     };
 

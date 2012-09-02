@@ -53,6 +53,9 @@ const buffer_t &replay_file::get_game_end() const {
     return game_end;
 }
 
+#define SHIFT(value, length) ((value) << (length))
+
+
 const buffer_t &replay_file::get_replay() const {
     return replay;
 }
@@ -117,10 +120,11 @@ void replay_file::parse(buffer_t &buffer) {
     
     decrypt_replay(raw_replay, key);
     extract_replay(raw_replay, replay);
+    read_packets();
 }
 
 void replay_file::decrypt_replay(buffer_t &replay_data, const unsigned char *key_data) {
-    debug_stream_content("/Users/jantemmerman/Development/wotreplays/replay-ec.dat", replay_data.begin(), replay_data.end());
+    debug_stream_content("/Users/jantemmerman/Development/wotreplays/out/replay-ec.dat", replay_data.begin(), replay_data.end());
     
     BF_KEY key = {0};
     BF_set_key(&key, 16, key_data);
@@ -157,7 +161,7 @@ uint32_t replay_file::get_data_block_count(const buffer_t &buffer) const {
 } 
 
 void replay_file::extract_replay(buffer_t &compressed_replay, buffer_t &replay) {
-    debug_stream_content("/Users/jantemmerman/Development/wotreplays/replay-c.dat", compressed_replay.begin(), compressed_replay.end());
+    debug_stream_content("/Users/jantemmerman/Development/wotreplays/out/replay-c.dat", compressed_replay.begin(), compressed_replay.end());
 
     z_stream strm = { 
         .next_in  = reinterpret_cast<unsigned char*>(&(compressed_replay[0])),
@@ -231,11 +235,11 @@ void replay_file::get_data_blocks(buffer_t &buffer, vector<slice_t> &data_blocks
     data_blocks.emplace_back(last_data_block.end() + 8, buffer.end());
 }
 
-size_t replay_file::get_packets(std::vector<packet_t> &packets) {
+size_t replay_file::read_packets() {
 
     buffer_t &buffer = this->replay;
     
-    std::map<char, int> packet_lengths = {
+    std::map<uint8_t, int> packet_lengths = {
         {0x03, 24},
         {0x04, 16},
         {0x05, 54},
@@ -262,7 +266,7 @@ size_t replay_file::get_packets(std::vector<packet_t> &packets) {
 
     size_t offset = 0;
 
-    std::vector<char> marker = {0x2C, 0x01, 0x01, 0x00, 0x00, 0x00};
+    std::vector<uint8_t> marker = {0x2C, 0x01, 0x01, 0x00, 0x00, 0x00};
 
     auto pos = std::search(buffer.begin(), buffer.end(),marker.begin(), marker.end());
     if (pos != buffer.end()) {
@@ -283,7 +287,7 @@ size_t replay_file::get_packets(std::vector<packet_t> &packets) {
             } else {
 #ifdef DEBUG
                 const packet_t &last_packet = packets.back();
-                const slice_t &packet_data = last_packet.data;
+                const slice_t &packet_data = last_packet.get_data();
                 size_t packet_size = packet_data.size();
                 size_t prev_ix = ix - packet_size;
                 std::cerr << "Bytes read: " << ix << std::endl
@@ -329,6 +333,70 @@ size_t replay_file::get_packets(std::vector<packet_t> &packets) {
     }
     
     return ix;
+}
+
+
+const std::vector<packet_t> &replay_file::get_packets() const {
+    return packets;
+}
+
+bool replay_file::find_property(size_t packet_id, property property, packet_t &out) const
+{
+    auto packet = packets.begin() + packet_id;
+    // method is useless if the packet does not have a clock or player_id
+    assert(packet->has_property(property::clock) && packet->has_property(property::player_id));
+
+    // inline function function for using with stl to finding the range with the same clock
+    auto has_same_clock =
+        [&packet](const packet_t &target) -> bool  {
+            // packets without clock are included
+            return !target.has_property(property::clock)
+                || target.clock() == packet->clock();
+        };
+    
+    // start searching from the next packet to the end for the first packet without the same clock
+    auto it_clock_end = std::find_if_not(packets.cbegin() + packet_id + 1, packets.cend(), has_same_clock);
+    // start searching from the previous packet to the beginning for the first packet without the same clock
+    auto it_clock_rbegin = std::find_if_not(packets.crbegin() + (packets.size() - packet_id), packets.crend(), has_same_clock);
+    // change it_clock_rbegin to forward iterator
+    auto it_clock_begin = (it_clock_rbegin + 1).base();
+
+    auto is_related_with_property = [&](const packet_t &target) -> bool {
+        return target.has_property(property::clock) &&
+        target.has_property(property::player_id) &&
+        target.has_property(property) &&
+        target.player_id() == packet->player_id() &&
+        target.clock() ==  packet->clock();
+    };
+    
+    auto it = std::find_if(it_clock_begin, it_clock_end, is_related_with_property);
+    bool found = it != it_clock_end;
+
+    if (!found) {
+        auto result_after = std::find_if(it_clock_end, packets.end(), is_related_with_property);
+        auto result_before = std::find_if(it_clock_rbegin, packets.crend(), is_related_with_property);
+
+        if(result_after != packets.end() && result_before != packets.rend()) {
+            // if both iterators point to items within the collection
+            auto cmp_by_clock = [](const packet_t &left, const packet_t &right) -> int {
+                return left.clock() <= right.clock();
+            };
+            out = std::min(*result_before, *result_after, cmp_by_clock);
+            found = true;
+        } else if (result_after == packets.end() && result_before != packets.rend()) {
+            // only result_before points to item in collection
+            out = *result_before;
+            found = true;
+        } else if (result_after != packets.end() && result_before == packets.rend()) {
+            // only result_after points to item in collection
+            out = *result_after;
+            found = true;
+        } 
+    } else {
+        out = *it;
+    }
+
+    return found;
 }
 
 
