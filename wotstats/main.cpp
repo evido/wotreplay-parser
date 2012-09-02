@@ -333,24 +333,40 @@ void process_reference_data() {
 
 bool get_map_info(const game_info &game_info, map_info &map_info) {
     std::map<std::string, std::array<std::tuple<int,int>, 2>> map_boundaries = {
-        {"04_himmelsdorf",
-            {
-                std::make_tuple(-300, 400),
-                std::make_tuple(-300, 400)
-            }            
-        },
-        {"45_north_america", 
-            {
-                std::make_tuple(-500, 500),
-                std::make_tuple(-500, 500)
-            }            
-        },
-        {"02_malinovka", 
-            {
-                std::make_tuple(-500, 500),
-                std::make_tuple(-500, 500)
-            }
-        }};
+        { "01_karelia",         { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
+        { "02_malinovka",       { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
+        { "03_campania",        { std::make_tuple(-300, 300), std::make_tuple(-300, 300) } },
+        { "04_himmelsdorf",     { std::make_tuple(-300, 400), std::make_tuple(-300, 400) } },
+        { "05_prohorovka", 	    { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
+        { "06_ensk",            { std::make_tuple(-300, 300), std::make_tuple(-300, 300) } },
+        { "07_lakeville",       { std::make_tuple(-400, 400), std::make_tuple(-400, 400) } },
+        { "08_ruinberg",        { std::make_tuple(-400, 400), std::make_tuple(-400, 400) } },
+        { "10_hills",           { std::make_tuple(-400, 400), std::make_tuple(-400, 400) } },
+        { "11_murovanka",       { std::make_tuple(-400, 400), std::make_tuple(-400, 400) } },
+        { "13_erlenberg",       { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
+        { "14_siegfried_line",  { std::make_tuple(-400, 400), std::make_tuple(-400, 400) } },
+        { "15_komarin",         { std::make_tuple(-400, 400), std::make_tuple(-400, 400) } },
+        { "17_munchen",         { std::make_tuple(-300, 300), std::make_tuple(-300, 300) } },
+        { "18_cliff",           { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
+        { "19_monastery",       { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
+        { "22_slough",          { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
+        { "23_westfeld",        { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
+        { "28_desert",          { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
+        { "29_el_hallouf",      { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
+        { "31_airfield",        { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
+        { "33_fjord",           { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
+        { "34_redshire",        { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
+        { "35_steppes",         { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
+        { "36_fishing_bay",     { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
+        { "37_caucasus",        { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
+        { "38_mannerheim_line", { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
+        { "39_crimea",          { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
+        { "42_north_america",   { std::make_tuple(-400, 400), std::make_tuple(-400, 400) } },
+        { "44_north_america",   { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
+        { "45_north_america",   { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
+        { "47_canada_a",        { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
+        { "51_asia",            { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } }
+    };
 
     auto boundaries = map_boundaries[game_info.map_name];
 
