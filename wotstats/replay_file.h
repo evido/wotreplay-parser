@@ -21,6 +21,7 @@ namespace wotstats {
     public:
         replay_file() = default;
         replay_file(std::istream &is);
+        const std::string& get_version() const;
         const buffer_t &get_game_begin() const;
         const buffer_t &get_game_end() const;
         const buffer_t &get_replay() const;
@@ -43,6 +44,7 @@ namespace wotstats {
         buffer_t game_end;
         buffer_t replay;
         std::vector<packet_t> packets;
+        std::string version;
     };
 
     template <typename iterator>

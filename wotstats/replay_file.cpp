@@ -13,21 +13,13 @@
 #include <openssl/blowfish.h>
 #include <zlib.h>
 #include <type_traits>
-
-using namespace wotstats;
-
-using std::ios;
-using std::istream;
-using std::vector;
-
-#ifdef DEBUG
-
 #include <fstream>
 #include <string>
 
-using std::string;
-using std::ofstream;
-using std::ios;
+using namespace wotstats;
+using namespace std;
+
+#if DEBUG_REPLAY_FILE
 
 template <typename T>
 static void debug_stream_content(const string &file_name, T begin, T end) {
@@ -43,7 +35,6 @@ static void debug_stream_content(const string &file_name, T begin, T end) {
 
 #endif
 
-using namespace wotstats;
 
 const buffer_t &replay_file::get_game_begin() const {
     return game_begin;
@@ -52,8 +43,6 @@ const buffer_t &replay_file::get_game_begin() const {
 const buffer_t &replay_file::get_game_end() const {
     return game_end;
 }
-
-#define SHIFT(value, length) ((value) << (length))
 
 
 const buffer_t &replay_file::get_replay() const {
@@ -78,6 +67,10 @@ replay_file::replay_file(istream &is) {
     buffer_t buffer;
     read(is, buffer);
     parse(buffer);
+}
+
+const std::string &replay_file::get_version() const {
+    return version;
 }
 
 void replay_file::parse(buffer_t &buffer) {
@@ -271,7 +264,9 @@ size_t replay_file::read_packets() {
     auto pos = std::search(buffer.begin(), buffer.end(),marker.begin(), marker.end());
     if (pos != buffer.end()) {
         offset = (pos - buffer.begin()) + marker.size();
-        std::cout << "OFFSET: " << offset << "\n";
+#if DEBUG_REPLAY_FILE
+        std::cerr << "OFFSET: " << offset << "\n";
+#endif
     }
 
     size_t ix = offset;
@@ -281,11 +276,13 @@ size_t replay_file::read_packets() {
             size_t count = packets.size();
             if (count < 500) {
                 ix = static_cast<int>(++offset);
-                std::cout << ix << "\n";
-                std::cout << "WARNING INCORRECT OFFSET!\n";
+#if DEBUG_REPLAY_FILE
+                std::cerr << ix << "\n";
+                std::cerr << "WARNING INCORRECT OFFSET!\n";
+#endif
                 continue;
             } else {
-#ifdef DEBUG
+#if DEBUG_REPLAY_FILE
                 const packet_t &last_packet = packets.back();
                 const slice_t &packet_data = last_packet.get_data();
                 size_t packet_size = packet_data.size();

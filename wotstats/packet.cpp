@@ -42,39 +42,39 @@ uint16_t packet_t::health() const {
     return get_field<uint16_t>(data.begin(), data.end(), 21);
 }
 
-const std::vector<property> &packet_t::get_properties() const {
+const std::array<bool, property_nr_items> &packet_t::get_properties() const {
     return properties;
 }
 
 bool packet_t::has_property(property p) const {
-    std::vector<property> properties = get_properties();
-    return std::find(properties.begin(), properties.end(), p) != properties.end();
+    return properties[p];
 }
 
 void packet_t::set_data(const slice_t &data) {
     this->data = data;
+    std::fill(properties.begin(), properties.end(), false);
     switch(get_field<uint8_t>(data.begin(), data.end(), 1)) {
         case 0x0a:
-            properties.push_back(property::position);
-            properties.push_back(property::type);
-            properties.push_back(property::clock);
-            properties.push_back(property::player_id);
+            properties[property::position] = true;
+            properties[property::type] = true;
+            properties[property::clock] = true;
+            properties[property::player_id] = true;
             break;
         case 0x07: {
-            properties.push_back(property::type);
-            properties.push_back(property::clock);            
-            properties.push_back(property::player_id);
+            properties[property::type] = true;
+            properties[property::clock] = true;
+            properties[property::player_id] = true;
             uint8_t sub_type = get_field<uint8_t>(data.begin(), data.end(), 13);
             if (sub_type == 0x02) {
-                properties.push_back(property::health);
+                properties[property::health] = true;
             }
         }
         default:
             if (data.size() >= 12) {
-                properties.push_back(property::clock);
-                properties.push_back(property::player_id);
+                properties[property::clock];
+                properties[property::player_id];
             }
-            properties.push_back(property::type);
+            properties[property::type] = true;
             break;
     }
 }

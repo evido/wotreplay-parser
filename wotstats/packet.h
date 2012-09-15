@@ -10,16 +10,17 @@
 #define __wotstats__packet__
 
 #include <tuple>
-#include <vector>
+#include <set>
 
 #include <stdint.h>
+#include <array>
 
 #include "types.h"
 
 namespace wotstats {
 
     enum property {
-        clock,
+        clock = 0,
         gun_direction,
         fired_shot,
         health,
@@ -29,6 +30,7 @@ namespace wotstats {
         sub_type,
         type,
         turret_direction,
+        property_nr_items
     };
 
     class packet_t {
@@ -48,14 +50,14 @@ namespace wotstats {
         bool fired_shot() const;
 
         // property helper methods
-        const std::vector<property> &get_properties() const;
+        const std::array<bool, property_nr_items> &get_properties() const;
         bool has_property(property p) const;
 
         // modify / retrieve packet data
         void set_data(const slice_t &data);
         const slice_t &get_data() const;
     private:
-        std::vector<property> properties;
+        std::array<bool, property_nr_items> properties;
         slice_t data;
     };
 
