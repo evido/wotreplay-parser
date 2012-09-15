@@ -10,10 +10,8 @@
 #define __wotstats__packet__
 
 #include <tuple>
-#include <set>
-
-#include <stdint.h>
 #include <array>
+#include <stdint.h>
 
 #include "types.h"
 

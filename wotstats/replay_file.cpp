@@ -229,10 +229,9 @@ void replay_file::get_data_blocks(buffer_t &buffer, vector<slice_t> &data_blocks
 }
 
 size_t replay_file::read_packets() {
-
     buffer_t &buffer = this->replay;
     
-    std::map<uint8_t, int> packet_lengths = {
+    static std::map<uint8_t, int> packet_lengths = {
         {0x03, 24},
         {0x04, 16},
         {0x05, 54},
@@ -259,7 +258,7 @@ size_t replay_file::read_packets() {
 
     size_t offset = 0;
 
-    std::vector<uint8_t> marker = {0x2C, 0x01, 0x01, 0x00, 0x00, 0x00};
+    std::array<uint8_t, 6> marker = {0x2C, 0x01, 0x01, 0x00, 0x00, 0x00};
 
     auto pos = std::search(buffer.begin(), buffer.end(),marker.begin(), marker.end());
     if (pos != buffer.end()) {
@@ -297,27 +296,20 @@ size_t replay_file::read_packets() {
             }
         }
 
-        size_t packet_length;
+        size_t packet_length = packet_lengths[buffer[ix + 1]];
         
         switch(buffer[ix + 1]) {
             case 0x07:
             case 0x08: {
-                packet_length = packet_lengths[buffer[ix + 1]];
                 packet_length += get_field<uint16_t>(buffer.begin(), buffer.end(), ix + 17);
                 break;
             }
             case 0x17: {
-                packet_length = packet_lengths[buffer[ix + 1]];
                 packet_length += get_field<uint8_t>(buffer.begin(), buffer.end(), ix + 9);
                 break;
             }
             case 0x05: {
-                packet_length = packet_lengths[buffer[ix + 1]];
                 packet_length += get_field<uint8_t>(buffer.begin(), buffer.end(), ix + 47);
-                break;
-            }
-            default: {
-                packet_length = packet_lengths[buffer[ix + 1]];
                 break;
             }
         }

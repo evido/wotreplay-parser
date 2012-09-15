@@ -367,7 +367,7 @@ map_info get_map_info(game_info &game_info) {
     }
 
     auto boundaries = map_boundaries[game_info.map_name];
-    // std::cout << game_info.game_mode << "\n";
+    
     string path = "maps/no-border/" + game_info.map_name + "_" + game_info.game_mode + ".png";
 
     return {boundaries, path};
@@ -384,14 +384,23 @@ struct process_result {
     map_info map_info;
     game_info game_info;
     array<uint8_t**, 3> images;
+    process_result() = default;
+    process_result(const process_result&) = delete;
+    process_result & operator= (const process_result & other) = delete;
+    ~process_result() {
+        delete this->replay;
+        for (auto image : this->images) {
+            if (image == nullptr) continue;
+            for (int i = 0; i< 500; ++i) {
+                delete []image[i];
+            }
+            delete []image;
+        }
+    }
 };
 
 void process_replay_directory(const path& directory) {
     std::map<std::string, std::vector<png_bytepp>> images;
-    std::vector<directory_entry> file_names;
-
-    std::atomic<int> count(0);
-    
     directory_iterator it(directory);
     // get out if no elements
     if (it == directory_iterator()) return;
@@ -405,7 +414,7 @@ void process_replay_directory(const path& directory) {
             auto path = it->path();
             file_path = path.string();
         }
-        return new process_result({ .error = false, .path = file_path, nullptr, map_info(), game_info(), { nullptr, nullptr, nullptr } });
+        return new process_result{ .error = false, .path = file_path };
     };
 
     auto f_create_replays = [](process_result* result) -> process_result* {
@@ -466,15 +475,6 @@ void process_replay_directory(const path& directory) {
     };
 
     auto merge_results = [&](process_result *result) -> void {
-        delete result->replay;
-        for (auto image : result->images) {
-            if (image == nullptr) continue;
-            for (int i = 0; i< 500; ++i) {
-                delete []image[i];
-            }
-            delete []image;
-        }
-        count += 1;
         delete result;
     };
 
@@ -484,29 +484,24 @@ void process_replay_directory(const path& directory) {
                            tbb::make_filter<process_result*, process_result*>(tbb::filter::parallel, f_draw_team(0)) &
                            tbb::make_filter<process_result*, process_result*>(tbb::filter::parallel, f_draw_team(1)) &
                            tbb::make_filter<process_result*, void>(tbb::filter::parallel, merge_results));
-
-    std::cout << count << "\n";
-    ofstream os("processed.txt");
-    os << count << "\n";
-    os.close();
 }
 
 int main(int argc, const char * argv[])
 {
-    chdir("/Users/jantemmerman/Development/wotreplays");
+    chdir("/Users/jantemmerman/Development/wotstats/data");
 
-    process_replay_directory("replay-data"); std::exit(1);
+    // process_replay_directory("replay-data"); std::exit(1);
     
     string replay_file_names[] = {
-        "replay-data/20120707_2059_germany-E-75_himmelsdorf.wotreplay",
-        "replay-data/siegfried_line/20120628_2039_germany-E-75_siegfried_line.wotreplay",
-        "replay-data/20120815_0309_germany-E-75_02_malinovka.wotreplay",
-        "replay-data/8.0/20120906_2352_germany-Panther_II_02_malinovka.wotreplay",
-        "replay-data/20120826_0013_france-AMX_13_90_04_himmelsdorf.wotreplay",
-        "replay-data/20120826_0019_france-AMX_13_90_45_north_america.wotreplay",
-        "replay-data/data/20120701_1247_germany-E-75_monastery.wotreplay",
-        "replay-data/20120826_2059_france-AMX_13_90_02_malinovka.wotreplay",
-        "replay-data/20120826_1729_france-AMX_13_90_04_himmelsdorf.wotreplay",
+        "replays/20120707_2059_germany-E-75_himmelsdorf.wotreplay",
+        "siegfried_line/20120628_2039_germany-E-75_siegfried_line.wotreplay",
+        "replays/20120815_0309_germany-E-75_02_malinovka.wotreplay",
+        "replays/8.0/20120906_2352_germany-Panther_II_02_malinovka.wotreplay",
+        "replays/20120826_0013_france-AMX_13_90_04_himmelsdorf.wotreplay",
+        "replays/20120826_0019_france-AMX_13_90_45_north_america.wotreplay",
+        "replays/20120701_1247_germany-E-75_monastery.wotreplay",
+        "replays/20120826_2059_france-AMX_13_90_02_malinovka.wotreplay",
+        "replays/20120826_1729_france-AMX_13_90_04_himmelsdorf.wotreplay",
     };
 
     const std::string &replay_file_name = replay_file_names[6];

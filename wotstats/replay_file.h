@@ -49,7 +49,6 @@ namespace wotstats {
 
     template <typename iterator>
     packet_t replay_file::read_packet(iterator begin, iterator end) {
-        
         return packet_t(boost::make_iterator_range(begin, end));
     }
 }
