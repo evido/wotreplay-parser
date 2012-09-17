@@ -73,6 +73,7 @@ void packet_t::set_data(const slice_t &data) {
             properties[property::clock] = true;
             properties[property::player_id] = true;
             properties[property::type] = true;
+            break;
         }
         default:
             if (data.size() >= 12) {

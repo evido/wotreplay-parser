@@ -15,6 +15,8 @@
 #include <type_traits>
 #include <fstream>
 #include <string>
+#include <ostream>
+#include <string>
 
 using namespace wotstats;
 using namespace std;
@@ -327,6 +329,66 @@ size_t replay_file::read_packets() {
 
 const std::vector<packet_t> &replay_file::get_packets() const {
     return packets;
+}
+
+bool replay_file::find_property(uint32_t clock, uint32_t player_id, property property, packet_t &out) const
+{
+    // inline function function for using with stl to finding the range with the same clock
+    auto has_same_clock = [&](const packet_t &target) -> bool  {
+        // packets without clock are included
+        return target.has_property(property::clock)
+          && target.clock() == clock;
+    };
+
+    
+    // find first packet with same clock
+    auto it_clock_begin = std::find_if(packets.cbegin(), packets.cend(), has_same_clock);
+    // find last packet with same clock
+    auto it_clock_end = std::find_if_not(it_clock_begin, packets.cend(), [&](const packet_t &target) -> bool  {
+        // packets without clock are included
+        return !target.has_property(property::clock)
+        || target.clock() == clock;
+    });
+    
+    auto is_related_with_property = [&](const packet_t &target) -> bool {
+        return target.has_property(property::clock) &&
+        target.has_property(property::player_id) &&
+        target.has_property(property) &&
+        target.player_id() == player_id;
+    };
+
+    auto it = std::find_if(it_clock_begin, it_clock_end, is_related_with_property);
+    bool found = it != it_clock_end;
+    
+    if (!found) {
+        std::cout << "search from: " << (it_clock_end - packets.begin()) << " to: end\n";
+        auto result_after = std::find_if(it_clock_end, packets.end(), is_related_with_property);
+        // std::cout << (it_clock_begin - packets.begin()) << "\n";
+        auto it_clock_rbegin = packets.crbegin() + (packets.size() - (it_clock_begin - packets.begin()));
+        std::cout << "search from: " << (it_clock_rbegin + 1).base() - packets.begin() << " to: begin\n";
+        auto result_before = std::find_if(it_clock_rbegin, packets.crend(), is_related_with_property);
+
+        if(result_after != packets.cend() && result_before != packets.crend()) {
+            // if both iterators point to items within the collection
+            auto cmp_by_clock = [](const packet_t &left, const packet_t &right) -> int {
+                return left.clock() <= right.clock();
+            };
+            out = std::min(*result_before, *result_after, cmp_by_clock);
+            found = true;
+        } else if (result_after == packets.end() && result_before != packets.rend()) {
+            // only result_before points to item in collection
+            out = *result_before;
+            found = true;
+        } else if (result_after != packets.end() && result_before == packets.rend()) {
+            // only result_after points to item in collection
+            out = *result_after;
+            found = true;
+        }
+    } else {
+        out = *it;
+    }
+
+    return found;
 }
 
 bool replay_file::find_property(size_t packet_id, property property, packet_t &out) const

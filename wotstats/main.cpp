@@ -43,8 +43,9 @@ struct game_info {
     unsigned recorder_id;
 };
 
-double round(double number) {
-    return number < 0.0 ? ceil(number - 0.5) : floor(number + 0.5);
+template <typename T>
+T round(T number) {
+    return number < static_cast<T>(0.0) ? ceil(number - static_cast<T>(0.5)) : floor(number + static_cast<T>(0.5));
 }
 
 void display_packet_summary(const std::vector<packet_t>& packets) {
@@ -66,8 +67,9 @@ std::tuple<int, int> get_2d_coord(const std::tuple<float, float, float> &positio
     std::tie(x,z,y) = position;
     std::tie(min_x, max_x) = map_info.limits[0];
     std::tie(min_y, max_y) = map_info.limits[1];
-    x = round((x - min_x) / static_cast<float>(max_x - min_x) * width);
-    y = round(((max_y - min_y) - (y - min_y)) / static_cast<float>(max_y - min_y) * height);
+    // --min_x, --max_x, --min_y, --max_y;
+    x = round((x - min_x) * (width / static_cast<float>(max_x - min_x + 1)));
+    y = round((max_y - y) * (height / static_cast<float>(max_y - min_y + 1)));
     return std::make_tuple(x,y);
 }
 
@@ -127,7 +129,43 @@ void create_image(
                 }              
         }
 
-        if (packet.has_property(property::health)) {
+        if (packet.has_property(property::tank_destroyed)) {
+            uint32_t target, killer;
+            std::tie(target, killer) = packet.tank_destroyed();
+            packet_t position_packet;
+
+            std::cout << target << " " << killer << "\n";
+            bool found = replay.find_property(packet.clock(), target, property::position, position_packet);
+            if (found) {
+                std::cout << "FOUND!\n";
+                std::tuple<float, float, float> position = position_packet.position();
+                int offsets[][2] = {
+                    {-1, -1},
+                    {-1,  0},
+                    {-1,  1},
+                    { 0,  1},
+                    { 1,  1},
+                    { 1,  0},
+                    { 1, -1},
+                    { 0, -1},
+                    { 0,  0}
+                };
+
+                // std::cout << packet.player_id() << "\n";
+                for (auto offset : offsets) {
+                    int x, y;
+                    std::tie(x,y) = get_2d_coord(position, map_info, width, height);
+                    x += offset[0];
+                    y += offset[1];
+                    x *= alpha ? 4 : 3;
+                    if (alpha) image[y][x+3] = 0xff;
+                    image[y][x] = image[y][x+1] = 0xff;
+                    image[y][x + 2] = 0x00;
+                }
+            }
+        }
+        
+        if (false && packet.has_property(property::health)) {
            uint16_t health = packet.health();
            if (health == 0) {
                packet_t position_packet;
@@ -146,8 +184,7 @@ void create_image(
                        { 0, -1},
                        { 0,  0}
                    };
-
-                   // std::cout << packet.player_id() << "\n";
+                   std::cout << "FOUND!\n";
                    for (auto offset : offsets) {
                        int x, y;
                        std::tie(x,y) = get_2d_coord(position, map_info, width, height);
@@ -479,7 +516,11 @@ void process_replay_directory(const path& directory) {
                 std::tie(x,y) = get_2d_coord(position, result->map_info, 500, 500);
                     
                 if (x < 0 || y < 0 || x > 499 || y > 499) {
-                    std::cerr << "WARNING: incorrect limits for " << result->game_info.map_name << std::endl;
+                    std::cerr
+                        << "WARNING: incorrect limits for " << result->game_info.map_name
+                        << " x: " << x << " y: " << y
+                        << " (" << std::get<0>(position) << "/" << std::get<2>(position) << ")"
+                        << std::endl;
                     result->error = true;
                     break;
                 }
@@ -495,7 +536,7 @@ void process_replay_directory(const path& directory) {
         delete result;
     };
 
-    tbb::parallel_pipeline(10,
+    tbb::parallel_pipeline(1,
                            tbb::make_filter<void, process_result*>(tbb::filter::serial_in_order, f_generate_paths) &
                            tbb::make_filter<process_result*, process_result*>(tbb::filter::parallel, f_create_replays) &
                            tbb::make_filter<process_result*, process_result*>(tbb::filter::parallel, f_draw_team(0)) &
@@ -506,7 +547,7 @@ void process_replay_directory(const path& directory) {
 int main(int argc, const char * argv[]) {
     chdir("/Users/jantemmerman/Development/wotstats/data");
 
-    // process_replay_directory("replay-data"); std::exit(1);
+    process_replay_directory("replays"); std::exit(1);
     
     string file_names[] = {
         "replays/20120707_2059_germany-E-75_himmelsdorf.wotreplay",
@@ -535,7 +576,7 @@ int main(int argc, const char * argv[]) {
     display_packet_summary(replay.get_packets());
     display_boundaries(game_info, replay.get_packets());
 
-    for (auto packet : replay.get_packets()) {
+   // for (auto packet : replay.get_packets()) {
         // if (packet.has_property(property::player_id)) {
       //     unsigned char player_ids[2][4] = {
       //         { 0x71, 0xc9, 0x9d, 0x04 },
@@ -578,12 +619,12 @@ int main(int argc, const char * argv[]) {
             }
         }*/
         // }
-        if (is_death_packet(packet))  {
-            print_packet(packet.get_data());
-        }
-    }
+       // if (is_death_packet(packet))  {
+       //     print_packet(packet.get_data());
+       //  }
+    // }
 
-    std::exit(1);
+    // std::exit(1);
     
     write_parts_to_file(replay);
     

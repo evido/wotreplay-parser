@@ -27,6 +27,7 @@ namespace wotstats {
         const buffer_t &get_replay() const;
         const std::vector<packet_t> &get_packets() const;
         bool find_property(size_t packet_id, property property, packet_t &out) const;
+        bool find_property(uint32_t clock, uint32_t player_id, property property, packet_t &out) const;
         // helper method responsible for parsing file
         void parse(buffer_t &buffer);
     private:
