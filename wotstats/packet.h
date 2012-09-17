@@ -28,6 +28,7 @@ namespace wotstats {
         sub_type,
         type,
         turret_direction,
+        tank_destroyed,
         property_nr_items
     };
 
@@ -46,7 +47,8 @@ namespace wotstats {
         uint16_t health() const;
         bool is_shot() const;
         bool fired_shot() const;
-
+        /* target , killer */
+        std::tuple<uint32_t, uint32_t> tank_destroyed() const;
         // property helper methods
         const std::array<bool, property_nr_items> &get_properties() const;
         bool has_property(property p) const;

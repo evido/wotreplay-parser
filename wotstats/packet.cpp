@@ -65,14 +65,19 @@ void packet_t::set_data(const slice_t &data) {
             properties[property::clock] = true;
             properties[property::player_id] = true;
             uint8_t sub_type = get_field<uint8_t>(data.begin(), data.end(), 13);
-            if (sub_type == 0x02) {
-                properties[property::health] = true;
-            }
+            properties[property::health] = sub_type == 0x02;
+            break;
+        }
+        case 0x08: {
+            properties[property::tank_destroyed] = data[13] == 0x16 && data[17] == 0x12;
+            properties[property::clock] = true;
+            properties[property::player_id] = true;
+            properties[property::type] = true;
         }
         default:
             if (data.size() >= 12) {
-                properties[property::clock];
-                properties[property::player_id];
+                properties[property::clock] = true;
+                properties[property::player_id] = true;
             }
             properties[property::type] = true;
             break;
@@ -82,3 +87,12 @@ void packet_t::set_data(const slice_t &data) {
 const slice_t &packet_t::get_data() const {
     return data;
 }
+
+std::tuple<uint32_t, uint32_t> packet_t::tank_destroyed() const {
+    assert(has_property(property::tank_destroyed));
+    return std::make_tuple(
+        get_field<uint32_t>(data.begin(), data.end(), 26),
+        get_field<uint32_t>(data.begin(), data.end(), 31)
+    );
+}
+

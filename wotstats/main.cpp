@@ -373,7 +373,14 @@ map_info get_map_info(game_info &game_info) {
     return {boundaries, path};
 }
 
-void draw_position(uint8_t** image, int width, int height, int channels, const game_info& game_info, const map_info& map_info, const replay_file &replay, int team) {
+void draw_position(uint8_t** image,
+                   int width,
+                   int height,
+                   int channels,
+                   const game_info& game_info,
+                   const map_info& map_info,
+                   const replay_file &replay,
+                   int team) {
     
 }
 
@@ -398,6 +405,16 @@ struct process_result {
         }
     }
 };
+
+bool is_death_packet(const packet_t &packet) {
+    if (packet.type() == 0x08) {
+        auto data = packet.get_data();
+        if (data[13] == 0x16 && data[17] == 0x12) {
+            return true;
+        }
+    }
+    return false;
+}
 
 void process_replay_directory(const path& directory) {
     std::map<std::string, std::vector<png_bytepp>> images;
@@ -442,7 +459,7 @@ void process_replay_directory(const path& directory) {
             uint8_t **image = new uint8_t*[500];
             for (int i = 0; i < 500; ++i) {
                 image[i] = new uint8_t[500];
-            }
+            }            
             result->images[team_id] = image;
             const std::vector<packet_t> &packets = result->replay->get_packets();
             for (const  packet_t &packet : packets) {
@@ -486,13 +503,12 @@ void process_replay_directory(const path& directory) {
                            tbb::make_filter<process_result*, void>(tbb::filter::parallel, merge_results));
 }
 
-int main(int argc, const char * argv[])
-{
+int main(int argc, const char * argv[]) {
     chdir("/Users/jantemmerman/Development/wotstats/data");
 
     // process_replay_directory("replay-data"); std::exit(1);
     
-    string replay_file_names[] = {
+    string file_names[] = {
         "replays/20120707_2059_germany-E-75_himmelsdorf.wotreplay",
         "siegfried_line/20120628_2039_germany-E-75_siegfried_line.wotreplay",
         "replays/20120815_0309_germany-E-75_02_malinovka.wotreplay",
@@ -504,31 +520,71 @@ int main(int argc, const char * argv[])
         "replays/20120826_1729_france-AMX_13_90_04_himmelsdorf.wotreplay",
     };
 
-    const std::string &replay_file_name = replay_file_names[6];
-
-
-    ifstream is(replay_file_name, std::ios::binary);
+    auto file_name = file_names[2];
+    ifstream is(file_name, std::ios::binary);
 
     if (!is) {
-        std::cerr << "Something went wrong with reading file: " << replay_file_name << std::endl;
+        std::cerr << "Something went wrong with reading file: " << file_name << std::endl;
         std::exit(-1);
     }
     
     replay_file replay(is);
     auto game_info = get_game_info(replay);
-    is.close();   
+    is.close();
 
     display_packet_summary(replay.get_packets());
     display_boundaries(game_info, replay.get_packets());
 
     for (auto packet : replay.get_packets()) {
-        if (packet.has_property(property::player_id)) {
-            if (packet.player_id() == 501379649) {
+        // if (packet.has_property(property::player_id)) {
+      //     unsigned char player_ids[2][4] = {
+      //         { 0x71, 0xc9, 0x9d, 0x04 },
+      //         { 0x73, 0xc9, 0x9d, 0x04 }
+      //     };
+
+/*        unsigned char player_ids[2][4] = {
+            {0x6d, 0xc9, 0x9d, 0x04},
+            {0x74, 0xc9, 0x9d, 0x04}
+        };
+           auto data = packet.get_data();
+           int found = 0;
+           for (int i = 0; i < 2; ++i) {
+               if (std::search(&(*data.begin()), &(*data.end()), player_ids[i], player_ids[i] + 4) != &(*data.end())) {
+                   found++;
+                   
+               }
+           }
+
+           if (found == 2) {
+               print_packet(packet.get_data());    
+           }
+ */
+       
+/*
+        if (packet.has_property(property::player_id) && packet.player_id() != 77449581) {
+            unsigned char player_id[4] = {
+                0x6d, 0xc9, 0x9d, 0x04
+            };
+
+            auto data = packet.get_data();
+            int found = 0;
+                if (std::search(&(*data.begin()), &(*data.end()), player_id, player_id + 4) != &(*data.end())) {
+                    found++;
+
+                }
+
+            if (found == 1) {
                 print_packet(packet.get_data());
             }
+        }*/
+        // }
+        if (is_death_packet(packet))  {
+            print_packet(packet.get_data());
         }
     }
 
+    std::exit(1);
+    
     write_parts_to_file(replay);
     
     map_info map_info = get_map_info(game_info);
