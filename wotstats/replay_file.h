@@ -19,13 +19,20 @@
 
 namespace wotstats {
     struct game_info {
+        // recorder client information
+        std::string version;
+
+        // game information
         std::string map_name;
         std::string game_mode;
-        std::string version;
         std::array<std::set<int>, 2> teams;
+
+        // player information
+        unsigned recorder_id;
+
+        // map information
         std::array<std::tuple<int, int>, 2> boundaries;
         std::string mini_map;
-        unsigned recorder_id;
     };
 
     class replay_file {

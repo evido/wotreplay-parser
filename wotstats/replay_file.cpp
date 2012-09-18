@@ -364,11 +364,8 @@ bool replay_file::find_property(uint32_t clock, uint32_t player_id, property pro
     bool found = it != it_clock_end;
     
     if (!found) {
-        std::cout << "search from: " << (it_clock_end - packets.begin()) << " to: end\n";
         auto result_after = std::find_if(it_clock_end, packets.end(), is_related_with_property);
-        // std::cout << (it_clock_begin - packets.begin()) << "\n";
         auto it_clock_rbegin = packets.crbegin() + (packets.size() - (it_clock_begin - packets.begin()));
-        std::cout << "search from: " << (it_clock_rbegin + 1).base() - packets.begin() << " to: begin\n";
         auto result_before = std::find_if(it_clock_rbegin, packets.crend(), is_related_with_property);
 
         if(result_after != packets.cend() && result_before != packets.crend()) {
