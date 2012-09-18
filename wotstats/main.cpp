@@ -21,27 +21,12 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/filesystem.hpp>
 #include <tbb/tbb.h>
-#include <unistd.h>
 #include <regex>
-#include <atomic>
 
 using namespace std;
 using namespace wotstats;
 using namespace tbb;
 using namespace boost::filesystem;
-
-struct map_info {
-    std::array<std::tuple<int,int>, 2> limits;
-    std::string mini_map;
-};
-
-struct game_info {
-    std::string map_name;
-    std::string game_mode;
-    std::string version;
-    std::array<std::set<int>, 2> teams;
-    unsigned recorder_id;
-};
 
 template <typename T>
 T round(T number) {
@@ -62,12 +47,11 @@ void display_packet_summary(const std::vector<packet_t>& packets) {
 
 }
 
-std::tuple<int, int> get_2d_coord(const std::tuple<float, float, float> &position, const map_info &map_info, int width, int height) {
+std::tuple<int, int> get_2d_coord(const std::tuple<float, float, float> &position, const game_info &game_info, int width, int height) {
     int x,y,z, min_x, max_x, min_y, max_y;
     std::tie(x,z,y) = position;
-    std::tie(min_x, max_x) = map_info.limits[0];
-    std::tie(min_y, max_y) = map_info.limits[1];
-    // --min_x, --max_x, --min_y, --max_y;
+    std::tie(min_x, max_x) = game_info.boundaries[0];
+    std::tie(min_y, max_y) = game_info.boundaries[1];
     x = round((x - min_x) * (width / static_cast<float>(max_x - min_x + 1)));
     y = round((max_y - y) * (height / static_cast<float>(max_y - min_y + 1)));
     return std::make_tuple(x,y);
@@ -82,7 +66,6 @@ void create_image(
                   int width, int height,
                   const replay_file &replay,
                   const game_info &game_info,
-                  const map_info &map_info,
                   bool alpha
                   ) {
     const std::vector<packet_t> &packets = replay.get_packets();
@@ -93,7 +76,7 @@ void create_image(
                 auto position = packet.position();
                 int x,y;
                 auto teams = game_info.teams;
-                std::tie(x,y) = get_2d_coord(position, map_info, width, height);
+                std::tie(x,y) = get_2d_coord(position, game_info, width, height);
                 x *= alpha ? 4 : 3;
 
                 if (alpha) image[y][x+3] = 0xff;
@@ -154,7 +137,7 @@ void create_image(
                 // std::cout << packet.player_id() << "\n";
                 for (auto offset : offsets) {
                     int x, y;
-                    std::tie(x,y) = get_2d_coord(position, map_info, width, height);
+                    std::tie(x,y) = get_2d_coord(position, game_info, width, height);
                     x += offset[0];
                     y += offset[1];
                     x *= alpha ? 4 : 3;
@@ -187,7 +170,7 @@ void create_image(
                    std::cout << "FOUND!\n";
                    for (auto offset : offsets) {
                        int x, y;
-                       std::tie(x,y) = get_2d_coord(position, map_info, width, height);
+                       std::tie(x,y) = get_2d_coord(position, game_info, width, height);
                        x += offset[0];
                        y += offset[1];
                        x *= alpha ? 4 : 3;
@@ -219,40 +202,6 @@ void write_parts_to_file(const replay_file &replay) {
     std::copy(replay.get_replay().begin(),
               replay.get_replay().end(),
               ostream_iterator<char>(replay_content));
-}
-
-game_info get_game_info(const replay_file& replay) {
-    std::array<std::set<int>, 2> teams;
-    Json::Value root;
-    Json::Reader reader;
-    const buffer_t &game_begin = replay.get_game_begin();
-    std::string doc(game_begin.begin(), game_begin.end());
-    reader.parse(doc, root);
-    auto vehicles = root["vehicles"];
-
-    auto player_name = root["playerName"].asString();
-
-    unsigned recorder_id = 0;
-
-    for (auto it = vehicles.begin(); it != vehicles.end(); ++it) {
-        unsigned player_id = boost::lexical_cast<int>(it.key().asString());
-        std::string name = (*it)["name"].asString();
-        if (name == player_name) {
-            recorder_id = player_id;
-        }
-        int team_id = (*it)["team"].asInt();
-        teams[team_id - 1].insert(player_id);
-    }
-
-    auto map_name = root["mapName"].asString();
-    auto game_mode = root["gameplayType"].asString();
-
-    return {
-        .map_name = map_name,
-        .game_mode = game_mode,
-        .teams = teams,
-        .recorder_id = recorder_id
-    };
 }
 
 void display_boundaries(const game_info &game_info, std::vector<packet_t> packets) {
@@ -352,106 +301,16 @@ void print_packet(const slice_t &packet) {
     printf("\n");
 }
 
-map_info get_map_info(game_info &game_info) {
-    static std::map<std::string, std::array<std::tuple<int,int>, 2>> map_boundaries = {
-        { "01_karelia",         { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
-        { "02_malinovka",       { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
-        { "03_campania",        { std::make_tuple(-300, 300), std::make_tuple(-300, 300) } },
-        { "04_himmelsdorf",     { std::make_tuple(-300, 400), std::make_tuple(-300, 400) } },
-        { "05_prohorovka", 	    { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
-        { "06_ensk",            { std::make_tuple(-300, 300), std::make_tuple(-300, 300) } },
-        { "07_lakeville",       { std::make_tuple(-400, 400), std::make_tuple(-400, 400) } },
-        { "08_ruinberg",        { std::make_tuple(-400, 400), std::make_tuple(-400, 400) } },
-        { "10_hills",           { std::make_tuple(-400, 400), std::make_tuple(-400, 400) } },
-        { "11_murovanka",       { std::make_tuple(-400, 400), std::make_tuple(-400, 400) } },
-        { "13_erlenberg",       { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
-        { "14_siegfried_line",  { std::make_tuple(-400, 400), std::make_tuple(-400, 400) } },
-        { "15_komarin",         { std::make_tuple(-400, 400), std::make_tuple(-400, 400) } },
-        { "17_munchen",         { std::make_tuple(-300, 300), std::make_tuple(-300, 300) } },
-        { "18_cliff",           { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
-        { "19_monastery",       { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
-        { "22_slough",          { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
-        { "23_westfeld",        { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
-        { "28_desert",          { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
-        { "29_el_hallouf",      { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
-        { "31_airfield",        { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
-        { "33_fjord",           { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
-        { "34_redshire",        { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
-        { "35_steppes",         { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
-        { "36_fishing_bay",     { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
-        { "37_caucasus",        { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
-        { "38_mannerheim_line", { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
-        { "39_crimea",          { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
-        { "42_north_america",   { std::make_tuple(-400, 400), std::make_tuple(-400, 400) } },
-        { "44_north_america",   { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
-        { "45_north_america",   { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
-        { "47_canada_a",        { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
-        { "51_asia",            { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } }
-    };
-    if (map_boundaries.find(game_info.map_name) == map_boundaries.end()) {
-
-        if (game_info.map_name == "north_america") {
-            game_info.map_name = "44_north_america";
-        } else {
-            for (auto entry : map_boundaries) {
-                string map_name = entry.first;
-                string short_map_name(map_name.begin() + 3, map_name.end());
-                if (short_map_name == game_info.map_name) {
-                    game_info.map_name = map_name;
-                }
-            }
-        }
-    }
-
-    auto boundaries = map_boundaries[game_info.map_name];
-    
-    string path = "maps/no-border/" + game_info.map_name + "_" + game_info.game_mode + ".png";
-
-    return {boundaries, path};
-}
-
-void draw_position(uint8_t** image,
-                   int width,
-                   int height,
-                   int channels,
-                   const game_info& game_info,
-                   const map_info& map_info,
-                   const replay_file &replay,
-                   int team) {
-    
-}
-
 struct process_result {
     bool error;
     std::string path;
     replay_file *replay;
-    map_info map_info;
-    game_info game_info;
     array<uint8_t**, 3> images;
     process_result() = default;
     process_result(const process_result&) = delete;
     process_result & operator= (const process_result & other) = delete;
-    ~process_result() {
-        delete this->replay;
-        for (auto image : this->images) {
-            if (image == nullptr) continue;
-            for (int i = 0; i< 500; ++i) {
-                delete []image[i];
-            }
-            delete []image;
-        }
-    }
+    ~process_result() = default;
 };
-
-bool is_death_packet(const packet_t &packet) {
-    if (packet.type() == 0x08) {
-        auto data = packet.get_data();
-        if (data[13] == 0x16 && data[17] == 0x12) {
-            return true;
-        }
-    }
-    return false;
-}
 
 void process_replay_directory(const path& directory) {
     std::map<std::string, std::vector<png_bytepp>> images;
@@ -480,8 +339,6 @@ void process_replay_directory(const path& directory) {
             ifstream is(result->path, std::ios::binary);
             result->replay = new replay_file(is);
             is.close();
-            result->game_info = get_game_info(*result->replay);
-            result->map_info = get_map_info(result->game_info);
         } catch (exception &e) {
             result->error = true;
             std::cerr << "Error!" << std::endl;
@@ -506,18 +363,19 @@ void process_replay_directory(const path& directory) {
                 }
 
                 int player_id = packet.player_id();
-                const std::set<int> &team = result->game_info.teams[team_id];
+                auto game_info = result->replay->get_game_info();
+                const std::set<int> &team = game_info.teams[team_id];
                 if (team.find(player_id) == team.end()) {
                     continue;
                 }
                 
                 auto position = packet.position();
                 int x,y;
-                std::tie(x,y) = get_2d_coord(position, result->map_info, 500, 500);
+                std::tie(x,y) = get_2d_coord(position, game_info, 500, 500);
                     
                 if (x < 0 || y < 0 || x > 499 || y > 499) {
                     std::cerr
-                        << "WARNING: incorrect limits for " << result->game_info.map_name
+                        << "WARNING: incorrect limits for " << game_info.map_name
                         << " x: " << x << " y: " << y
                         << " (" << std::get<0>(position) << "/" << std::get<2>(position) << ")"
                         << std::endl;
@@ -533,6 +391,14 @@ void process_replay_directory(const path& directory) {
     };
 
     auto merge_results = [&](process_result *result) -> void {
+        delete result->replay;
+        for (auto image : result->images) {
+            if (image == nullptr) continue;
+            for (int i = 0; i< 500; ++i) {
+                delete []image[i];
+            }
+            delete []image;
+        }
         delete result;
     };
 
@@ -547,7 +413,7 @@ void process_replay_directory(const path& directory) {
 int main(int argc, const char * argv[]) {
     chdir("/Users/jantemmerman/Development/wotstats/data");
 
-    process_replay_directory("replays"); std::exit(1);
+    // process_replay_directory("replays"); std::exit(1);
     
     string file_names[] = {
         "replays/20120707_2059_germany-E-75_himmelsdorf.wotreplay",
@@ -570,70 +436,20 @@ int main(int argc, const char * argv[]) {
     }
     
     replay_file replay(is);
-    auto game_info = get_game_info(replay);
+    auto game_info = replay.get_game_info();
     is.close();
 
     display_packet_summary(replay.get_packets());
     display_boundaries(game_info, replay.get_packets());
-
-   // for (auto packet : replay.get_packets()) {
-        // if (packet.has_property(property::player_id)) {
-      //     unsigned char player_ids[2][4] = {
-      //         { 0x71, 0xc9, 0x9d, 0x04 },
-      //         { 0x73, 0xc9, 0x9d, 0x04 }
-      //     };
-
-/*        unsigned char player_ids[2][4] = {
-            {0x6d, 0xc9, 0x9d, 0x04},
-            {0x74, 0xc9, 0x9d, 0x04}
-        };
-           auto data = packet.get_data();
-           int found = 0;
-           for (int i = 0; i < 2; ++i) {
-               if (std::search(&(*data.begin()), &(*data.end()), player_ids[i], player_ids[i] + 4) != &(*data.end())) {
-                   found++;
-                   
-               }
-           }
-
-           if (found == 2) {
-               print_packet(packet.get_data());    
-           }
- */
-       
-/*
-        if (packet.has_property(property::player_id) && packet.player_id() != 77449581) {
-            unsigned char player_id[4] = {
-                0x6d, 0xc9, 0x9d, 0x04
-            };
-
-            auto data = packet.get_data();
-            int found = 0;
-                if (std::search(&(*data.begin()), &(*data.end()), player_id, player_id + 4) != &(*data.end())) {
-                    found++;
-
-                }
-
-            if (found == 1) {
-                print_packet(packet.get_data());
-            }
-        }*/
-        // }
-       // if (is_death_packet(packet))  {
-       //     print_packet(packet.get_data());
-       //  }
-    // }
-
-    // std::exit(1);
     
     write_parts_to_file(replay);
     
-    map_info map_info = get_map_info(game_info);
+    // map_info map_info = get_map_info(game_info);
     png_bytepp row_pointers;
     int width, height, channels;
-    read_png(map_info.mini_map, row_pointers, width, height, channels);
+    read_png(game_info.mini_map, row_pointers, width, height, channels);
     bool alpha = channels == 4;
-    create_image(row_pointers, width, height, replay, game_info, map_info, alpha);
+    create_image(row_pointers, width, height, replay, game_info, alpha);
     write_png("out/replay.png", row_pointers, width, height, alpha);
 
     return EXIT_SUCCESS;

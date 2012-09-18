@@ -17,6 +17,8 @@
 #include <string>
 #include <ostream>
 #include <string>
+#include "json/json.h"
+#include <boost/lexical_cast.hpp>
 
 using namespace wotstats;
 using namespace std;
@@ -116,6 +118,7 @@ void replay_file::parse(buffer_t &buffer) {
     decrypt_replay(raw_replay, key);
     extract_replay(raw_replay, replay);
     read_packets();
+    read_game_info();
 }
 
 void replay_file::decrypt_replay(buffer_t &replay_data, const unsigned char *key_data) {
@@ -448,6 +451,92 @@ bool replay_file::find_property(size_t packet_id, property property, packet_t &o
     }
 
     return found;
+}
+
+const game_info &replay_file::get_game_info() const {
+    return game_info;
+}
+
+static std::map<std::string, std::array<std::tuple<int,int>, 2>> map_boundaries = {
+    { "01_karelia",         { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
+    { "02_malinovka",       { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
+    { "03_campania",        { std::make_tuple(-300, 300), std::make_tuple(-300, 300) } },
+    { "04_himmelsdorf",     { std::make_tuple(-300, 400), std::make_tuple(-300, 400) } },
+    { "05_prohorovka", 	    { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
+    { "06_ensk",            { std::make_tuple(-300, 300), std::make_tuple(-300, 300) } },
+    { "07_lakeville",       { std::make_tuple(-400, 400), std::make_tuple(-400, 400) } },
+    { "08_ruinberg",        { std::make_tuple(-400, 400), std::make_tuple(-400, 400) } },
+    { "10_hills",           { std::make_tuple(-400, 400), std::make_tuple(-400, 400) } },
+    { "11_murovanka",       { std::make_tuple(-400, 400), std::make_tuple(-400, 400) } },
+    { "13_erlenberg",       { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
+    { "14_siegfried_line",  { std::make_tuple(-400, 400), std::make_tuple(-400, 400) } },
+    { "15_komarin",         { std::make_tuple(-400, 400), std::make_tuple(-400, 400) } },
+    { "17_munchen",         { std::make_tuple(-300, 300), std::make_tuple(-300, 300) } },
+    { "18_cliff",           { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
+    { "19_monastery",       { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
+    { "22_slough",          { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
+    { "23_westfeld",        { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
+    { "28_desert",          { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
+    { "29_el_hallouf",      { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
+    { "31_airfield",        { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
+    { "33_fjord",           { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
+    { "34_redshire",        { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
+    { "35_steppes",         { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
+    { "36_fishing_bay",     { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
+    { "37_caucasus",        { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
+    { "38_mannerheim_line", { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
+    { "39_crimea",          { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
+    { "42_north_america",   { std::make_tuple(-400, 400), std::make_tuple(-400, 400) } },
+    { "44_north_america",   { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
+    { "45_north_america",   { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
+    { "47_canada_a",        { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
+    { "51_asia",            { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } }
+};
+
+void replay_file::read_game_info() {
+    // get game details
+    Json::Value root;
+    Json::Reader reader;
+    std::string doc(game_begin.begin(), game_begin.end());
+    reader.parse(doc, root);
+    auto vehicles = root["vehicles"];
+
+    auto player_name = root["playerName"].asString();
+
+
+    for (auto it = vehicles.begin(); it != vehicles.end(); ++it) {
+        unsigned player_id = boost::lexical_cast<int>(it.key().asString());
+        std::string name = (*it)["name"].asString();
+        if (name == player_name) {
+            game_info.recorder_id = player_id;
+        }
+        int team_id = (*it)["team"].asInt();
+        game_info.teams[team_id - 1].insert(player_id);
+    }
+
+    game_info.map_name = root["mapName"].asString();
+    game_info.game_mode = root["gameplayType"].asString();
+    game_info.game_mode.resize(3);
+
+    // explicit check for game version should be better
+    if (map_boundaries.find(game_info.map_name) == map_boundaries.end()) {
+
+        if (game_info.map_name == "north_america") {
+            game_info.map_name = "44_north_america";
+        } else {
+            for (auto entry : map_boundaries) {
+                string map_name = entry.first;
+                string short_map_name(map_name.begin() + 3, map_name.end());
+                if (short_map_name == game_info.map_name) {
+                    // rewrite map name
+                    game_info.map_name = map_name;
+                }
+            }
+        }
+    }
+
+    game_info.boundaries = map_boundaries[game_info.map_name];
+    game_info.mini_map = "maps/no-border/" + game_info.map_name + "_" + game_info.game_mode + ".png";
 }
 
 
