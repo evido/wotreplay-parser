@@ -466,7 +466,7 @@ static std::map<std::string, std::array<std::tuple<int,int>, 2>> map_boundaries 
     { "10_hills",           { std::make_tuple(-400, 400), std::make_tuple(-400, 400) } },
     { "11_murovanka",       { std::make_tuple(-400, 400), std::make_tuple(-400, 400) } },
     { "13_erlenberg",       { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
-    { "14_siegfried_line",  { std::make_tuple(-400, 400), std::make_tuple(-400, 400) } },
+    { "14_siegfried_line",  { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
     { "15_komarin",         { std::make_tuple(-400, 400), std::make_tuple(-400, 400) } },
     { "17_munchen",         { std::make_tuple(-300, 300), std::make_tuple(-300, 300) } },
     { "18_cliff",           { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },

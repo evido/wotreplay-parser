@@ -39,7 +39,7 @@ namespace wotstats {
 
         // property accessor
         uint8_t type() const;
-        uint32_t clock() const;
+        float clock() const;
         uint32_t player_id() const;
         std::tuple<float, float, float> position() const;
         std::tuple<float, float, float> gun_direction() const;

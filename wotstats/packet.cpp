@@ -24,9 +24,9 @@ uint32_t packet_t::player_id() const {
     return get_field<uint32_t>(data.begin(), data.end(), 9);
 }
 
-uint32_t packet_t::clock() const {
+float packet_t::clock() const {
     assert(has_property(property::clock));
-    return get_field<uint32_t>(data.begin(), data.end(), 5);
+    return get_field<float>(data.begin(), data.end(), 5);
 }
 
 std::tuple<float, float, float> packet_t::position() const {
@@ -76,9 +76,11 @@ void packet_t::set_data(const slice_t &data) {
             break;
         }
         default:
-            if (data.size() >= 12) {
-                properties[property::clock] = true;
+            if (data.size() >= 13) {
                 properties[property::player_id] = true;
+            }
+            if (data.size() >= 9) {
+                properties[property::clock] = true;
             }
             properties[property::type] = true;
             break;

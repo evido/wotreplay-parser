@@ -257,6 +257,25 @@ void read_png(const std::string &in, png_bytepp &image, int &width, int &height,
     return;
 }
 
+void read_png2(const std::string &in, png_bytepp image, int &width, int &height, int &channels) {
+    FILE *fp = fopen(in.c_str(), "rb");
+    png_structp png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
+    png_infop info_ptr = png_create_info_struct(png_ptr);
+    png_infop end_info = png_create_info_struct(png_ptr);
+    if (setjmp(png_jmpbuf(png_ptr))) {
+        png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
+        fclose(fp);
+        return;
+    }
+    png_init_io(png_ptr, fp);
+    png_set_rows(png_ptr, info_ptr, image);
+    png_read_png(png_ptr, info_ptr, PNG_TRANSFORM_IDENTITY, nullptr);
+    height = png_get_image_height(png_ptr, info_ptr);
+    width = png_get_image_width(png_ptr, info_ptr);
+    channels = png_get_channels(png_ptr, info_ptr);
+    fclose(fp);
+}
+
 void print_packet(const slice_t &packet) {
     for (auto val : packet) {
         unsigned ival = (unsigned)(unsigned char)(val);
@@ -293,11 +312,11 @@ struct process_result {
 };
 
 int get_team(const game_info &game_info, uint32_t player_id) {
-    auto teams = game_info.teams;
+    const auto &teams = game_info.teams;
     auto it = std::find_if(teams.begin(), teams.end(), [&](const std::set<int> &team) {
         return team.find(player_id) != team.end();
     });
-    return it == teams.end() ? -1 : (static_cast<int>(it - teams.begin()) + 1);
+    return it == teams.end() ? -1 : (static_cast<int>(it - teams.begin()));
 }
 
 void process_replay_directory(const path& directory) {
@@ -341,11 +360,9 @@ void process_replay_directory(const path& directory) {
         const replay_file &replay = *result.replay;
         const game_info &game_info = replay.get_game_info();
 
-        
         int team_id = get_team(game_info, player_id);
         if (team_id < 0) return;
 
-        // get sizes of image
         auto shape = result.position_image[0].shape();
         int width = static_cast<int>(shape[1]), height = static_cast<int>(shape[0]);
         
@@ -354,12 +371,16 @@ void process_replay_directory(const path& directory) {
         std::tie(x,y) = get_2d_coord(position, game_info, width, height);
         
         if (__builtin_expect(x < 0 || y < 0 || x >= width || y >= height, 0)) {
+            if (!result.error) {
+#if DEBUG
             std::cerr
                 << "WARNING: incorrect limits for " << game_info.map_name
                 << " x: " << x << " y: " << y
                 << " (" << std::get<0>(position) << "/" << std::get<2>(position) << ")"
                 << std::endl;
+#endif
             result.error = true;
+            }
         } else {
             result.position_image[team_id][y][x]++;
         }
@@ -385,6 +406,40 @@ void process_replay_directory(const path& directory) {
     };
 
     auto f_create_image = [](process_result* result) -> process_result* {
+        if (result->error) return result;
+        boost::multi_array<uint8_t, 3> base(boost::extents[500][500][4]);
+        std::unique_ptr<png_bytep[]> row_pointers(new png_bytep[500]);
+        auto shape = base.shape();
+        for (int i = 0; i < shape[0]; ++i) {
+            row_pointers[i] = base.origin() + i*shape[1]*shape[2];
+        }
+        int width, height, channels;
+        const replay_file &replay = *result->replay;
+        read_png2(replay.get_game_info().mini_map, row_pointers.get(), width, height, channels);
+        bool alpha = channels == 4;
+        for (int i = 0; i < 500; ++i) {
+            for (int j = 0; j < 500; ++j) {
+                if (result->position_image[0][i][j] > 0) {
+                    base[i][j][0] = 0x00;
+                    base[i][j][1] = 0xFF;
+                    base[i][j][2] = 0x00;
+                    base[i][j][3] = 0xFF;
+                }
+                if (result->position_image[1][i][j] > 0) {
+                    base[i][j][1] = 0x00;
+                    base[i][j][0] = 0xFF;
+                    base[i][j][2] = 0x00;
+                    base[i][j][3] = 0xFF;
+                }
+            }
+        }
+        std::stringstream out_file_name;
+        out_file_name << "out/" << result->path << ".png";
+        write_png(out_file_name.str(), row_pointers.get(), width, height, alpha);
+        return result;
+    };
+
+    auto f_merge_results = [](process_result *result) -> process_result* {
         return result;
     };
 
@@ -392,22 +447,22 @@ void process_replay_directory(const path& directory) {
         delete result;
     };
 
-    tbb::parallel_pipeline(1,
+    tbb::parallel_pipeline(10,
                            tbb::make_filter<void, process_result*>(tbb::filter::serial_in_order, f_generate_paths) &
                            tbb::make_filter<process_result*, process_result*>(tbb::filter::parallel, f_create_replays) &
                            tbb::make_filter<process_result*, process_result*>(tbb::filter::parallel, f_process_replays) &
                            tbb::make_filter<process_result*, process_result*>(tbb::filter::parallel, f_create_image) &
+                           tbb::make_filter<process_result*, process_result*>(tbb::filter::serial_out_of_order, f_merge_results) &
                            tbb::make_filter<process_result*, void>(tbb::filter::parallel, f_clean_up));
 }
 
 int main(int argc, const char * argv[]) {
     chdir("/Users/jantemmerman/Development/wotstats/data");
 
-     process_replay_directory("replays"); std::exit(1);
+     // process_replay_directory("replays"); std::exit(1);
     
     string file_names[] = {
         "replays/20120707_2059_germany-E-75_himmelsdorf.wotreplay",
-        "siegfried_line/20120628_2039_germany-E-75_siegfried_line.wotreplay",
         "replays/20120815_0309_germany-E-75_02_malinovka.wotreplay",
         "replays/8.0/20120906_2352_germany-Panther_II_02_malinovka.wotreplay",
         "replays/20120826_0013_france-AMX_13_90_04_himmelsdorf.wotreplay",
@@ -415,9 +470,11 @@ int main(int argc, const char * argv[]) {
         "replays/20120701_1247_germany-E-75_monastery.wotreplay",
         "replays/20120826_2059_france-AMX_13_90_02_malinovka.wotreplay",
         "replays/20120826_1729_france-AMX_13_90_04_himmelsdorf.wotreplay",
+        "replays/20120920_2130_france-AMX_13_90_14_siegfried_line.wotreplay",
+        "replays/20120921_0042_ussr-IS-3_02_malinovka.wotreplay"
     };
 
-    auto file_name = file_names[2];
+    auto file_name = file_names[8];
     ifstream is(file_name, std::ios::binary);
 
     if (!is) {
@@ -426,20 +483,38 @@ int main(int argc, const char * argv[]) {
     }
     
     replay_file replay(is);
-    auto game_info = replay.get_game_info();
+    const auto &game_info = replay.get_game_info();
     is.close();
 
     display_packet_summary(replay.get_packets());
     display_boundaries(game_info, replay.get_packets());
     
     write_parts_to_file(replay);
+
+    const std::vector<packet_t> &packets = replay.get_packets();
+    auto has_clock = [](const packet_t &packet) -> bool { return packet.has_property(property::clock) && packet.clock() != 0; };
+    auto first_clock_packet = std::find_if(packets.cbegin(), packets.cend(), has_clock);
+    auto last_clock_packet = std::find_if(packets.crbegin(), packets.crend(), has_clock);
     
+    std::cout << first_clock_packet->clock() << " " << last_clock_packet->clock() << " "
+        << last_clock_packet->clock() - first_clock_packet->clock() << "\n";
+    float prev = 0 , clock = 0;
+    for (const packet_t &packet : packets) {
+        auto data = packet.get_data();
+        if (packet.has_property(property::clock) && prev
+                != (clock = get_field<float>(data.begin(), data.end(), 5))) {
+            
+            std::cout <<clock << " (diff: " <<  clock - prev << ")\n";
+            prev = clock;
+        } 
+
+        //print_packet(data);
+    }
     png_bytepp row_pointers;
     int width, height, channels;
     read_png(game_info.mini_map, row_pointers, width, height, channels);
     bool alpha = channels == 4;
     create_image(row_pointers, width, height, replay, game_info, alpha);
     write_png("out/replay.png", row_pointers, width, height, alpha);
-
-    return EXIT_SUCCESS;
+       return EXIT_SUCCESS;
 }
