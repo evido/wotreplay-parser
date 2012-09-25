@@ -34,6 +34,7 @@ namespace wotstats {
 
     class packet_t {
     public:
+        // constructors
         packet_t() = default;
         packet_t(const slice_t &slice_t);
 
