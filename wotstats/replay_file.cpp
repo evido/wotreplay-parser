@@ -77,48 +77,67 @@ const std::string &replay_file::get_version() const {
     return version;
 }
 
+
+bool replay_file::is_legacy_replay(const buffer_t &buffer) const {
+    return buffer.size() >= 10 && buffer[8] == 0x78 && buffer[9] == 0xDA;
+}
+
+bool replay_file::is_legacy() const {
+    return legacy;
+}
 void replay_file::parse(buffer_t &buffer) {
     // determine number of data blocks
     std::vector<slice_t> data_blocks;
-    get_data_blocks(buffer, data_blocks);
-    
-    buffer_t raw_replay;
-    
-    switch(data_blocks.size()) {
-    case 3:
-            game_end.resize(data_blocks[1].size());
-            std::copy(data_blocks[1].begin(), data_blocks[1].end(), game_end.begin());
+    this->legacy = is_legacy_replay(buffer);
+    if (is_legacy()) {
+        buffer_t raw_replay;
+        
+        raw_replay.resize(buffer.size() - 8);
+        std::copy(buffer.begin() + 8, buffer.end(), raw_replay.begin());
 
-            game_begin.resize(data_blocks[0].size());
-            std::copy(data_blocks[0].begin(), data_blocks[0].end(), game_begin.begin());
+        extract_replay(raw_replay, replay);
+        read_packets();// no game info by default available
+    } else {
+        get_data_blocks(buffer, data_blocks);
+    
+        buffer_t raw_replay;
+    
+        switch(data_blocks.size()) {
+            case 3:
+                game_end.resize(data_blocks[1].size());
+                std::copy(data_blocks[1].begin(), data_blocks[1].end(), game_end.begin());
 
-            raw_replay.resize(data_blocks[2].size());
-            std::copy(data_blocks[2].begin(), data_blocks[2].end(), raw_replay.begin());
-            break;
-    case 2:
-            // data blocks contain at least game begin state and replay data
-            game_begin.resize(data_blocks[0].size());
-            std::copy(data_blocks[0].begin(), data_blocks[0].end(), game_begin.begin());
+                game_begin.resize(data_blocks[0].size());
+                std::copy(data_blocks[0].begin(), data_blocks[0].end(), game_begin.begin());
+
+                raw_replay.resize(data_blocks[2].size());
+                std::copy(data_blocks[2].begin(), data_blocks[2].end(), raw_replay.begin());
+                break;
+            case 2:
+                // data blocks contain at least game begin state and replay data
+                game_begin.resize(data_blocks[0].size());
+                std::copy(data_blocks[0].begin(), data_blocks[0].end(), game_begin.begin());
             
-            raw_replay.resize(data_blocks[1].size());
-            std::copy(data_blocks[1].begin(), data_blocks[1].end(), raw_replay.begin());
+                raw_replay.resize(data_blocks[1].size());
+                std::copy(data_blocks[1].begin(), data_blocks[1].end(), raw_replay.begin());
             
-            break;
-    default:
-            std::stringstream msg;
-            msg << __func__
-                << "Unexpected number of data blocks ("
-                << data_blocks.size()
-                << ") !\n";
-            throw std::runtime_error(msg.str());
+                break;
+            default:
+                std::stringstream msg;
+                msg << __func__
+                    << "Unexpected number of data blocks ("
+                    << data_blocks.size()
+                    << ") !\n";
+                throw std::runtime_error(msg.str());
+        }
+    
+        const unsigned char key[] = { 0xDE, 0x72, 0xBE, 0xA0, 0xDE, 0x04, 0xBE, 0xB1, 0xDE, 0xFE, 0xBE, 0xEF, 0xDE, 0xAD, 0xBE, 0xEF};
+        
+        decrypt_replay(raw_replay, key);
+        extract_replay(raw_replay, replay);
+        read_packets();
+        read_game_info();
     }
-    
-    const unsigned char key[] = { 0xDE, 0x72, 0xBE, 0xA0, 0xDE, 0x04, 0xBE, 0xB1, 0xDE, 0xFE, 0xBE, 0xEF, 0xDE, 0xAD, 0xBE, 0xEF};
-    
-    decrypt_replay(raw_replay, key);
-    extract_replay(raw_replay, replay);
-    read_packets();
-    read_game_info();
 }
 
 void replay_file::decrypt_replay(buffer_t &replay_data, const unsigned char *key_data) {
@@ -245,6 +264,7 @@ size_t replay_file::read_packets() {
         {0x0A, 61},
         {0x0E, 4},
         {0x0C, 3},
+        {0x11, 12},
         {0x12, 16},
         {0x13, 16},
         {0x14, 4},
@@ -260,6 +280,10 @@ size_t replay_file::read_packets() {
         {0x20, 4},
         {0x31, 4}
     };
+
+    if (is_legacy()) {
+        packet_lengths[0x16] = 44;
+    }
 
     size_t offset = 0;
 
@@ -320,9 +344,16 @@ size_t replay_file::read_packets() {
         }
         
         auto packet_begin = buffer.begin() + ix;
-        auto packet_end = packet_begin + packet_length;
-        packets.emplace_back(replay_file::read_packet(packet_begin, packet_end));
-        
+
+        if (ix + packet_length < buffer.size()) {
+            auto packet_end = packet_begin + packet_length;
+            packets.emplace_back(replay_file::read_packet(packet_begin, packet_end));
+        } else {
+#if DEBUG_REPLAY_FILE
+            std::cerr << "Packet went out of replay file bounds.\n";
+#endif
+        }
+
         ix += packet_length;
     }
     

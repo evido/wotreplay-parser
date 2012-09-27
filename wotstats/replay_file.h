@@ -48,9 +48,11 @@ namespace wotstats {
         bool find_property(size_t packet_id, property property, packet_t &out) const;
         bool find_property(uint32_t clock, uint32_t player_id, property property, packet_t &out) const;
         // helper method responsible for parsing file
+        bool is_legacy() const;
         void parse(buffer_t &buffer);
     private:
         // process raw replay file
+        bool is_legacy_replay(const buffer_t &buffer) const;
         void get_data_blocks(buffer_t &buffer, std::vector<slice_t> &data_blocks) const;
         uint32_t get_data_block_count(const buffer_t &buffer) const;
         void decrypt_replay(buffer_t &slice, const unsigned char* key);
@@ -67,6 +69,7 @@ namespace wotstats {
         std::vector<packet_t> packets;
         std::string version;
         game_info game_info;
+        bool legacy;
     };
 
     template <typename iterator>
