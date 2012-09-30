@@ -34,53 +34,90 @@
 #include <array>
 #include <stdint.h>
 
-namespace wotstats {
+/** @file packet.h */
 
+namespace wot {
+    /**
+     * @enum wot::property
+     * @brief A list of detectable properties in packets of a wot:replay_file.
+     */
     enum property {
         clock = 0,
-        gun_direction,
-        fired_shot,
         health,
         is_shot,
         position,
         player_id,
         sub_type,
         type,
-        turret_direction,
         tank_destroyed,
         property_nr_items
     };
 
+    /**
+     * A representation of a single packet in a World Of Tanks replay. This
+     * class provides easy accessor methods to determine the properties of packet,
+     * and the corresponding values of these properties.
+     */
     class packet_t {
     public:
-        // constructors
+        /** 
+         * Constructor for a default (empty) packet. 
+         */
         packet_t() = default;
-        packet_t(const slice_t &slice_t);
+        /** 
+         * Constructor for a packet with defined content.
+         * @param data The content of this packet.
+         */
+        packet_t(const slice_t &data);
 
-        // property accessor
+        /** @return The packet type */
         uint8_t type() const;
+        /** @return The clock value of this packet. */
         float clock() const;
+        /** @return The player_id value of this packet. */
         uint32_t player_id() const;
+        /** @return The position value of this packet. */
         std::tuple<float, float, float> position() const;
-        std::tuple<float, float, float> gun_direction() const;
-        std::tuple<float, float, float> turret_direction() const;
+        /** @return The remaining health of a player. */
         uint16_t health() const;
+        /** @return Indicates the player_id was hit. */
         bool is_shot() const;
-        bool fired_shot() const;
-        /* target , killer */
+        /** @return A tuple of with the player_id's of the target and the killer. */
         std::tuple<uint32_t, uint32_t> tank_destroyed() const;
-        // property helper methods
+        /** @return An array of the properties available in this packet. */
         const std::array<bool, property_nr_items> &get_properties() const;
+        /**
+         * Determines if the packet has the property specified.
+         * @param p The property
+         * @return \c true if the packet contains the property, \c false if not.
+         */
         bool has_property(property p) const;
 
-        // modify / retrieve packet data
+        /**
+         * Sets internal packet data to the data passed to the method, the properties
+         * of this packet are updated accordingly.
+         * @param data The new data of this packet.
+         */
         void set_data(const slice_t &data);
+        /**
+         * @return The data of this packet.
+         */
         const slice_t &get_data() const;
     private:
+        /** An array containing the presence of each property. */
         std::array<bool, property_nr_items> properties;
+        /** The data content of this packet. */
         slice_t data;
     };
 
+    /*!
+     * @fn template<typename U, typename T> const U & wot::get_field(T begin, T end, size_t offset)
+     * @brief Gets a field with the specified type from an iterator range.
+     * @param begin Start of the iterator range
+     * @param end End of the iterator range
+     * @param offset The offset of the value to return in the iterator range
+     * @return The requested value.
+     */
     template <typename U, typename T>
     const U &get_field(T begin, T end, size_t offset) {
         assert((offset + sizeof(U)) < std::distance(begin, end));
@@ -88,4 +125,4 @@ namespace wotstats {
     }
 }
 
-#endif /* defined(__wotstats__packet__) */
+#endif

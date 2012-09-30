@@ -58,7 +58,7 @@
 #include <atomic>
 
 using namespace std;
-using namespace wotstats;
+using namespace wot;
 using namespace tbb;
 using namespace boost::filesystem;
 using namespace boost::accumulators;
@@ -325,11 +325,26 @@ void print_packet(const slice_t &packet) {
 template <typename T>
 using image_t = boost::multi_array<T, 2>;
 
+/**
+ * Collection of values used and filled in during the processing of the replay
+ * file, an instance of this object is passed allong the pipeline.
+ */
 struct process_result {
+    /** Indicates if an error has occured somewhere in the pipeline. */
     bool error;
+    /** The path for the replay file to proces. */
     std::string path;
+    /** An instance of the replay_file for the member path. */
     replay_file *replay;
-    std::array<image_t<float>, 2> position_image, death_image, hit_image;
+    /** images for both teams containing the number of times this position was filled by a team member. */
+    std::array<image_t<float>, 2> position_image;
+    /** images for both teams containing the number of team member was killed on a specific position. */
+    std::array<image_t<float>, 2> death_image;
+    /** images for both teams containing the number of times as team member was hit. */
+    std::array<image_t<float>, 2> hit_image;
+    /**
+     * Constructor for process_result, setting the path and the image sizes.
+     */
     process_result(std::string path, int image_width, int image_height)
         : path(path), position_image({
             image_t<float>(boost::extents[image_width][image_height]),
@@ -344,8 +359,17 @@ struct process_result {
     {
         
     }
+    /**
+     * No copy constructor available.
+     */
     process_result(const process_result&) = delete;
+    /**
+     * No assignation possible.
+     */
     process_result & operator= (const process_result & other) = delete;
+    /** 
+     * Destructor for the class process_result.
+     */
     ~process_result() {
         delete replay;
     }

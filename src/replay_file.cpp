@@ -38,7 +38,7 @@
 #include <type_traits>
 #include <zlib.h>
 
-using namespace wotstats;
+using namespace wot;
 using namespace std;
 
 #if DEBUG_REPLAY_FILE

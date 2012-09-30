@@ -27,7 +27,7 @@
 
 #include "packet.h"
 
-using namespace wotstats;
+using namespace wot;
 
 packet_t::packet_t(const slice_t &data) {
     this->set_data(data);
@@ -83,6 +83,7 @@ void packet_t::set_data(const slice_t &data) {
             properties[property::type] = true;
             properties[property::clock] = true;
             properties[property::player_id] = true;
+            properties[property::is_shot] = true;
             uint8_t sub_type = get_field<uint8_t>(data.begin(), data.end(), 13);
             properties[property::health] = sub_type == 0x02;
             break;

@@ -35,7 +35,7 @@
 #include "types.h"
 #include "packet.h"
 
-namespace wotstats {
+namespace wot {
     /** game_info describes a minimal number of properties from the replay file. */
     struct game_info {
         /** The name of the map. */
@@ -115,7 +115,6 @@ namespace wotstats {
          * @param property required property of the packet to be found
          * @param out output variable containing the packet if one is found
          * @return \c true if a packet was found, \c false if no packet with the required properties was found
-         * @deprecated use find_property(uint32_t clock, uint32_t player_id, property property, packet_t &out) const instead
          */
         bool find_property(uint32_t clock, uint32_t player_id, property property, packet_t &out) const;
         /**
