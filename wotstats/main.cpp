@@ -41,8 +41,6 @@ using namespace boost::accumulators;
 using namespace boost;
 using boost::accumulators::left;
 using boost::accumulators::right;
-// tolerance in %
-double epsilon = 1;
 
 std::size_t n = 100000; // number of MC steps
 std::size_t c =  250000; // cache size
@@ -634,16 +632,8 @@ auto get_bounds(const std::vector<float> &values) -> std::tuple<float, float> {
 
 int main(int argc, const char * argv[]) {
     chdir("/Users/jantemmerman/Development/wotstats/data");
-
-    std::vector<float> values;
-    for (int i = 0; i < 1000; ++i) {
-        values.push_back(i);
-    }
-    auto bounds = get_bounds(values);
-    std::cout << std::get<0>(bounds) << " " << std::get<1>(bounds) << "\n";
-    // std::exit(1);
-
-     process_replay_directory("replays"); std::exit(1);
+    
+    // process_replay_directory("replays"); std::exit(1);
     
     string file_names[] = {
          "replays/20120405_2204_ussr-KV_caucasus.wotreplay",
@@ -657,10 +647,12 @@ int main(int argc, const char * argv[]) {
         "replays/20120826_1729_france-AMX_13_90_04_himmelsdorf.wotreplay",
         "replays/20120920_2130_france-AMX_13_90_14_siegfried_line.wotreplay",
         "replays/20120921_0042_ussr-IS-3_02_malinovka.wotreplay",
-       
+       "replays/old/20120319_2306_ussr-KV-3_malinovka.wotreplay",
+        "replays/old/20120318_0044_germany-PzVIB_Tiger_II_himmelsdorf.wotreplay",
+        "replays/old/20120317_2037_ussr-KV-3_lakeville.wotreplay"
     };
 
-    auto file_name = file_names[2];
+    auto file_name = file_names[13];
     ifstream is(file_name, std::ios::binary);
 
     if (!is) {
@@ -669,10 +661,12 @@ int main(int argc, const char * argv[]) {
     }
     
     replay_file replay(is);
-    const auto &game_info = replay.get_game_info();
     is.close();
-
     display_packet_summary(replay.get_packets());
+    write_parts_to_file(replay);
+    std::exit(1);
+    
+    const auto &game_info = replay.get_game_info();
     display_boundaries(game_info, replay.get_packets());
     
     write_parts_to_file(replay);
