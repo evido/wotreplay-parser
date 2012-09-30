@@ -11,13 +11,13 @@
 		D90AF1F6160485660018356A /* libpng15.15.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D90AF1F5160485660018356A /* libpng15.15.dylib */; };
 		D90AF1FD16048EAD0018356A /* libboost_filesystem.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D90AF1FB16048EAD0018356A /* libboost_filesystem.dylib */; };
 		D90AF1FE16048EAD0018356A /* libboost_system.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D90AF1FC16048EAD0018356A /* libboost_system.dylib */; };
-		D9A660CF1618ADDC00A84E6B /* jsoncpp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D9A660C71618ADDC00A84E6B /* jsoncpp.cpp */; };
 		D9A660D01618ADDC00A84E6B /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D9A660C81618ADDC00A84E6B /* main.cpp */; };
 		D9A660D11618ADDC00A84E6B /* packet.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D9A660C91618ADDC00A84E6B /* packet.cpp */; };
 		D9A660D21618ADDC00A84E6B /* replay_file.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D9A660CB1618ADDC00A84E6B /* replay_file.cpp */; };
 		D9AF1CEA159EDE9500074C27 /* libz.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D9AF1CE9159EDE9500074C27 /* libz.dylib */; };
 		D9C45F4815F9493600D61AA8 /* libtbb.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D9C45F4615F9493600D61AA8 /* libtbb.dylib */; };
 		D9C45F4915F9493600D61AA8 /* libtbbmalloc.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D9C45F4715F9493600D61AA8 /* libtbbmalloc.dylib */; };
+		D9C92C451618B22C00E00826 /* jsoncpp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D9C92C441618B22C00E00826 /* jsoncpp.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -39,9 +39,6 @@
 		D90AF1FB16048EAD0018356A /* libboost_filesystem.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libboost_filesystem.dylib; path = ../../lib/libboost_filesystem.dylib; sourceTree = "<group>"; };
 		D90AF1FC16048EAD0018356A /* libboost_system.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libboost_system.dylib; path = ../../lib/libboost_system.dylib; sourceTree = "<group>"; };
 		D9511A2015615982009B4E0F /* wotreplay-parser */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "wotreplay-parser"; sourceTree = BUILT_PRODUCTS_DIR; };
-		D9A660C41618ADDC00A84E6B /* json-forwards.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "json-forwards.h"; sourceTree = "<group>"; };
-		D9A660C51618ADDC00A84E6B /* json.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = json.h; sourceTree = "<group>"; };
-		D9A660C71618ADDC00A84E6B /* jsoncpp.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = jsoncpp.cpp; sourceTree = "<group>"; };
 		D9A660C81618ADDC00A84E6B /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		D9A660C91618ADDC00A84E6B /* packet.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = packet.cpp; sourceTree = "<group>"; };
 		D9A660CA1618ADDC00A84E6B /* packet.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = packet.h; sourceTree = "<group>"; };
@@ -52,6 +49,9 @@
 		D9AF1CE9159EDE9500074C27 /* libz.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libz.dylib; path = usr/lib/libz.dylib; sourceTree = SDKROOT; };
 		D9C45F4615F9493600D61AA8 /* libtbb.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libtbb.dylib; path = ../../lib/libtbb.dylib; sourceTree = "<group>"; };
 		D9C45F4715F9493600D61AA8 /* libtbbmalloc.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libtbbmalloc.dylib; path = ../../lib/libtbbmalloc.dylib; sourceTree = "<group>"; };
+		D9C92C411618B22C00E00826 /* json-forwards.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "json-forwards.h"; sourceTree = "<group>"; };
+		D9C92C421618B22C00E00826 /* json.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = json.h; sourceTree = "<group>"; };
+		D9C92C441618B22C00E00826 /* jsoncpp.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = jsoncpp.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -98,6 +98,7 @@
 		D9511A2315615982009B4E0F /* wotreplay-parser */ = {
 			isa = PBXGroup;
 			children = (
+				D9C92C3D1618B22C00E00826 /* ext */,
 				D9A660BF1618ADDC00A84E6B /* src */,
 			);
 			name = "wotreplay-parser";
@@ -107,7 +108,6 @@
 		D9A660BF1618ADDC00A84E6B /* src */ = {
 			isa = PBXGroup;
 			children = (
-				D9A660C01618ADDC00A84E6B /* ext */,
 				D9A660C81618ADDC00A84E6B /* main.cpp */,
 				D9A660C91618ADDC00A84E6B /* packet.cpp */,
 				D9A660CA1618ADDC00A84E6B /* packet.h */,
@@ -119,44 +119,44 @@
 			path = src;
 			sourceTree = SOURCE_ROOT;
 		};
-		D9A660C01618ADDC00A84E6B /* ext */ = {
+		D9C92C3D1618B22C00E00826 /* ext */ = {
 			isa = PBXGroup;
 			children = (
-				D9A660C11618ADDC00A84E6B /* jsoncpp */,
+				D9C92C3E1618B22C00E00826 /* jsoncpp */,
 			);
 			path = ext;
-			sourceTree = "<group>";
+			sourceTree = SOURCE_ROOT;
 		};
-		D9A660C11618ADDC00A84E6B /* jsoncpp */ = {
+		D9C92C3E1618B22C00E00826 /* jsoncpp */ = {
 			isa = PBXGroup;
 			children = (
-				D9A660C21618ADDC00A84E6B /* include */,
-				D9A660C61618ADDC00A84E6B /* src */,
+				D9C92C3F1618B22C00E00826 /* include */,
+				D9C92C431618B22C00E00826 /* src */,
 			);
 			path = jsoncpp;
 			sourceTree = "<group>";
 		};
-		D9A660C21618ADDC00A84E6B /* include */ = {
+		D9C92C3F1618B22C00E00826 /* include */ = {
 			isa = PBXGroup;
 			children = (
-				D9A660C31618ADDC00A84E6B /* json */,
+				D9C92C401618B22C00E00826 /* json */,
 			);
 			path = include;
 			sourceTree = "<group>";
 		};
-		D9A660C31618ADDC00A84E6B /* json */ = {
+		D9C92C401618B22C00E00826 /* json */ = {
 			isa = PBXGroup;
 			children = (
-				D9A660C41618ADDC00A84E6B /* json-forwards.h */,
-				D9A660C51618ADDC00A84E6B /* json.h */,
+				D9C92C411618B22C00E00826 /* json-forwards.h */,
+				D9C92C421618B22C00E00826 /* json.h */,
 			);
 			path = json;
 			sourceTree = "<group>";
 		};
-		D9A660C61618ADDC00A84E6B /* src */ = {
+		D9C92C431618B22C00E00826 /* src */ = {
 			isa = PBXGroup;
 			children = (
-				D9A660C71618ADDC00A84E6B /* jsoncpp.cpp */,
+				D9C92C441618B22C00E00826 /* jsoncpp.cpp */,
 			);
 			path = src;
 			sourceTree = "<group>";
@@ -219,7 +219,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/bash;
-			shellScript = "";
+			shellScript = "cd /Users/jantemmerman/Development/wotreplay-parser/\n/opt/local/bin/doxygen wotreplay-parser.xml";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -228,10 +228,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D9A660CF1618ADDC00A84E6B /* jsoncpp.cpp in Sources */,
 				D9A660D01618ADDC00A84E6B /* main.cpp in Sources */,
 				D9A660D11618ADDC00A84E6B /* packet.cpp in Sources */,
 				D9A660D21618ADDC00A84E6B /* replay_file.cpp in Sources */,
+				D9C92C451618B22C00E00826 /* jsoncpp.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -302,7 +302,7 @@
 				);
 				GCC_STRICT_ALIASING = YES;
 				HEADER_SEARCH_PATHS = (
-					/Users/jantemmerman/Development/wotstats/wotstats/ext/jsoncpp/include,
+					"/Users/jantemmerman/Development/wotreplay-parser/ext/jsoncpp/include",
 					/opt/local/include,
 					/Users/jantemmerman/include,
 				);
@@ -314,8 +314,12 @@
 				OTHER_CPLUSPLUSFLAGS = "$(OTHER_CFLAGS)";
 				PRODUCT_NAME = "wotreplay-parser";
 				SDKROOT = "";
-				USER_HEADER_SEARCH_PATHS = "/opt/local/include /Users/jantemmerman/Development/wotstats/wotstats/ext/jsoncpp/include";
+				USER_HEADER_SEARCH_PATHS = /opt/local/include;
 				VALID_ARCHS = x86_64;
+				WARNING_CFLAGS = (
+					"-isystem",
+					"-fdiagnostics-show-category",
+				);
 			};
 			name = Debug;
 		};
@@ -330,7 +334,7 @@
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
 				GCC_STRICT_ALIASING = YES;
 				HEADER_SEARCH_PATHS = (
-					/Users/jantemmerman/Development/wotstats/wotstats/ext/jsoncpp/include,
+					"/Users/jantemmerman/Development/wotreplay-parser/ext/jsoncpp/include",
 					/opt/local/include,
 					/Users/jantemmerman/include,
 				);
@@ -343,8 +347,12 @@
 				OTHER_CPLUSPLUSFLAGS = "$(OTHER_CFLAGS)";
 				PRODUCT_NAME = "wotreplay-parser";
 				SDKROOT = "";
-				USER_HEADER_SEARCH_PATHS = "/opt/local/include /Users/jantemmerman/Development/wotstats/wotstats/ext/jsoncpp/include";
+				USER_HEADER_SEARCH_PATHS = /opt/local/include;
 				VALID_ARCHS = x86_64;
+				WARNING_CFLAGS = (
+					"-isystem",
+					"-fdiagnostics-show-category",
+				);
 			};
 			name = Release;
 		};

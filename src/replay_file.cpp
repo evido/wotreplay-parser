@@ -1,24 +1,42 @@
- //
-//  ReplayFile.cpp
-//  wotstats
-//
-//  Created by Jan Temmerman on 01/07/12.
-//  Copyright (c) 2012 __MyCompanyName__. All rights reserved.
-//
+/*
+ Copyright (c) 2012, Jan Temmerman
+ All rights reserved.
 
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are met:
+ * Redistributions of source code must retain the above copyright
+ notice, this list of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above copyright
+ notice, this list of conditions and the following disclaimer in the
+ documentation and/or other materials provided with the distribution.
+ * Neither the name of the <organization> nor the
+ names of its contributors may be used to endorse or promote products
+ derived from this software without specific prior written permission.
+
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ DISCLAIMED. IN NO EVENT SHALL Jan Temmerman BE LIABLE FOR ANY
+ DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#include "json/json.h"
 #include "replay_file.h"
 
-#include <sstream>
-#include <map>
-#include <openssl/blowfish.h>
-#include <zlib.h>
-#include <type_traits>
-#include <fstream>
-#include <string>
-#include <ostream>
-#include <string>
-#include "json/json.h"
 #include <boost/lexical_cast.hpp>
+#include <fstream>
+#include <map>
+#include <ostream>
+#include <openssl/blowfish.h>
+#include <sstream>
+#include <string>
+#include <type_traits>
+#include <zlib.h>
 
 using namespace wotstats;
 using namespace std;
@@ -66,7 +84,7 @@ static void read(istream& is, buffer_t &buffer) {
     is.read(reinterpret_cast<char*>(&buffer[0]), size);
 }
 
-replay_file::replay_file(istream &is) {
+replay_file::replay_file(std::istream &is) {
     // fully read file into buffer
     buffer_t buffer;
     read(is, buffer);
@@ -89,6 +107,7 @@ void replay_file::parse(buffer_t &buffer) {
     // determine number of data blocks
     std::vector<slice_t> data_blocks;
     this->legacy = is_legacy_replay(buffer);
+
     if (is_legacy()) {
         buffer_t raw_replay;
         
@@ -137,6 +156,10 @@ void replay_file::parse(buffer_t &buffer) {
         extract_replay(raw_replay, replay);
         read_packets();
         read_game_info();
+
+        // read version string
+        uint32_t version_string_sz = get_field<uint32_t>(replay.begin(), replay.end(), 12);
+        version.assign(replay.begin() + 16, replay.begin() + 16 + version_string_sz);
     }
 }
 
@@ -262,7 +285,9 @@ size_t replay_file::read_packets() {
         {0x07, 24},
         {0x08, 24},
         {0x0A, 61},
-        {0x0E, 4},
+        {0x0B, 30},
+        // changed {0x0E, 4},
+        {0x0e, 25},
         {0x0C, 3},
         {0x11, 12},
         {0x12, 16},
@@ -276,9 +301,17 @@ size_t replay_file::read_packets() {
         {0x1B, 16},
         {0x1C, 20},
         {0x1D, 21},
-        {0x1e, 160},
-        {0x20, 4},
-        {0x31, 4}
+        // modified for 0.7.2
+        // {0x1e, 160},
+        {0x1a, 16},
+        {0x1e, 16},
+        // modified for 0.8.0 from 4
+        {0x20, 21},
+        // {0x20, 4}
+        {0x31, 4},
+        // restarting replay ?
+        {0x0D, 22},
+        {0x00, 22}
     };
 
     if (is_legacy()) {
@@ -299,7 +332,7 @@ size_t replay_file::read_packets() {
 
     size_t ix = offset;
     while (ix < buffer.size()) {
-
+    
         if (packet_lengths.count(buffer[ix + 1]) < 1) {
             size_t count = packets.size();
             if (count < 500) {
@@ -315,11 +348,14 @@ size_t replay_file::read_packets() {
                 const slice_t &packet_data = last_packet.get_data();
                 size_t packet_size = packet_data.size();
                 size_t prev_ix = ix - packet_size;
-                std::cerr << "Bytes read: " << ix << std::endl
-                    << "Packets read: " << count << std::endl
-                    << "Last packets start: " << prev_ix << std::endl
-                    << "Bytes unread: " << buffer.size() - ix << std::endl
-                    << "Bytes skipped: " << offset << std::endl;
+                int unread = (int) buffer.size() - (int) ix;
+                if (unread > 25) {
+                    std::cerr << "Bytes read: " << ix << std::endl
+                        << "Packets read: " << count << std::endl
+                        << "Last packets start: " << prev_ix << std::endl
+                        << "Bytes unread: " << unread << std::endl
+                        << "Bytes skipped: " << offset << std::endl;
+                }
 #endif
                 break;
             }
@@ -341,6 +377,26 @@ size_t replay_file::read_packets() {
                 packet_length += get_field<uint8_t>(buffer.begin(), buffer.end(), ix + 47);
                 break;
             }
+            case 0x20: {
+                packet_length += get_field<uint8_t>(buffer.begin(), buffer.end(), ix + 14);
+                break;
+            }
+            case 0x0B: {
+                packet_length += get_field<uint8_t>(buffer.begin(), buffer.end(), ix + 23);
+                break;
+            }
+            case 0x0D: {
+                packet_length += get_field<uint32_t>(buffer.begin(), buffer.end(), ix + 15);
+                                break;
+            }
+            case 0x0e: {
+                packet_length += get_field<uint32_t>(buffer.begin(), buffer.end(), ix + 10);
+                break;
+            }
+            case 0x00: {
+                packet_length += get_field<uint32_t>(buffer.begin(), buffer.end(), ix + 15);
+                break;
+            }
         }
         
         auto packet_begin = buffer.begin() + ix;
@@ -354,6 +410,7 @@ size_t replay_file::read_packets() {
 #endif
         }
 
+        // std::cout << (int) buffer[ix + 1] << " " << ix << " " << packet_length << "\n";
         ix += packet_length;
     }
     
@@ -485,40 +542,40 @@ const game_info &replay_file::get_game_info() const {
     return game_info;
 }
 
-static std::map<std::string, std::array<std::tuple<int,int>, 2>> map_boundaries = {
-    { "01_karelia",         { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
-    { "02_malinovka",       { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
-    { "03_campania",        { std::make_tuple(-300, 300), std::make_tuple(-300, 300) } },
-    { "04_himmelsdorf",     { std::make_tuple(-300, 400), std::make_tuple(-300, 400) } },
-    { "05_prohorovka", 	    { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
-    { "06_ensk",            { std::make_tuple(-300, 300), std::make_tuple(-300, 300) } },
-    { "07_lakeville",       { std::make_tuple(-400, 400), std::make_tuple(-400, 400) } },
-    { "08_ruinberg",        { std::make_tuple(-400, 400), std::make_tuple(-400, 400) } },
-    { "10_hills",           { std::make_tuple(-400, 400), std::make_tuple(-400, 400) } },
-    { "11_murovanka",       { std::make_tuple(-400, 400), std::make_tuple(-400, 400) } },
-    { "13_erlenberg",       { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
-    { "14_siegfried_line",  { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
-    { "15_komarin",         { std::make_tuple(-400, 400), std::make_tuple(-400, 400) } },
-    { "17_munchen",         { std::make_tuple(-300, 300), std::make_tuple(-300, 300) } },
-    { "18_cliff",           { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
-    { "19_monastery",       { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
-    { "22_slough",          { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
-    { "23_westfeld",        { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
-    { "28_desert",          { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
-    { "29_el_hallouf",      { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
-    { "31_airfield",        { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
-    { "33_fjord",           { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
-    { "34_redshire",        { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
-    { "35_steppes",         { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
-    { "36_fishing_bay",     { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
-    { "37_caucasus",        { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
-    { "38_mannerheim_line", { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
-    { "39_crimea",          { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
-    { "42_north_america",   { std::make_tuple(-400, 400), std::make_tuple(-400, 400) } },
-    { "44_north_america",   { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
-    { "45_north_america",   { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
-    { "47_canada_a",        { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } },
-    { "51_asia",            { std::make_tuple(-500, 500), std::make_tuple(-500, 500) } }
+static std::map<std::string, std::array<std::array<int, 2>,2>> map_boundaries = {
+    { "01_karelia",         {-500, 500, -500, 500} },
+    { "02_malinovka",       {-500, 500, -500, 500} },
+    { "03_campania",        {-300, 300, -300, 300} },
+    { "04_himmelsdorf",     {-300, 400, -300, 400} },
+    { "05_prohorovka", 	    {-500, 500, -500, 500} },
+    { "06_ensk",            {-300, 300, -300, 300} },
+    { "07_lakeville",       {-400, 400, -400, 400} },
+    { "08_ruinberg",        {-400, 400, -400, 400} },
+    { "10_hills",           {-400, 400, -400, 400} },
+    { "11_murovanka",       {-400, 400, -400, 400} },
+    { "13_erlenberg",       {-500, 500, -500, 500} },
+    { "14_siegfried_line",  {-500, 500, -500, 500} },
+    { "15_komarin",         {-400, 400, -400, 400} },
+    { "17_munchen",         {-300, 300, -300, 300} },
+    { "18_cliff",           {-500, 500, -500, 500} },
+    { "19_monastery",       {-500, 500, -500, 500} },
+    { "22_slough",          {-500, 500, -500, 500} },
+    { "23_westfeld",        {-500, 500, -500, 500} },
+    { "28_desert",          {-500, 500, -500, 500} },
+    { "29_el_hallouf",      {-500, 500, -500, 500} },
+    { "31_airfield",        {-500, 500, -500, 500} },
+    { "33_fjord",           {-500, 500, -500, 500} },
+    { "34_redshire",        {-500, 500, -500, 500} },
+    { "35_steppes",         {-500, 500, -500, 500} },
+    { "36_fishing_bay",     {-500, 500, -500, 500} },
+    { "37_caucasus",        {-500, 500, -500, 500} },
+    { "38_mannerheim_line", {-500, 500, -500, 500} },
+    { "39_crimea",          {-500, 500, -500, 500} },
+    { "42_north_america",   {-400, 400, -400, 400} },
+    { "44_north_america",   {-500, 500, -500, 500} },
+    { "45_north_america",   {-500, 500, -500, 500} },
+    { "47_canada_a",        {-500, 500, -500, 500} },
+    { "51_asia",            {-500, 500, -500, 500} }
 };
 
 void replay_file::read_game_info() {
@@ -543,7 +600,14 @@ void replay_file::read_game_info() {
     }
 
     game_info.map_name = root["mapName"].asString();
-    game_info.game_mode = root["gameplayType"].asString();
+
+    if (root.isMember("gameplayType")) {
+        game_info.game_mode = root["gameplayType"].asString();
+    } else {
+        // from 8.0 this is renamed
+        game_info.game_mode = root["gameplayID"].asString();
+    }
+    
     game_info.game_mode.resize(3);
 
     // explicit check for game version should be better

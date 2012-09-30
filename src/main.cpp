@@ -1,10 +1,29 @@
-//
-//  main.cpp
-//  wotstats
-//
-//  Created by Jan Temmerman on 14/05/12.
-//  Copyright (c) 2012 __MyCompanyName__. All rights reserved.
-//
+/*
+ Copyright (c) 2012, Jan Temmerman
+ All rights reserved.
+
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are met:
+ * Redistributions of source code must retain the above copyright
+ notice, this list of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above copyright
+ notice, this list of conditions and the following disclaimer in the
+ documentation and/or other materials provided with the distribution.
+ * Neither the name of the <organization> nor the
+ names of its contributors may be used to endorse or promote products
+ derived from this software without specific prior written permission.
+
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ DISCLAIMED. IN NO EVENT SHALL Jan Temmerman BE LIABLE FOR ANY
+ DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
 #include "replay_file.h"
 #include <png.h>
@@ -24,12 +43,17 @@
 #include <regex>
 #include <boost/multi_array.hpp>
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-variable"
+
 #include <boost/accumulators/numeric/functional/vector.hpp>
 #include <boost/accumulators/numeric/functional/complex.hpp>
 #include <boost/accumulators/numeric/functional/valarray.hpp>
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics/stats.hpp>
 #include <boost/accumulators/statistics/tail_quantile.hpp>
+
+#pragma clang diagnostic pop
 
 #include <atomic>
 
@@ -231,7 +255,7 @@ bool write_png(const std::string &out, png_bytepp image, size_t width, size_t he
 
     png_init_io(png_ptr, fp);
     png_set_filter(png_ptr, 0,PNG_FILTER_VALUE_NONE);
-    png_set_IHDR(png_ptr, info_ptr, width, height,
+    png_set_IHDR(png_ptr, info_ptr, static_cast<uint32_t>(width), static_cast<uint32_t>(height),
                  8, alpha ? PNG_COLOR_TYPE_RGBA : PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE,
                  PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
     png_set_rows(png_ptr, info_ptr, image);
@@ -359,9 +383,11 @@ void process_replay_directory(const path& directory) {
             return result;
         }
         try {
+            std::cout << result->path << "\n";
             ifstream is(result->path, std::ios::binary);
             result->replay = new replay_file(is);
             is.close();
+            std::cout << result->replay->get_version() << "\n";
         } catch (std::exception &e) {
             result->error = true;
             std::cerr << "Error!" << std::endl;
@@ -516,12 +542,12 @@ void process_replay_directory(const path& directory) {
         delete result;
     };
 
-    tbb::parallel_pipeline(10,
+    tbb::parallel_pipeline(1,
                            tbb::make_filter<void, process_result*>(tbb::filter::serial_in_order, f_generate_paths) &
                            tbb::make_filter<process_result*, process_result*>(tbb::filter::parallel, f_create_replays) &
-                           tbb::make_filter<process_result*, process_result*>(tbb::filter::parallel, f_process_replays) &
+//                           tbb::make_filter<process_result*, process_result*>(tbb::filter::parallel, f_process_replays) &
 //                           tbb::make_filter<process_result*, process_result*>(tbb::filter::parallel, f_create_image) &
-                           tbb::make_filter<process_result*, process_result*>(tbb::filter::serial_out_of_order, f_merge_results) &
+//                           tbb::make_filter<process_result*, process_result*>(tbb::filter::serial_out_of_order, f_merge_results) &
                            tbb::make_filter<process_result*, void>(tbb::filter::parallel, f_clean_up));
 
 
@@ -631,11 +657,17 @@ auto get_bounds(const std::vector<float> &values) -> std::tuple<float, float> {
 };
 
 int main(int argc, const char * argv[]) {
-    chdir("/Users/jantemmerman/Development/wotstats/data");
+    chdir("/Users/jantemmerman/Development/wotreplay-parser/data");
     
-    // process_replay_directory("replays"); std::exit(1);
+    process_replay_directory("replays/8.0"); std::exit(1);
     
     string file_names[] = {
+        "replays/20120610_1507_germany-E-75_caucasus.wotreplay",
+        "replays/20120408_2137_ussr-KV-3_ruinberg.wotreplay",
+        "replays/20120407_1322_ussr-KV_fjord.wotreplay",
+        "replays/20120407_1046_ussr-KV-3_himmelsdorf.wotreplay",
+        "replays/20120405_2122_germany-PzVIB_Tiger_II_redshire.wotreplay",
+        "replays/20120405_2112_germany-PzVIB_Tiger_II_monastery.wotreplay",
          "replays/20120405_2204_ussr-KV_caucasus.wotreplay",
         "replays/20120707_2059_germany-E-75_himmelsdorf.wotreplay",
         "replays/20120815_0309_germany-E-75_02_malinovka.wotreplay",
@@ -649,10 +681,12 @@ int main(int argc, const char * argv[]) {
         "replays/20120921_0042_ussr-IS-3_02_malinovka.wotreplay",
        "replays/old/20120319_2306_ussr-KV-3_malinovka.wotreplay",
         "replays/old/20120318_0044_germany-PzVIB_Tiger_II_himmelsdorf.wotreplay",
-        "replays/old/20120317_2037_ussr-KV-3_lakeville.wotreplay"
+        "replays/old/20120317_2037_ussr-KV-3_lakeville.wotreplay",
+        "replays/8.0/20120929_1724_ussr-IS-3_17_munchen.wotreplay",
+        "replays/8.0/20120929_1204_ussr-IS-3_28_desert.wotreplay"
     };
 
-    auto file_name = file_names[13];
+    auto file_name = file_names[0];
     ifstream is(file_name, std::ios::binary);
 
     if (!is) {
@@ -664,13 +698,13 @@ int main(int argc, const char * argv[]) {
     is.close();
     display_packet_summary(replay.get_packets());
     write_parts_to_file(replay);
-    std::exit(1);
+    // std::exit(1);
     
     const auto &game_info = replay.get_game_info();
     display_boundaries(game_info, replay.get_packets());
     
     write_parts_to_file(replay);
-    
+    replay.get_version();
     png_bytepp row_pointers;
     int width, height, channels;
     read_png(game_info.mini_map, row_pointers, width, height, channels);
