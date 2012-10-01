@@ -35,6 +35,8 @@
 #include "types.h"
 #include "packet.h"
 
+/** @file */
+
 namespace wotreplay {
     /** game_info describes a minimal number of properties from the replay file. */
     struct game_info {
@@ -64,7 +66,7 @@ namespace wotreplay {
          * The inputstream will be consumed completely after returning from this method.
          * @param is The inputstream containing the contest of a wot replay file.
          */
-        parser(std::istream &is);
+        parser(std::istream &is, bool debug = false);
         /** 
          * Returns the version string as stored in the replay file.
          * @return The version string as stored in the replay file.
@@ -127,6 +129,15 @@ namespace wotreplay {
          * @param buffer The complete contents of a replay file.
          */
         void parse(buffer_t &buffer);
+        /**
+         * Set debug mode for this instance.
+         * @param debug The new value for debug.
+         */
+        void set_debug(bool debug);
+        /**
+         * @return The debug setting for this parser instance.
+         */
+        bool get_debug() const;
     private:
         /**
          * Indicates if the passed buffer_t contains a legacy (< 0.7.2) replay file. 
@@ -196,12 +207,35 @@ namespace wotreplay {
         game_info game_info;
         /** The legacy indicator. */
         bool legacy;
+        /** The debug indicator */
+        bool debug;
     };
 
     template <typename iterator>
     packet_t parser::read_packet(iterator begin, iterator end) {
         return packet_t(boost::make_iterator_range(begin, end));
     }
+
+    /**
+     * Shows a quick overview of the packet count in the replay file.
+     * @param packets A list of packets parsed from a replay file.
+     */
+    void show_packet_summary(const std::vector<packet_t>& packets);
+
+    /**
+     * @fn void wotreplay::write_parts_to_file(const parser &replay)
+     * Writes each data block of a replay file to a file, for debugging purpopses.
+     * @param replay The parsed replay.
+     */
+    void write_parts_to_file(const parser &replay);
+
+    /**
+     * @fn void wotreplay::show_map_boundaries(const game_info &game_info, const std::vector<packet_t> &packets)
+     * Prints the position boundaries reached by any player in the map.
+     * @param game_info game_info object containing the team information
+     * @param packets a list of all the packets in a replay
+     */
+    void show_map_boundaries(const game_info &game_info, const std::vector<packet_t> &packets);
 }
 
 #endif

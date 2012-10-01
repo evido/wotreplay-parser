@@ -119,3 +119,11 @@ std::tuple<uint32_t, uint32_t> packet_t::tank_destroyed() const {
     );
 }
 
+void wotreplay::display_packet(const packet_t &packet) {
+    for (auto val : packet.get_data()) {
+        unsigned ival = (unsigned)(unsigned char)(val);
+        printf("%02X ", ival);
+    }
+    printf("\n");
+}
+

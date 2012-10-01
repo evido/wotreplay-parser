@@ -110,7 +110,7 @@ namespace wotreplay {
         slice_t data;
     };
 
-    /*!
+    /**
      * @fn template<typename U, typename T> const U & wot::get_field(T begin, T end, size_t offset)
      * @brief Gets a field with the specified type from an iterator range.
      * @param begin Start of the iterator range
@@ -123,6 +123,12 @@ namespace wotreplay {
         assert((offset + sizeof(U)) < std::distance(begin, end));
         return *reinterpret_cast<const U*>(&*(begin + offset));
     }
+
+    /**
+     * Prints the bytes of a packet.
+     * @param packet The packet to print out.
+     */
+    void display_packet(const packet_t &packet);
 }
 
 #endif

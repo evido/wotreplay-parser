@@ -84,11 +84,20 @@ static void read(istream& is, buffer_t &buffer) {
     is.read(reinterpret_cast<char*>(&buffer[0]), size);
 }
 
-parser::parser(std::istream &is) {
+parser::parser(std::istream &is, bool debug)
+    : debug(debug){
     // fully read file into buffer
     buffer_t buffer;
     read(is, buffer);
     parse(buffer);
+}
+
+void parser::set_debug(bool debug) {
+    this->debug = debug;
+}
+
+bool parser::get_debug() const {
+    return debug;
 }
 
 const std::string &parser::get_version() const {
@@ -319,9 +328,9 @@ size_t parser::read_packets() {
     auto pos = std::search(buffer.begin(), buffer.end(),marker.begin(), marker.end());
     if (pos != buffer.end()) {
         offset = (pos - buffer.begin()) + marker.size();
-#if DEBUG_REPLAY_FILE
-        std::cerr << "OFFSET: " << offset << "\n";
-#endif
+        if (debug) {
+            std::cerr << "OFFSET: " << offset << "\n";
+        }
     }
 
     size_t ix = offset;
@@ -331,26 +340,27 @@ size_t parser::read_packets() {
             size_t count = packets.size();
             if (count < 500) {
                 ix = static_cast<int>(++offset);
-#if DEBUG_REPLAY_FILE
-                std::cerr << ix << "\n";
-                std::cerr << "WARNING INCORRECT OFFSET!\n";
-#endif
+                if (debug) {
+                    std::cerr << ix << "\n";
+                    std::cerr << "WARNING INCORRECT OFFSET!\n";
+                }
                 continue;
             } else {
-#if DEBUG_REPLAY_FILE
-                const packet_t &last_packet = packets.back();
-                const slice_t &packet_data = last_packet.get_data();
-                size_t packet_size = packet_data.size();
-                size_t prev_ix = ix - packet_size;
-                int unread = (int) buffer.size() - (int) ix;
-                if (unread > 25) {
+                if (debug) {
+                    const packet_t &last_packet = packets.back();
+                    const slice_t &packet_data = last_packet.get_data();
+                    size_t packet_size = packet_data.size();
+                    size_t prev_ix = ix - packet_size;
+                    int unread = (int) buffer.size() - (int) ix;
                     std::cerr << "Bytes read: " << ix << std::endl
                         << "Packets read: " << count << std::endl
                         << "Last packets start: " << prev_ix << std::endl
                         << "Bytes unread: " << unread << std::endl
                         << "Bytes skipped: " << offset << std::endl;
+                    if (unread > 25) {
+                        std::cerr << "Unexpected end of the replay.\n";
+                    }
                 }
-#endif
                 break;
             }
         }
@@ -379,14 +389,11 @@ size_t parser::read_packets() {
                 packet_length += get_field<uint8_t>(buffer.begin(), buffer.end(), ix + 23);
                 break;
             }
-            case 0x0D: {
-                packet_length += get_field<uint32_t>(buffer.begin(), buffer.end(), ix + 15);
-                                break;
-            }
             case 0x0e: {
                 packet_length += get_field<uint32_t>(buffer.begin(), buffer.end(), ix + 10);
                 break;
             }
+            case 0x0D:
             case 0x00: {
                 packet_length += get_field<uint32_t>(buffer.begin(), buffer.end(), ix + 15);
                 break;
@@ -398,19 +405,19 @@ size_t parser::read_packets() {
         if (ix + packet_length < buffer.size()) {
             auto packet_end = packet_begin + packet_length;
             packets.emplace_back(parser::read_packet(packet_begin, packet_end));
-        } else {
-#if DEBUG_REPLAY_FILE
+        } else if (debug) {
             std::cerr << "Packet went out of replay file bounds.\n";
-#endif
         }
 
-        // std::cout << (int) buffer[ix + 1] << " " << ix << " " << packet_length << "\n";
+        if (debug) {
+              std::cerr << (int) buffer[ix + 1] << " " << ix << " " << packet_length << "\n";
+        }
+        
         ix += packet_length;
     }
-    
+
     return ix;
 }
-
 
 const std::vector<packet_t> &parser::get_packets() const {
     return packets;
@@ -623,6 +630,68 @@ void parser::read_game_info() {
 
     game_info.boundaries = map_boundaries[game_info.map_name];
     game_info.mini_map = "maps/no-border/" + game_info.map_name + "_" + game_info.game_mode + ".png";
+}
+
+void wotreplay::show_packet_summary(const std::vector<packet_t>& packets) {
+    std::map<char, int> packet_type_count;
+
+    for (const packet_t &p : packets) {
+        packet_type_count[p.type()]++;
+    }
+
+    for (auto it : packet_type_count) {
+        printf("packet_type [%02x] = %d\n", it.first, it.second);
+    }
+
+    printf("Total packets = %lu\n", packets.size());
+}
+
+void wotreplay::write_parts_to_file(const parser &replay) {
+    ofstream game_begin("out/game_begin.txt", ios::binary | ios::ate);
+    std::copy(replay.get_game_begin().begin(),
+              replay.get_game_begin().end(),
+              ostream_iterator<char>(game_begin));
+    game_begin.close();
+
+    ofstream game_end("out/game_end.txt", ios::binary | ios::ate);
+    std::copy(replay.get_game_end().begin(),
+              replay.get_game_end().end(),
+              ostream_iterator<char>(game_end));
+    game_end.close();
+
+    ofstream replay_content("out/replay.dat", ios::binary | ios::ate);
+    std::copy(replay.get_replay().begin(),
+              replay.get_replay().end(),
+              ostream_iterator<char>(replay_content));
+}
+
+void wotreplay::show_map_boundaries(const game_info &game_info, const std::vector<packet_t> &packets) {
+
+    float min_x = 0.f, min_y = 0.f, max_x = 0.f, max_y = 0.f;
+
+    for (const packet_t &packet : packets) {
+        if (packet.type() != 0xa) {
+            continue;
+        }
+
+        uint32_t player_id = packet.player_id();
+
+        const auto &teams = game_info.teams;
+        for (auto it = teams.begin(); it != teams.end(); ++it) {
+            // only take into account positions of 'valid' players.
+            if (it->find(player_id) != it->end()) {
+                // update the boundaries
+                auto position = packet.position();
+                min_x = std::min(min_x, std::get<0>(position));
+                min_y = std::min(min_y, std::get<2>(position));
+                max_x = std::max(max_x, std::get<0>(position));
+                max_y = std::max(max_y, std::get<2>(position));
+                break;
+            }
+        }
+    }
+
+    printf("The boundaries of used positions in this replay are: min_x = %f max_x = %f min_y = %f max_y = %f\n", min_x, max_x, min_y, max_y);
 }
 
 

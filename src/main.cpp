@@ -43,6 +43,8 @@
 #include <regex>
 #include <boost/multi_array.hpp>
 
+
+// generates unavoidable unused variable warnings
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-variable"
 
@@ -57,6 +59,8 @@
 
 #include <atomic>
 
+/** @file */
+
 using namespace std;
 using namespace wotreplay;
 using namespace tbb;
@@ -66,25 +70,13 @@ using namespace boost;
 using boost::accumulators::left;
 using boost::accumulators::right;
 
-std::size_t n = 100000; // number of MC steps
 std::size_t c =  250000; // cache size
 
 typedef accumulator_set<double, stats<tag::tail_quantile<boost::accumulators::right>>> accumulator_t_right;
 typedef accumulator_set<double, stats<tag::tail_quantile<boost::accumulators::left>>> accumulator_t_left;
 
-void display_packet_summary(const std::vector<packet_t>& packets) {
-    std::map<char, int> packet_type_count;
 
-    for (auto p : packets) {
-        packet_type_count[p.type()]++;
-    }
-    
-    for (auto it : packet_type_count) {
-        printf("packet_type [%02x] = %d\n", it.first, it.second);
-    }
-    printf("Total packets = %lu\n", packets.size());
 
-}
 
 std::tuple<float, float> get_2d_coord(const std::tuple<float, float, float> &position, const game_info &game_info, int width, int height) {
     float x,y,z, min_x, max_x, min_y, max_y;
@@ -94,10 +86,6 @@ std::tuple<float, float> get_2d_coord(const std::tuple<float, float, float> &pos
     x = (x - min_x) * (width / (max_x - min_x + 1));
     y = (max_y - y) * (height / (max_y - min_y + 1));
     return std::make_tuple(x,y);
-}
-
-void display_packet_clock(const packet_t &packet) {
-    std::cout << packet.clock() << "\n";
 }
 
 void create_image(
@@ -186,59 +174,7 @@ void create_image(
     }
 }
 
-void write_parts_to_file(const parser &replay) {
-    ofstream game_begin("out/game_begin.txt", ios::binary | ios::ate);
-    std::copy(replay.get_game_begin().begin(),
-              replay.get_game_begin().end(),
-              ostream_iterator<char>(game_begin));
-    game_begin.close();
-    
-    ofstream game_end("out/game_end.txt", ios::binary | ios::ate);
-    std::copy(replay.get_game_end().begin(),
-              replay.get_game_end().end(),
-              ostream_iterator<char>(game_end));
-    game_end.close();
-    
-    ofstream replay_content("out/replay.dat", ios::binary | ios::ate);
-    std::copy(replay.get_replay().begin(),
-              replay.get_replay().end(),
-              ostream_iterator<char>(replay_content));
-}
 
-void display_boundaries(const game_info &game_info, std::vector<packet_t> packets) {
-
-    float min_x = 0.f, min_y = 0.f, max_x = 0.f, max_y = 0.f;
-
-    for (auto packet : packets) {
-        if (packet.type() != 0xa) {
-            continue;
-        }
-        
-        uint32_t player_id = packet.player_id();
-        auto position = packet.position();
-
-        int team_id = -1;
-        auto teams = game_info.teams;
-        for (auto it = teams.begin(); it != teams.end(); ++it) {
-            auto pos = std::find(it->begin(), it->end(), player_id);
-            if (pos != it->end()) {
-                team_id = static_cast<int>(it - teams.begin());
-                break;
-            }
-        }
-   
-        if (team_id == -1) {
-            continue;
-        }
-
-        min_x = std::min(min_x, std::get<0>(position));
-        min_y = std::min(min_y, std::get<2>(position));
-        max_x = std::max(max_x, std::get<0>(position));
-        max_y = std::max(max_y, std::get<2>(position));
-    }
-    
-    printf("%f %f %f %f\n", min_x, max_x, min_y, max_y);
-}
 
 bool write_png(const std::string &out, png_bytepp image, size_t width, size_t height, bool alpha) {
     FILE *fp = fopen(out.c_str(), "wb");
@@ -314,13 +250,7 @@ void read_png2(const std::string &in, png_bytepp image, int &width, int &height,
     fclose(fp);
 }
 
-void print_packet(const slice_t &packet) {
-    for (auto val : packet) {
-        unsigned ival = (unsigned)(unsigned char)(val);
-        printf("%02X ", ival);
-    }
-    printf("\n");
-}
+
 
 template <typename T>
 using image_t = boost::multi_array<T, 2>;
@@ -722,12 +652,12 @@ int main(int argc, const char * argv[]) {
     
     parser replay(is);
     is.close();
-    display_packet_summary(replay.get_packets());
+    show_packet_summary(replay.get_packets());
     write_parts_to_file(replay);
     // std::exit(1);
     
     const auto &game_info = replay.get_game_info();
-    display_boundaries(game_info, replay.get_packets());
+    show_map_boundaries(game_info, replay.get_packets());
     
     write_parts_to_file(replay);
     replay.get_version();
