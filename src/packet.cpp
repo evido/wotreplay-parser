@@ -27,7 +27,7 @@
 
 #include "packet.h"
 
-using namespace wot;
+using namespace wotreplay;
 
 packet_t::packet_t(const slice_t &data) {
     this->set_data(data);

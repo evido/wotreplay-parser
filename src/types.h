@@ -33,7 +33,7 @@
 
 /** @file types.h */
 
-namespace wot {
+namespace wotreplay {
     /**
      * @typedef typedef std::vector<uint8_t> wot::buffer_t
      * @brief Definition of buffer_t.

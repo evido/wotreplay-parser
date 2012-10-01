@@ -25,8 +25,8 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef wotreplay_parser_replay_file_h
-#define wotreplay_parser_replay_file_h
+#ifndef wotreplay_parser_parser_h
+#define wotreplay_parser_parser_h
 
 #include <iostream>
 #include <vector>
@@ -35,7 +35,7 @@
 #include "types.h"
 #include "packet.h"
 
-namespace wot {
+namespace wotreplay {
     /** game_info describes a minimal number of properties from the replay file. */
     struct game_info {
         /** The name of the map. */
@@ -52,19 +52,19 @@ namespace wot {
         std::string mini_map;
     };
 
-    /** replay_file is a class responsible for parsing a World of Tanks replay file.  */
-    class replay_file {
+    /** wotreplay::parser is a class responsible for parsing a World of Tanks replay file.  */
+    class parser {
     public:
         /** 
          * Default constructor for creating an empty replay_file 
          */
-        replay_file() = default;
+        parser() = default;
         /**
          * Constructor for creating a replay_file from a valid std::inputstream.
          * The inputstream will be consumed completely after returning from this method.
          * @param is The inputstream containing the contest of a wot replay file.
          */
-        replay_file(std::istream &is);
+        parser(std::istream &is);
         /** 
          * Returns the version string as stored in the replay file.
          * @return The version string as stored in the replay file.
@@ -199,7 +199,7 @@ namespace wot {
     };
 
     template <typename iterator>
-    packet_t replay_file::read_packet(iterator begin, iterator end) {
+    packet_t parser::read_packet(iterator begin, iterator end) {
         return packet_t(boost::make_iterator_range(begin, end));
     }
 }

@@ -26,7 +26,7 @@
  */
 
 #include "json/json.h"
-#include "replay_file.h"
+#include "parser.h"
 
 #include <boost/lexical_cast.hpp>
 #include <fstream>
@@ -38,7 +38,7 @@
 #include <type_traits>
 #include <zlib.h>
 
-using namespace wot;
+using namespace wotreplay;
 using namespace std;
 
 #if DEBUG_REPLAY_FILE
@@ -58,16 +58,16 @@ static void debug_stream_content(const string &file_name, T begin, T end) {
 #endif
 
 
-const buffer_t &replay_file::get_game_begin() const {
+const buffer_t &parser::get_game_begin() const {
     return game_begin;
 }
 
-const buffer_t &replay_file::get_game_end() const {
+const buffer_t &parser::get_game_end() const {
     return game_end;
 }
 
 
-const buffer_t &replay_file::get_replay() const {
+const buffer_t &parser::get_replay() const {
     return replay;
 }
 
@@ -84,26 +84,26 @@ static void read(istream& is, buffer_t &buffer) {
     is.read(reinterpret_cast<char*>(&buffer[0]), size);
 }
 
-replay_file::replay_file(std::istream &is) {
+parser::parser(std::istream &is) {
     // fully read file into buffer
     buffer_t buffer;
     read(is, buffer);
     parse(buffer);
 }
 
-const std::string &replay_file::get_version() const {
+const std::string &parser::get_version() const {
     return version;
 }
 
 
-bool replay_file::is_legacy_replay(const buffer_t &buffer) const {
+bool parser::is_legacy_replay(const buffer_t &buffer) const {
     return buffer.size() >= 10 && buffer[8] == 0x78 && buffer[9] == 0xDA;
 }
 
-bool replay_file::is_legacy() const {
+bool parser::is_legacy() const {
     return legacy;
 }
-void replay_file::parse(buffer_t &buffer) {
+void parser::parse(buffer_t &buffer) {
     // determine number of data blocks
     std::vector<slice_t> data_blocks;
     this->legacy = is_legacy_replay(buffer);
@@ -163,7 +163,7 @@ void replay_file::parse(buffer_t &buffer) {
     }
 }
 
-void replay_file::decrypt_replay(buffer_t &replay_data, const unsigned char *key_data) {
+void parser::decrypt_replay(buffer_t &replay_data, const unsigned char *key_data) {
     debug_stream_content("out/replay-ec.dat", replay_data.begin(), replay_data.end());
     
     BF_KEY key = {0};
@@ -192,7 +192,7 @@ void replay_file::decrypt_replay(buffer_t &replay_data, const unsigned char *key
     }
 }
 
-uint32_t replay_file::get_data_block_count(const buffer_t &buffer) const {
+uint32_t parser::get_data_block_count(const buffer_t &buffer) const {
     // number of data blocks is contained in an 'unsigned long' (4 bytes) 
     // with an offset of 4 bytes from the beginning of te file
     const size_t db_cnt_offset = 4;
@@ -200,7 +200,7 @@ uint32_t replay_file::get_data_block_count(const buffer_t &buffer) const {
     return *db_cnt;
 } 
 
-void replay_file::extract_replay(buffer_t &compressed_replay, buffer_t &replay) {
+void parser::extract_replay(buffer_t &compressed_replay, buffer_t &replay) {
     debug_stream_content("out/replay-c.dat", compressed_replay.begin(), compressed_replay.end());
 
     z_stream strm = { 
@@ -249,7 +249,7 @@ void replay_file::extract_replay(buffer_t &compressed_replay, buffer_t &replay) 
     }
 }
 
-void replay_file::get_data_blocks(buffer_t &buffer, vector<slice_t> &data_blocks) const {
+void parser::get_data_blocks(buffer_t &buffer, vector<slice_t> &data_blocks) const {
     // determine number of data blocks
     uint32_t nr_data_blocks = get_data_block_count(buffer);
     
@@ -275,44 +275,38 @@ void replay_file::get_data_blocks(buffer_t &buffer, vector<slice_t> &data_blocks
     data_blocks.emplace_back(last_data_block.end() + 8, buffer.end());
 }
 
-size_t replay_file::read_packets() {
+static std::map<uint8_t, int> packet_lengths = {
+    {0x03, 24},
+    {0x04, 16},
+    {0x05, 54},
+    {0x07, 24},
+    {0x08, 24},
+    {0x0A, 61},
+    {0x0B, 30},
+    {0x0E, 25}, // changed {0x0E, 4}
+    {0x0C,  3},
+    {0x11, 12},
+    {0x12, 16},
+    {0x13, 16},
+    {0x14,  4},
+    {0x15, 44},
+    {0x16, 52},
+    {0x17, 16},
+    {0x18, 16},
+    {0x19, 16},
+    {0x1B, 16},
+    {0x1C, 20},
+    {0x1D, 21},
+    {0x1A, 16},
+    {0x1E, 16},  // modified for 0.7.2 {0x1e, 160},
+    {0x20, 21},  // modified for 0.8.0 {0x20, 4}
+    {0x31,  4},  // indication of restart of the replay, probably not a part of the replay but necessary because of wrong detection of the start of the replay
+    {0x0D, 22},
+    {0x00, 22}
+};
+
+size_t parser::read_packets() {
     buffer_t &buffer = this->replay;
-    
-    static std::map<uint8_t, int> packet_lengths = {
-        {0x03, 24},
-        {0x04, 16},
-        {0x05, 54},
-        {0x07, 24},
-        {0x08, 24},
-        {0x0A, 61},
-        {0x0B, 30},
-        // changed {0x0E, 4},
-        {0x0e, 25},
-        {0x0C, 3},
-        {0x11, 12},
-        {0x12, 16},
-        {0x13, 16},
-        {0x14, 4},
-        {0x15, 44},
-        {0x16, 52},
-        {0x17, 16},
-        {0x18, 16},
-        {0x19, 16},
-        {0x1B, 16},
-        {0x1C, 20},
-        {0x1D, 21},
-        // modified for 0.7.2
-        // {0x1e, 160},
-        {0x1a, 16},
-        {0x1e, 16},
-        // modified for 0.8.0 from 4
-        {0x20, 21},
-        // {0x20, 4}
-        {0x31, 4},
-        // restarting replay ?
-        {0x0D, 22},
-        {0x00, 22}
-    };
 
     if (is_legacy()) {
         packet_lengths[0x16] = 44;
@@ -403,7 +397,7 @@ size_t replay_file::read_packets() {
 
         if (ix + packet_length < buffer.size()) {
             auto packet_end = packet_begin + packet_length;
-            packets.emplace_back(replay_file::read_packet(packet_begin, packet_end));
+            packets.emplace_back(parser::read_packet(packet_begin, packet_end));
         } else {
 #if DEBUG_REPLAY_FILE
             std::cerr << "Packet went out of replay file bounds.\n";
@@ -418,11 +412,11 @@ size_t replay_file::read_packets() {
 }
 
 
-const std::vector<packet_t> &replay_file::get_packets() const {
+const std::vector<packet_t> &parser::get_packets() const {
     return packets;
 }
 
-bool replay_file::find_property(uint32_t clock, uint32_t player_id, property property, packet_t &out) const
+bool parser::find_property(uint32_t clock, uint32_t player_id, property property, packet_t &out) const
 {
     // inline function function for using with stl to finding the range with the same clock
     auto has_same_clock = [&](const packet_t &target) -> bool  {
@@ -479,7 +473,7 @@ bool replay_file::find_property(uint32_t clock, uint32_t player_id, property pro
     return found;
 }
 
-bool replay_file::find_property(size_t packet_id, property property, packet_t &out) const
+bool parser::find_property(size_t packet_id, property property, packet_t &out) const
 {
     auto packet = packets.begin() + packet_id;
     // method is useless if the packet does not have a clock or player_id
@@ -538,7 +532,7 @@ bool replay_file::find_property(size_t packet_id, property property, packet_t &o
     return found;
 }
 
-const game_info &replay_file::get_game_info() const {
+const game_info &parser::get_game_info() const {
     return game_info;
 }
 
@@ -578,7 +572,7 @@ static std::map<std::string, std::array<std::array<int, 2>,2>> map_boundaries = 
     { "51_asia",            {-500, 500, -500, 500} }
 };
 
-void replay_file::read_game_info() {
+void parser::read_game_info() {
     // get game details
     Json::Value root;
     Json::Reader reader;

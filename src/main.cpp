@@ -25,7 +25,7 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "replay_file.h"
+#include "parser.h"
 #include <png.h>
 #include <iostream>
 #include <fstream>
@@ -58,7 +58,7 @@
 #include <atomic>
 
 using namespace std;
-using namespace wot;
+using namespace wotreplay;
 using namespace tbb;
 using namespace boost::filesystem;
 using namespace boost::accumulators;
@@ -103,7 +103,7 @@ void display_packet_clock(const packet_t &packet) {
 void create_image(
                   unsigned char **image,
                   int width, int height,
-                  const replay_file &replay,
+                  const parser &replay,
                   const game_info &game_info,
                   bool alpha
                   ) {
@@ -186,7 +186,7 @@ void create_image(
     }
 }
 
-void write_parts_to_file(const replay_file &replay) {
+void write_parts_to_file(const parser &replay) {
     ofstream game_begin("out/game_begin.txt", ios::binary | ios::ate);
     std::copy(replay.get_game_begin().begin(),
               replay.get_game_begin().end(),
@@ -334,8 +334,8 @@ struct process_result {
     bool error;
     /** The path for the replay file to proces. */
     std::string path;
-    /** An instance of the replay_file for the member path. */
-    replay_file *replay;
+    /** An instance of the parser for the member path. */
+    parser *replay;
     /** images for both teams containing the number of times this position was filled by a team member. */
     std::array<image_t<float>, 2> position_image;
     /** images for both teams containing the number of team member was killed on a specific position. */
@@ -407,11 +407,11 @@ void process_replay_directory(const path& directory) {
             return result;
         }
         try {
-            std::cout << result->path << "\n";
+            // std::cout << result->path << "\n";
             ifstream is(result->path, std::ios::binary);
-            result->replay = new replay_file(is);
+            result->replay = new parser(is);
             is.close();
-            std::cout << result->replay->get_version() << "\n";
+            // std::cout << result->replay->get_version() << "\n";
         } catch (std::exception &e) {
             result->error = true;
             std::cerr << "Error!" << std::endl;
@@ -422,7 +422,7 @@ void process_replay_directory(const path& directory) {
 
     auto f_draw_position = [](const packet_t &packet, process_result &result, std::array<image_t<float>, 2> &images) {
         uint32_t player_id = packet.player_id();
-        const replay_file &replay = *result.replay;
+        const parser &replay = *result.replay;
         const game_info &game_info = replay.get_game_info();
 
         int team_id = get_team(game_info, player_id);
@@ -463,7 +463,7 @@ void process_replay_directory(const path& directory) {
         if (result->error) return result;
 
         std::fill(result->position_image[0].data(), result->position_image[0].data() + 500*500, 0.f);
-        const replay_file &replay = *result->replay;
+        const parser &replay = *result->replay;
         std::set<uint32_t> dead_players;
 
         for (const packet_t &packet : replay.get_packets()) {
@@ -497,7 +497,7 @@ void process_replay_directory(const path& directory) {
             row_pointers[i] = base.origin() + i*shape[1]*shape[2];
         }
         int width, height, channels;
-        const replay_file &replay = *result->replay;
+        const parser &replay = *result->replay;
         read_png2(replay.get_game_info().mini_map, row_pointers.get(), width, height, channels);
         bool alpha = channels == 4;
         for (int i = 0; i < 500; ++i) {
@@ -535,7 +535,7 @@ void process_replay_directory(const path& directory) {
     auto f_merge_results = [&](process_result *result) -> process_result* {
         if (result->error || result->replay->get_game_end().size() == 0 ) return result;
 
-        const replay_file &replay = *result->replay;
+        const parser &replay = *result->replay;
         const game_info &game_info = replay.get_game_info();
 
         auto key = std::make_tuple(game_info.map_name, game_info.game_mode);
@@ -566,12 +566,12 @@ void process_replay_directory(const path& directory) {
         delete result;
     };
 
-    tbb::parallel_pipeline(1,
+    tbb::parallel_pipeline(10,
                            tbb::make_filter<void, process_result*>(tbb::filter::serial_in_order, f_generate_paths) &
                            tbb::make_filter<process_result*, process_result*>(tbb::filter::parallel, f_create_replays) &
-//                           tbb::make_filter<process_result*, process_result*>(tbb::filter::parallel, f_process_replays) &
+                           tbb::make_filter<process_result*, process_result*>(tbb::filter::parallel, f_process_replays) &
 //                           tbb::make_filter<process_result*, process_result*>(tbb::filter::parallel, f_create_image) &
-//                           tbb::make_filter<process_result*, process_result*>(tbb::filter::serial_out_of_order, f_merge_results) &
+                           tbb::make_filter<process_result*, process_result*>(tbb::filter::serial_out_of_order, f_merge_results) &
                            tbb::make_filter<process_result*, void>(tbb::filter::parallel, f_clean_up));
 
 
@@ -660,7 +660,7 @@ void process_replay_directory(const path& directory) {
 
         // process deaths
         read_mini_map(map_name, game_mode, base);
-        draw_image(base, image[2], image[3], 0.f, 1.f);
+        draw_image(base, image[2], image[3], .33, .66);
         std::stringstream death_image;
         death_image << "out/deaths/" << map_name << "_" << game_mode << ".png";
         write_image(death_image.str(), base);
@@ -683,16 +683,18 @@ auto get_bounds(const std::vector<float> &values) -> std::tuple<float, float> {
 int main(int argc, const char * argv[]) {
     chdir("/Users/jantemmerman/Development/wotreplay-parser/data");
     
-    process_replay_directory("replays/8.0"); std::exit(1);
+    // process_replay_directory("replays"); std::exit(1);
     
     string file_names[] = {
+        "replays/8.0/20120929_1204_ussr-IS-3_28_desert.wotreplay",
+        "replays/old/20120317_2037_ussr-KV-3_lakeville.wotreplay",
         "replays/20120610_1507_germany-E-75_caucasus.wotreplay",
         "replays/20120408_2137_ussr-KV-3_ruinberg.wotreplay",
         "replays/20120407_1322_ussr-KV_fjord.wotreplay",
         "replays/20120407_1046_ussr-KV-3_himmelsdorf.wotreplay",
         "replays/20120405_2122_germany-PzVIB_Tiger_II_redshire.wotreplay",
         "replays/20120405_2112_germany-PzVIB_Tiger_II_monastery.wotreplay",
-         "replays/20120405_2204_ussr-KV_caucasus.wotreplay",
+        "replays/20120405_2204_ussr-KV_caucasus.wotreplay",
         "replays/20120707_2059_germany-E-75_himmelsdorf.wotreplay",
         "replays/20120815_0309_germany-E-75_02_malinovka.wotreplay",
         "replays/8.0/20120906_2352_germany-Panther_II_02_malinovka.wotreplay",
@@ -703,11 +705,11 @@ int main(int argc, const char * argv[]) {
         "replays/20120826_1729_france-AMX_13_90_04_himmelsdorf.wotreplay",
         "replays/20120920_2130_france-AMX_13_90_14_siegfried_line.wotreplay",
         "replays/20120921_0042_ussr-IS-3_02_malinovka.wotreplay",
-       "replays/old/20120319_2306_ussr-KV-3_malinovka.wotreplay",
+        "replays/old/20120319_2306_ussr-KV-3_malinovka.wotreplay",
         "replays/old/20120318_0044_germany-PzVIB_Tiger_II_himmelsdorf.wotreplay",
         "replays/old/20120317_2037_ussr-KV-3_lakeville.wotreplay",
         "replays/8.0/20120929_1724_ussr-IS-3_17_munchen.wotreplay",
-        "replays/8.0/20120929_1204_ussr-IS-3_28_desert.wotreplay"
+        
     };
 
     auto file_name = file_names[0];
@@ -718,7 +720,7 @@ int main(int argc, const char * argv[]) {
         std::exit(-1);
     }
     
-    replay_file replay(is);
+    parser replay(is);
     is.close();
     display_packet_summary(replay.get_packets());
     write_parts_to_file(replay);

@@ -36,7 +36,7 @@
 
 /** @file packet.h */
 
-namespace wot {
+namespace wotreplay {
     /**
      * @enum wot::property
      * @brief A list of detectable properties in packets of a wot:replay_file.
