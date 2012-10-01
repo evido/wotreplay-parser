@@ -619,7 +619,7 @@ int main(int argc, const char * argv[]) {
         
     };
 
-    auto file_name = file_names[0];
+    auto file_name = file_names[2];
     ifstream is(file_name, std::ios::binary);
 
     if (!is) {
@@ -636,18 +636,6 @@ int main(int argc, const char * argv[]) {
     write_parts_to_file(replay);
     show_map_boundaries(game_info, replay.get_packets());
     write_parts_to_file(replay);
-
-    for (const packet_t &packet : replay.get_packets()) {
-        // if (packet.type() == 0x08) {
-            unsigned char target[] = { 0xdd, 0xbd, 0x3c, 0x05};
-            unsigned char killer[] = {0xe8, 0xbd, 0x3c, 0x05 };
-            const auto &data = packet.get_data();
-            if (std::search(data.begin(), data.end(), target, target + 4) != data.end()
-                && std::search(data.begin(), data.end(), killer, killer + 4) !=  data.end()) {
-            display_packet(packet);
-            }
-        // }
-    }
 
     // create image
     boost::multi_array<uint8_t, 3> image;
