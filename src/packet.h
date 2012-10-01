@@ -125,7 +125,8 @@ namespace wotreplay {
     }
 
     /**
-     * Prints the bytes of a packet.
+     * @fn void display_packet(const packet_t &packet)
+     * @brief Prints the bytes of a packet.
      * @param packet The packet to print out.
      */
     void display_packet(const packet_t &packet);

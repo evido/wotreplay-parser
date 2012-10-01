@@ -78,6 +78,15 @@ typedef accumulator_set<double, stats<tag::tail_quantile<boost::accumulators::le
 
 
 
+/**
+ * @fn std::tuple<float, float> get_2d_coord(const std::tuple<float, float, float> &position, const game_info &game_info, int width, int height)
+ * @brief Get 2D Coordinates from a WOT position scaled to given width and height.
+ * @param position The position to convert to a 2d coordinate
+ * @param game_info game_info object containing the boundaries of the map
+ * @param width target map width to scale the coordinates too
+ * @param height target map height to scale the coordinates too
+ * @return The scaled 2d coordinates
+ */
 std::tuple<float, float> get_2d_coord(const std::tuple<float, float, float> &position, const game_info &game_info, int width, int height) {
     float x,y,z, min_x, max_x, min_y, max_y;
     std::tie(x,z,y) = position;
@@ -88,66 +97,81 @@ std::tuple<float, float> get_2d_coord(const std::tuple<float, float, float> &pos
     return std::make_tuple(x,y);
 }
 
-void create_image(
-                  unsigned char **image,
-                  int width, int height,
-                  const parser &replay,
-                  const game_info &game_info,
-                  bool alpha
-                  ) {
+/**
+ * @fn int get_team(const game_info &game_info, uint32_t player_id)
+ * @brief Determine team for a player.
+ * @param player_id The player_id for which to determine the team.
+ * @param game_info The game info containing the seperate teams.
+ * @return The team-id for the given player-id.
+ */
+int get_team(const game_info &game_info, uint32_t player_id) {
+    const auto &teams = game_info.teams;
+    auto it = std::find_if(teams.begin(), teams.end(), [&](const std::set<int> &team) {
+        return team.find(player_id) != team.end();
+    });
+    return it == teams.end() ? -1 : (static_cast<int>(it - teams.begin()));
+}
+
+/**
+ * @fn void create_image(boost::multi_array<uint8_t, 3> &image, const parser &replay)
+ * @brief Draw an a 500x500 image (with alpha channel) the positions of the tanks, and the death positions.
+ * @param image The target image to draw on.
+ * @param replay The replay with the information to draw
+ */
+void create_image(boost::multi_array<uint8_t, 3> &image, const parser &replay) {
     const std::vector<packet_t> &packets = replay.get_packets();
-    for (auto it = packets.begin(); it != packets.end(); ++it) {
-        const packet_t &packet = *it;
+    const game_info &game_info = replay.get_game_info();
+
+    auto shape = image.shape();
+    int width = static_cast<int>(shape[1]);
+    int height = static_cast<int>(shape[0]);
+
+    for (const packet_t &packet : packets) {
+
         if (packet.has_property(property::position)) {
-                int player_id = (*(const unsigned*) &packet.get_data()[9]);
-                auto position = packet.position();
-                int x,y;
-                auto teams = game_info.teams;
-                std::tie(x,y) = get_2d_coord(position, game_info, width, height);
-                x *= alpha ? 4 : 3;
+            uint32_t player_id = packet.player_id();
 
-                if (alpha) image[y][x+3] = 0xff;
+            float f_x,f_y;
+            auto position = packet.position();
+            std::tie(f_x,f_y) = get_2d_coord(position, game_info, width, height);
+            int x = std::round(f_x);
+            int y = std::round(f_y);
 
-                if (packet.player_id() == game_info.recorder_id) {
-                    image[y][x] = image[y][x+1] = 0x00;
-                    image[y][x + 2] = 0xff;
-                    continue;
-                }
+            if (player_id == game_info.recorder_id) {
+                image[y][x][2]= 0xff;
+                image[y][x][1] = image[y][x][0] = 0x00;
+                image[y][x][3] = 0xff;
+                continue;
+            }
 
-                int team_id = -1;
-                for (auto it = teams.begin(); it != teams.end(); ++it) {
-                    auto pos = std::find(it->begin(), it->end(), player_id);
-                    if (pos != it->end()) {
-                        team_id = static_cast<int>(it - teams.begin());
-                        break;
-                    }
-                }
+            int team_id = get_team(game_info, player_id);
+            if (team_id < 0) continue;
 
-                if (team_id == -1) {
-                    continue;
-                }
-        
+            
+            if (__builtin_expect(f_x >= 0 && f_y >= 0 && f_x <= (width - 1) && f_y <= (height - 1), 1)) {
                 switch (team_id) {
                     case 0:
-                        image[y][x] = image[y][x+2] = 0x00;
-                        image[y][x + 1] = 0xff;
+                        image[y][x][0] = image[y][x][2] = 0x00;
+                        image[y][x][1] = 0xff;
+                        image[y][x][3] = 0xff;
                         break;
                     case 1:
-                        image[y][x]= 0xff;
-                        image[y][x+1] = image[y][x+2] = 0x00;
+                        image[y][x][0]= 0xff;
+                        image[y][x][1] = image[y][x][2] = 0x00;
+                        image[y][x][3] = 0xff;
                         break;
-                }              
+                }
+            }
         }
 
         if (packet.has_property(property::tank_destroyed)) {
             uint32_t target, killer;
             std::tie(target, killer) = packet.tank_destroyed();
             packet_t position_packet;
-
             bool found = replay.find_property(packet.clock(), target, property::position, position_packet);
             if (found) {
-                std::tuple<float, float, float> position = position_packet.position();
-                int offsets[][2] = {
+                auto position = position_packet.position();
+                static int offsets[][2] = {
                     {-1, -1},
                     {-1,  0},
                     {-1,  1},
@@ -158,22 +182,19 @@ void create_image(
                     { 0, -1},
                     { 0,  0}
                 };
-
                 for (auto offset : offsets) {
-                    int x, y;
-                    std::tie(x,y) = get_2d_coord(position, game_info, width, height);
-                    x += offset[0];
-                    y += offset[1];
-                    x *= alpha ? 4 : 3;
-                    if (alpha) image[y][x+3] = 0xff;
-                    image[y][x] = image[y][x+1] = 0xff;
-                    image[y][x + 2] = 0x00;
+                    float f_x, f_y;
+                    std::tie(f_x,f_y) = get_2d_coord(position, game_info, width, height);
+                    int x = std::round(f_x) + offset[0];
+                    int y = std::round(f_y) + offset[1];
+                    image[y][x][3] = 0xff;
+                    image[y][x][0] = image[y][x][1] = 0xFF;
+                    image[y][x][2] = 0x00;
                 }
             }
         }
     }
 }
-
 
 
 bool write_png(const std::string &out, png_bytepp image, size_t width, size_t height, bool alpha) {
@@ -202,35 +223,7 @@ bool write_png(const std::string &out, png_bytepp image, size_t width, size_t he
     return true;
 }
 
-void read_png(const std::string &in, png_bytepp &image, int &width, int &height, int &channels) {
-    FILE *fp = fopen(in.c_str(), "rb");
-    png_structp png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
-    png_infop info_ptr = png_create_info_struct(png_ptr);
-    png_infop end_info = png_create_info_struct(png_ptr);
-
-    if (setjmp(png_jmpbuf(png_ptr))) {
-        png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
-        fclose(fp);
-        return;
-    }
-
-    png_init_io(png_ptr, fp);
-    png_read_png(png_ptr, info_ptr, PNG_TRANSFORM_IDENTITY, nullptr);
-    png_bytepp row_pointers = png_get_rows(png_ptr, info_ptr);
-    height = png_get_image_height(png_ptr, info_ptr);
-    width = png_get_image_width(png_ptr, info_ptr);
-    channels = png_get_channels(png_ptr, info_ptr);
-    image = new png_bytep[height];
-    for (int i = 0; i < height; ++i) {
-        image[i] = new png_byte[width*channels];
-        std::copy_n(row_pointers[i], width*channels, image[i]);
-    }
-    png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
-    fclose(fp);
-    return;
-}
-
-void read_png2(const std::string &in, png_bytepp image, int &width, int &height, int &channels) {
+void read_png(const std::string &in, png_bytepp image, int &width, int &height, int &channels) {
     FILE *fp = fopen(in.c_str(), "rb");
     png_structp png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
     png_infop info_ptr = png_create_info_struct(png_ptr);
@@ -305,13 +298,31 @@ struct process_result {
     }
 };
 
-int get_team(const game_info &game_info, uint32_t player_id) {
-    const auto &teams = game_info.teams;
-    auto it = std::find_if(teams.begin(), teams.end(), [&](const std::set<int> &team) {
-        return team.find(player_id) != team.end();
-    });
-    return it == teams.end() ? -1 : (static_cast<int>(it - teams.begin()));
-}
+
+
+void get_row_pointers(multi_array<uint8_t, 3> &image, std::vector<png_bytep> &row_pointers) {
+    auto shape = image.shape();
+    size_t rows = shape[0], column_bytes = shape[1]*shape[2];
+    for (int i = 0; i < rows; ++i) {
+        row_pointers.push_back(image.data() + i*column_bytes);
+    }
+};
+
+void write_image(const std::string &file_name, boost::multi_array<uint8_t, 3> &image) {
+    auto shape = image.shape();
+    std::vector<png_bytep> row_pointers;
+    get_row_pointers(image, row_pointers);
+    write_png(file_name, &row_pointers[0], shape[0], shape[1], shape[2] == 4);
+};
+
+void read_mini_map(const std::string &map_name, const std::string &game_mode, boost::multi_array<uint8_t, 3> &base) {
+    base.resize(boost::extents[500][500][4]);
+    std::vector<png_bytep> row_pointers;
+    get_row_pointers(base, row_pointers);
+    int width, height, channels;
+    std::string mini_map = "maps/no-border/" + map_name + "_" + game_mode + ".png";
+    read_png(mini_map, &row_pointers[0], width, height, channels);
+};
 
 void process_replay_directory(const path& directory) {
     directory_iterator it(directory);
@@ -359,24 +370,14 @@ void process_replay_directory(const path& directory) {
         if (team_id < 0) return;
 
         auto shape = result.position_image[0].shape();
-        int width = static_cast<int>(shape[1]), height = static_cast<int>(shape[0]);
+        int width = static_cast<int>(shape[1]);
+        int height = static_cast<int>(shape[0]);
         
         float x,y;
         auto position = packet.position();
         std::tie(x,y) = get_2d_coord(position, game_info, width, height);
         
-        if (__builtin_expect(x < 0 || y < 0 || x >= (width - 1) || y >= (height - 1), 0)) {
-//            if (!result.error) {
-//#if DEBUG
-//            std::cerr
-//                << "WARNING: incorrect limits for " << game_info.map_name
-//                << " x: " << x << " y: " << y
-//                << " (" << std::get<0>(position) << "/" << std::get<2>(position) << ")"
-//                << std::endl;
-//#endif
-//            result.error = true;
-//            }
-        } else {
+        if (__builtin_expect(x >= 0 && y >= 0 && x <= (width - 1) && y <= (height - 1), 1)) {
             float px = x - floor(x), py = y - floor(y);
             images[team_id][floor(y)][floor(x)] += px*py;
             images[team_id][ceil(y)][floor(x)] += px*(1-py);
@@ -428,7 +429,7 @@ void process_replay_directory(const path& directory) {
         }
         int width, height, channels;
         const parser &replay = *result->replay;
-        read_png2(replay.get_game_info().mini_map, row_pointers.get(), width, height, channels);
+        read_png(replay.get_game_info().mini_map, row_pointers.get(), width, height, channels);
         bool alpha = channels == 4;
         for (int i = 0; i < 500; ++i) {
             for (int j = 0; j < 500; ++j) {
@@ -550,30 +551,6 @@ void process_replay_directory(const path& directory) {
         }
     };
 
-    auto get_row_pointers = [](multi_array<uint8_t, 3> &image, std::vector<png_bytep> &row_pointers) {
-        auto shape = image.shape();
-        size_t rows = shape[0], column_bytes = shape[1]*shape[2];
-        for (int i = 0; i < rows; ++i) {
-            row_pointers.push_back(image.data() + i*column_bytes);
-        }
-    };
-
-    auto read_mini_map = [&] (const std::string &map_name, const std::string &game_mode, boost::multi_array<uint8_t, 3> &base) {
-        base.resize(boost::extents[500][500][4]);
-        std::vector<png_bytep> row_pointers;
-        get_row_pointers(base, row_pointers);
-        int width, height, channels;
-        std::string mini_map = "maps/no-border/" + map_name + "_" + game_mode + ".png";
-        read_png2(mini_map, &row_pointers[0], width, height, channels);
-    };
-
-    auto write_image = [&](const std::string &file_name, boost::multi_array<uint8_t, 3> &image) {
-        auto shape = image.shape();
-        std::vector<png_bytep> row_pointers;
-        get_row_pointers(image, row_pointers);
-        write_png(file_name, &row_pointers[0], shape[0], shape[1], shape[2] == 4);
-    };
-
     typedef std::map<std::tuple<std::string, std::string>, std::array<image_t<float>, 4>>::value_type images_entry;
     tbb::parallel_do(images.begin(), images.end(), [&](const images_entry &entry){
         const std::array<image_t<float>,4> &image = entry.second;
@@ -652,20 +629,30 @@ int main(int argc, const char * argv[]) {
     
     parser replay(is);
     is.close();
+
+    // display some info about the replay
+    const auto &game_info = replay.get_game_info();
     show_packet_summary(replay.get_packets());
     write_parts_to_file(replay);
-    // std::exit(1);
-    
-    const auto &game_info = replay.get_game_info();
     show_map_boundaries(game_info, replay.get_packets());
-    
     write_parts_to_file(replay);
-    replay.get_version();
-    png_bytepp row_pointers;
-    int width, height, channels;
-    read_png(game_info.mini_map, row_pointers, width, height, channels);
-    bool alpha = channels == 4;
-    create_image(row_pointers, width, height, replay, game_info, alpha);
-    write_png("out/replay.png", row_pointers, width, height, alpha);
-       return EXIT_SUCCESS;
+
+    for (const packet_t &packet : replay.get_packets()) {
+        // if (packet.type() == 0x08) {
+            unsigned char target[] = { 0xdd, 0xbd, 0x3c, 0x05};
+            unsigned char killer[] = {0xe8, 0xbd, 0x3c, 0x05 };
+            const auto &data = packet.get_data();
+            if (std::search(data.begin(), data.end(), target, target + 4) != data.end()
+                && std::search(data.begin(), data.end(), killer, killer + 4) !=  data.end()) {
+            display_packet(packet);
+            }
+        // }
+    }
+
+    // create image
+    boost::multi_array<uint8_t, 3> image;
+    read_mini_map(game_info.map_name, game_info.game_mode, image);
+    create_image(image, replay);
+    write_image("out/replay.png", image);
+    return EXIT_SUCCESS;
 }

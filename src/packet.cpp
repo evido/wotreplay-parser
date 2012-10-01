@@ -89,7 +89,8 @@ void packet_t::set_data(const slice_t &data) {
             break;
         }
         case 0x08: {
-            properties[property::tank_destroyed] = data[13] == 0x16 && data[17] == 0x12;
+            // 0x17 is for 0.8.0
+            properties[property::tank_destroyed] = (data[13] == 0x16 || data[13] == 0x17) && data[17] == 0x12;
             properties[property::clock] = true;
             properties[property::player_id] = true;
             properties[property::type] = true;
