@@ -28,9 +28,10 @@
 #ifndef wotreplay_parser_parser_h
 #define wotreplay_parser_parser_h
 
+#include <boost/filesystem.hpp>
 #include <iostream>
-#include <vector>
 #include <set>
+#include <vector>
 
 #include "types.h"
 #include "packet.h"
@@ -56,6 +57,14 @@ namespace wotreplay {
 
     /** wotreplay::parser is a class responsible for parsing a World of Tanks replay file.  */
     class parser {
+        /**
+         * @brief Validate the inner workings of the class parser
+         * Validate the inner workings of the class parser by:
+         * -# checking the number of unread bytes
+         * -# validating the parsed packets with the game metadata
+         * @param path The directory which contains the replays to validate the parser with
+         */
+        friend void validate_parser(const std::string &path);
     public:
         /** 
          * Default constructor for creating an empty replay_file 
@@ -65,6 +74,7 @@ namespace wotreplay {
          * Constructor for creating a replay_file from a valid std::inputstream.
          * The inputstream will be consumed completely after returning from this method.
          * @param is The inputstream containing the contest of a wot replay file.
+         * @param debug print diagnostic messages
          */
         parser(std::istream &is, bool debug = false);
         /** 
@@ -236,6 +246,14 @@ namespace wotreplay {
      * @param packets a list of all the packets in a replay
      */
     void show_map_boundaries(const game_info &game_info, const std::vector<packet_t> &packets);
+
+    void validate_parser(const std::string &path);
+
+    /**
+     * @brief Basic function to check if a path might be a replay file.
+     * @return @c true if the path is expected to be a valid replay file, @c false if not
+     */
+    bool is_replayfile(const boost::filesystem::path &p);
 }
 
 #endif

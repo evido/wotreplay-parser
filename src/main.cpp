@@ -197,6 +197,16 @@ void create_image(boost::multi_array<uint8_t, 3> &image, const parser &replay) {
 }
 
 
+/**
+ * @fn bool write_png(const std::string &out, png_bytepp image, size_t width, size_t height, bool alpha)
+ * @brief Write out an image to path out with given width and height.
+ * @param out The path of the new image.
+ * @param image The contents of the image.
+ * @param width The width of the image.
+ * @param height The height of the image.
+ * @param alpha Indicates if the image has alpha values.
+ * @return @c if the image was written successfully, @c false is not
+ */
 bool write_png(const std::string &out, png_bytepp image, size_t width, size_t height, bool alpha) {
     FILE *fp = fopen(out.c_str(), "wb");
 
@@ -223,6 +233,15 @@ bool write_png(const std::string &out, png_bytepp image, size_t width, size_t he
     return true;
 }
 
+/**
+ * @fn void read_png(const std::string &in, png_bytepp image, int &width, int &height, int &channels)
+ * @brief Wrapper for libpng functions to read a png image.
+ * @param in the path of the image to read
+ * @param image output variable which will contain the contents of the image
+ * @param width the width of the image
+ * @param height the height of the image
+ * @param channels the number of channels in the image
+ */
 void read_png(const std::string &in, png_bytepp image, int &width, int &height, int &channels) {
     FILE *fp = fopen(in.c_str(), "rb");
     png_structp png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
@@ -297,8 +316,6 @@ struct process_result {
         delete replay;
     }
 };
-
-
 
 void get_row_pointers(multi_array<uint8_t, 3> &image, std::vector<png_bytep> &row_pointers) {
     auto shape = image.shape();
@@ -589,7 +606,8 @@ auto get_bounds(const std::vector<float> &values) -> std::tuple<float, float> {
 
 int main(int argc, const char * argv[]) {
     chdir("/Users/jantemmerman/Development/wotreplay-parser/data");
-    
+
+    validate_parser("replays"); std::exit(0);
     // process_replay_directory("replays"); std::exit(1);
     
     string file_names[] = {
@@ -636,6 +654,8 @@ int main(int argc, const char * argv[]) {
     write_parts_to_file(replay);
     show_map_boundaries(game_info, replay.get_packets());
     write_parts_to_file(replay);
+
+    wotreplay::validate_parser("abc");
 
     // create image
     boost::multi_array<uint8_t, 3> image;
