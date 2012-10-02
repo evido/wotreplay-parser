@@ -240,7 +240,7 @@ namespace wotreplay {
     void write_parts_to_file(const parser &replay);
 
     /**
-     * @fn void wotreplay::show_map_boundaries(const game_info &game_info, const std::vector<packet_t> &packets)
+     * @fn void wotreplay::show_map_boundaries(const game_info_t &game_info, const std::vector<packet_t> &packets)
      * Prints the position boundaries reached by any player in the map.
      * @param game_info game_info object containing the team information
      * @param packets a list of all the packets in a replay
