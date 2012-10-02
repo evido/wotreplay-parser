@@ -31,8 +31,10 @@
 #include <boost/lexical_cast.hpp>
 #include <fstream>
 #include <map>
+#include <memory>
 #include <openssl/blowfish.h>
 #include <ostream>
+#include <stdexcept>
 #include <sstream>
 #include <string>
 #include <type_traits>
