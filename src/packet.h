@@ -25,8 +25,8 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef wotreplay_parser_packet_h
-#define wotreplay_parser_packet_h
+#ifndef wotreplay_packet_h
+#define wotreplay_packet_h
 
 #include "types.h"
 

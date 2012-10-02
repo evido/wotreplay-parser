@@ -59,8 +59,6 @@
 
 #include <atomic>
 
-/** @file */
-
 using namespace std;
 using namespace wotreplay;
 using namespace tbb;
@@ -74,9 +72,6 @@ std::size_t c =  250000; // cache size
 
 typedef accumulator_set<double, stats<tag::tail_quantile<boost::accumulators::right>>> accumulator_t_right;
 typedef accumulator_set<double, stats<tag::tail_quantile<boost::accumulators::left>>> accumulator_t_left;
-
-
-
 
 /**
  * @fn std::tuple<float, float> get_2d_coord(const std::tuple<float, float, float> &position, const game_info &game_info, int width, int height)
@@ -262,11 +257,6 @@ void read_png(const std::string &in, png_bytepp image, int &width, int &height, 
     fclose(fp);
 }
 
-
-
-template <typename T>
-using image_t = boost::multi_array<T, 2>;
-
 /**
  * Collection of values used and filled in during the processing of the replay
  * file, an instance of this object is passed allong the pipeline.
@@ -279,25 +269,19 @@ struct process_result {
     /** An instance of the parser for the member path. */
     parser *replay;
     /** images for both teams containing the number of times this position was filled by a team member. */
-    std::array<image_t<float>, 2> position_image;
+    boost::multi_array<float, 3> position_image;
     /** images for both teams containing the number of team member was killed on a specific position. */
-    std::array<image_t<float>, 2> death_image;
+    boost::multi_array<float, 3> death_image;
     /** images for both teams containing the number of times as team member was hit. */
-    std::array<image_t<float>, 2> hit_image;
+    boost::multi_array<float, 3> hit_image;
     /**
      * Constructor for process_result, setting the path and the image sizes.
      */
     process_result(std::string path, int image_width, int image_height)
-        : path(path), position_image({
-            image_t<float>(boost::extents[image_width][image_height]),
-            image_t<float>(boost::extents[image_width][image_height])
-        }), death_image({
-            image_t<float>(boost::extents[image_width][image_height]),
-            image_t<float>(boost::extents[image_width][image_height])
-        }), hit_image({
-            image_t<float>(boost::extents[image_width][image_height]),
-            image_t<float>(boost::extents[image_width][image_height])
-        }), replay(nullptr), error(false)
+        : path(path), position_image(boost::extents[image_width][image_height][2])
+        , death_image(boost::extents[image_width][image_height][2])
+        , hit_image(boost::extents[image_width][image_height][2])
+        , replay(nullptr), error(false)
     {
         
     }
@@ -341,6 +325,55 @@ void read_mini_map(const std::string &map_name, const std::string &game_mode, bo
     read_png(mini_map, &row_pointers[0], width, height, channels);
 };
 
+std::tuple<float, float> get_bounds(const boost::multi_array<float, 2> &image, float l_quant,float r_quant)  {
+    accumulator_t_right r(tag::tail<boost::accumulators::right>::cache_size = c);
+    accumulator_t_left l(tag::tail<boost::accumulators::left>::cache_size = c);
+    auto shape = image.shape();
+    int size = static_cast<int>( shape[0]*shape[1] );
+    for (int i = 0; i < size; ++i) {
+        if (*(image.data() + i) > 0.f) {
+            r(*(image.data() + i));
+            l(*(image.data() + i));
+        }
+    }
+    auto lower_bound = quantile(l, quantile_probability = l_quant );
+    auto upper_bound = quantile(r, quantile_probability = r_quant );
+    return std::make_tuple(lower_bound, upper_bound);
+}
+
+float calculate_alpha(const std::tuple<float, float> &bounds, float value) {
+    float nominator = value - std::get<0>(bounds);
+    float denominator = std::get<1>(bounds) - std::get<0>(bounds);
+    return std::min(std::max( nominator /  denominator, 0.f), 1.f);
+}
+
+int mix(int v0, int v1, float a1, int v2, float a2) {
+    return (1-a2)*((1-a1)*v0 + a1*v1) + a2 * v2;
+}
+
+void draw_image(boost::multi_array<uint8_t, 3> &base,
+                const boost::multi_array<float, 2> &team1,
+                const boost::multi_array<float, 2> &team2,
+                float l_quant, float u_quant) {
+    std::array<std::tuple<float, float>, 2> bounds = {
+        get_bounds(team1, l_quant, u_quant),
+        get_bounds(team2, l_quant, u_quant)
+    };
+
+    auto shape = base.shape();
+    for (size_t i = 0; i < shape[0]; ++i) {
+        for (size_t j = 0; j < shape[1]; ++j) {
+            float a[2]  = {
+                calculate_alpha(bounds[0], team1[i][j]),
+                calculate_alpha(bounds[1], team2[i][j])
+            };
+            base[i][j][0] = mix(base[i][j][0], 0, a[0], 255, a[1]);
+            base[i][j][1] = mix(base[i][j][1], 255, a[0], 0, a[1]);
+            base[i][j][2] = mix(base[i][j][2], 0, a[0], 0, a[1]);
+        }
+    }
+};
+
 void process_replay_directory(const path& directory) {
     directory_iterator it(directory);
     // get out if no elements
@@ -378,7 +411,7 @@ void process_replay_directory(const path& directory) {
         return result;
     };
 
-    auto f_draw_position = [](const packet_t &packet, process_result &result, std::array<image_t<float>, 2> &images) {
+    auto f_draw_position = [](const packet_t &packet, process_result &result, boost::multi_array<float,3> &images) {
         uint32_t player_id = packet.player_id();
         const parser &replay = *result.replay;
         const game_info &game_info = replay.get_game_info();
@@ -410,7 +443,6 @@ void process_replay_directory(const path& directory) {
     auto f_process_replays = [&](process_result *result) -> process_result* {
         if (result->error) return result;
 
-        std::fill(result->position_image[0].data(), result->position_image[0].data() + 500*500, 0.f);
         const parser &replay = *result->replay;
         std::set<uint32_t> dead_players;
 
@@ -471,15 +503,15 @@ void process_replay_directory(const path& directory) {
     };
 
 
-    auto merge_image = [] (image_t<float> &left, image_t<float> &right) {
+    auto merge_image = [] (const boost::multi_array<float, 2> &left, const boost::multi_array<float, 2> &right) {
         return [&]( const blocked_range<size_t>& range )  {
             for (size_t i = range.begin(); i != range.end(); ++i) {
-                left.data()[i] += right.data()[i];
+                // left.data()[i] += right.data()[i];
             }
         };
     };
     
-    std::map<std::tuple<std::string, std::string>, std::array<image_t<float>, 4>> images;
+    std::map<std::tuple<std::string, std::string>, boost::multi_array<float,3>> images;
     auto f_merge_results = [&](process_result *result) -> process_result* {
         if (result->error || result->replay->get_game_end().size() == 0 ) return result;
 
@@ -488,20 +520,14 @@ void process_replay_directory(const path& directory) {
 
         auto key = std::make_tuple(game_info.map_name, game_info.game_mode);
         if (images.find(key) == images.end()) {
-            images.insert(std::make_pair(key,
-                std::array<image_t<float>,4>({
-                    image_t<float>(boost::extents[500][500]),
-                    image_t<float>(boost::extents[500][500]),
-                    image_t<float>(boost::extents[500][500]),
-                    image_t<float>(boost::extents[500][500])
-                })));
+            images.insert(std::make_pair(key,boost::extents[500][500][4]));
         }
 
-        std::array<image_t<float>,4> &image = images[key];
+        boost::multi_array<float,3> &image = images[key];
 
         auto shape = image[0].shape();
         auto size = shape[0]*shape[1];
-        
+
         parallel_for(blocked_range<size_t>(0, size), merge_image(image[0], result->position_image[0]), auto_partitioner());
         parallel_for(blocked_range<size_t>(0, size), merge_image(image[1], result->position_image[1]), auto_partitioner());
         parallel_for(blocked_range<size_t>(0, size), merge_image(image[2], result->death_image[0]), auto_partitioner());
@@ -522,55 +548,9 @@ void process_replay_directory(const path& directory) {
                            tbb::make_filter<process_result*, process_result*>(tbb::filter::serial_out_of_order, f_merge_results) &
                            tbb::make_filter<process_result*, void>(tbb::filter::parallel, f_clean_up));
 
-
-    auto get_bounds = [](const image_t<float> &image, float l_quant,float r_quant) -> std::tuple<float, float> {
-        accumulator_t_right r(tag::tail<boost::accumulators::right>::cache_size = c);
-        accumulator_t_left l(tag::tail<boost::accumulators::left>::cache_size = c);
-        auto shape = image.shape();
-        int size = static_cast<int>( shape[0]*shape[1] );
-        for (int i = 0; i < size; ++i) {
-            if (*(image.data() + i) > 0.f) {
-            r(*(image.data() + i));
-            l(*(image.data() + i));
-            }
-        }
-        auto lower_bound = quantile(l, quantile_probability = l_quant );
-        auto upper_bound = quantile(r, quantile_probability = r_quant );
-        return std::make_tuple(lower_bound, upper_bound);
-    };
-
-    auto calculate_alpha = [](const std::tuple<float, float> &bounds, float value) -> float {
-        return
-        std::min(std::max((value - std::get<0>(bounds)) / (std::get<1>(bounds) - std::get<0>(bounds)), 0.f), 1.f);
-    };
-
-    auto mix = [](int v0, int v1, float a1, int v2, float a2) {
-        return (1-a2)*((1-a1)*v0 + a1*v1) + a2 * v2;
-    };
-    
-    auto draw_image = [&](boost::multi_array<uint8_t, 3> &base, const image_t<float> &team1, const image_t<float> &team2, float l_quant, float u_quant) {
-        std::array<std::tuple<float, float>, 2> bounds = {
-            get_bounds(team1, l_quant, u_quant),
-            get_bounds(team2, l_quant, u_quant)
-        };
-
-        auto shape = base.shape();
-        for (size_t i = 0; i < shape[0]; ++i) {
-            for (size_t j = 0; j < shape[1]; ++j) {                
-                float a[2]  = {
-                    calculate_alpha(bounds[0], team1[i][j]),
-                    calculate_alpha(bounds[1], team2[i][j])
-                };
-                base[i][j][0] = mix(base[i][j][0], 0, a[0], 255, a[1]);
-                base[i][j][1] = mix(base[i][j][1], 255, a[0], 0, a[1]);
-                base[i][j][2] = mix(base[i][j][2], 0, a[0], 0, a[1]);
-            }
-        }
-    };
-
-    typedef std::map<std::tuple<std::string, std::string>, std::array<image_t<float>, 4>>::value_type images_entry;
+    typedef std::map<std::tuple<std::string, std::string>, boost::multi_array<float, 3>>::value_type images_entry;
     tbb::parallel_do(images.begin(), images.end(), [&](const images_entry &entry){
-        const std::array<image_t<float>,4> &image = entry.second;
+        const boost::multi_array<float, 3> &image = entry.second;
         std::string map_name, game_mode;
         std::tie(map_name, game_mode) = entry.first;
         boost::multi_array<uint8_t, 3> base;
@@ -607,10 +587,11 @@ auto get_bounds(const std::vector<float> &values) -> std::tuple<float, float> {
 int main(int argc, const char * argv[]) {
     chdir("/Users/jantemmerman/Development/wotreplay-parser/data");
 
-    validate_parser("replays"); std::exit(0);
+    // validate_parser("replays"); std::exit(0);
     // process_replay_directory("replays"); std::exit(1);
     
     string file_names[] = {
+        "replays/20120407_1046_ussr-KV-3_himmelsdorf.wotreplay",
         "replays/8.0/20120929_1204_ussr-IS-3_28_desert.wotreplay",
         "replays/old/20120317_2037_ussr-KV-3_lakeville.wotreplay",
         "replays/20120610_1507_germany-E-75_caucasus.wotreplay",
@@ -637,7 +618,7 @@ int main(int argc, const char * argv[]) {
         
     };
 
-    auto file_name = file_names[2];
+    auto file_name = file_names[0];
     ifstream is(file_name, std::ios::binary);
 
     if (!is) {
@@ -654,8 +635,6 @@ int main(int argc, const char * argv[]) {
     write_parts_to_file(replay);
     show_map_boundaries(game_info, replay.get_packets());
     write_parts_to_file(replay);
-
-    wotreplay::validate_parser("abc");
 
     // create image
     boost::multi_array<uint8_t, 3> image;

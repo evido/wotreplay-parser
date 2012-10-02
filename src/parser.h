@@ -25,8 +25,8 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef wotreplay_parser_parser_h
-#define wotreplay_parser_parser_h
+#ifndef wotreplay_parser_h
+#define wotreplay_parser_h
 
 #include <boost/filesystem.hpp>
 #include <iostream>
