@@ -31,8 +31,10 @@
 #include <boost/lexical_cast.hpp>
 #include <fstream>
 #include <map>
-#include <ostream>
+#include <memory>
 #include <openssl/blowfish.h>
+#include <ostream>
+#include <stdexcept>
 #include <sstream>
 #include <string>
 #include <type_traits>
@@ -40,6 +42,7 @@
 
 using namespace wotreplay;
 using namespace std;
+using namespace boost::filesystem;
 
 #if DEBUG_REPLAY_FILE
 
@@ -112,24 +115,22 @@ bool parser::is_legacy_replay(const buffer_t &buffer) const {
 bool parser::is_legacy() const {
     return legacy;
 }
+
 void parser::parse(buffer_t &buffer) {
     // determine number of data blocks
     std::vector<slice_t> data_blocks;
+    buffer_t raw_replay;
     this->legacy = is_legacy_replay(buffer);
 
     if (is_legacy()) {
-        buffer_t raw_replay;
-        
         raw_replay.resize(buffer.size() - 8);
         std::copy(buffer.begin() + 8, buffer.end(), raw_replay.begin());
 
-        extract_replay(raw_replay, replay);
-        read_packets();// no game info by default available
+        // no decryption necessary
+        // no game info available
     } else {
         get_data_blocks(buffer, data_blocks);
-    
-        buffer_t raw_replay;
-    
+
         switch(data_blocks.size()) {
             case 3:
                 game_end.resize(data_blocks[1].size());
@@ -162,14 +163,14 @@ void parser::parse(buffer_t &buffer) {
         const unsigned char key[] = { 0xDE, 0x72, 0xBE, 0xA0, 0xDE, 0x04, 0xBE, 0xB1, 0xDE, 0xFE, 0xBE, 0xEF, 0xDE, 0xAD, 0xBE, 0xEF};
         
         decrypt_replay(raw_replay, key);
-        extract_replay(raw_replay, replay);
-        read_packets();
         read_game_info();
-
-        // read version string
-        uint32_t version_string_sz = get_field<uint32_t>(replay.begin(), replay.end(), 12);
-        version.assign(replay.begin() + 16, replay.begin() + 16 + version_string_sz);
     }
+
+    extract_replay(raw_replay, replay);
+    read_packets();
+    // read version string
+    uint32_t version_string_sz = get_field<uint32_t>(replay.begin(), replay.end(), 12);
+    version.assign(replay.begin() + 16, replay.begin() + 16 + version_string_sz);
 }
 
 void parser::decrypt_replay(buffer_t &replay_data, const unsigned char *key_data) {
@@ -692,6 +693,74 @@ void wotreplay::show_map_boundaries(const game_info &game_info, const std::vecto
     }
 
     printf("The boundaries of used positions in this replay are: min_x = %f max_x = %f min_y = %f max_y = %f\n", min_x, max_x, min_y, max_y);
+}
+
+bool wotreplay::is_replayfile(const boost::filesystem::path &p) {
+    return is_regular_file(p) && p.extension() == ".wotreplay" ;
+}
+
+static size_t get_unread_bytes(const parser &parser) {
+    const std::vector<packet_t> &packets = parser.get_packets();
+    const packet_t &last_packet = packets.back();
+    const slice_t &data = last_packet.get_data();
+    const buffer_t &replay = parser.get_replay();
+    size_t bytes_unread = &replay.back() - &data.back();
+    return bytes_unread;
+}
+
+static size_t get_dead_player_count(const buffer_t &game_end) {
+    // parse game_end formatted as a JSON object
+    Json::Value root;
+    Json::Reader reader;
+    std::string doc(game_end.begin(), game_end.end());
+    reader.parse(doc, root);
+    // TODO: validate this node
+    Json::Value players = root[1];
+    size_t dead_players = 0;
+    for (auto it = players.begin(); it != players.end(); ++it) {
+        bool isAlive = (*it)["isAlive"].asBool();
+        if (!isAlive) ++dead_players;
+    }
+    
+    return dead_players;
+}
+
+void wotreplay::validate_parser(const std::string &path) {
+    // loop over each file in the path
+    for (directory_iterator it(path); it != directory_iterator(); ++it) {
+        // skip non-replay files
+        if (!is_replayfile(it->path())) continue;
+
+        std::stringstream ss;
+
+        ss << "file:" << it->path().string();
+        
+        // parse the path as a replay file, using methods internal to parser
+        ifstream is(it->path().string(), std::ios::binary);
+        parser parser(is, false);
+        is.close();
+
+        size_t bytes_unread = get_unread_bytes(parser);
+
+        ss << " end:" << (bytes_unread <= 25) << " ";
+
+        const buffer_t &game_end = parser.get_game_end();
+
+        // game_end can be unavailable when the replay is incomplete
+        if (game_end.size() > 0)  {
+            const std::vector<packet_t> &packets = parser.get_packets();
+            size_t tank_destroyed_count = std::count_if(packets.begin(), packets.end(), [](const packet_t &packet) {
+                return packet.has_property(property::tank_destroyed);
+            });
+
+            size_t dead_players = get_dead_player_count(game_end);
+            ss << "kills:" << (tank_destroyed_count == dead_players);
+        } else {
+            ss << "n/a";
+        }
+
+        std::cout << ss.str() << "\n";
+    }
 }
 
 

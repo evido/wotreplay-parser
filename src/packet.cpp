@@ -61,12 +61,12 @@ uint16_t packet_t::health() const {
     return get_field<uint16_t>(data.begin(), data.end(), 21);
 }
 
-const std::array<bool, property_nr_items> &packet_t::get_properties() const {
+const std::array<bool, static_cast<size_t>(property::property_nr_items)> &packet_t::get_properties() const {
     return properties;
 }
 
 bool packet_t::has_property(property p) const {
-    return properties[p];
+    return properties[static_cast<size_t>(p)];
 }
 
 void packet_t::set_data(const slice_t &data) {
@@ -74,39 +74,38 @@ void packet_t::set_data(const slice_t &data) {
     std::fill(properties.begin(), properties.end(), false);
     switch(get_field<uint8_t>(data.begin(), data.end(), 1)) {
         case 0x0a:
-            properties[property::position] = true;
-            properties[property::type] = true;
-            properties[property::clock] = true;
-            properties[property::player_id] = true;
+            properties[static_cast<size_t>(property::position)] = true;
+            properties[static_cast<size_t>(property::type)] = true;
+            properties[static_cast<size_t>(property::clock)] = true;
+            properties[static_cast<size_t>(property::player_id)] = true;
             break;
         case 0x07: {
-            properties[property::type] = true;
-            properties[property::clock] = true;
-            properties[property::player_id] = true;
-            properties[property::is_shot] = true;
+            properties[static_cast<size_t>(property::type)] = true;
+            properties[static_cast<size_t>(property::clock)] = true;
+            properties[static_cast<size_t>(property::player_id)] = true;
+            properties[static_cast<size_t>(property::is_shot)] = true;
             uint8_t sub_type = get_field<uint8_t>(data.begin(), data.end(), 13);
-            properties[property::health] = sub_type == 0x02;
+            properties[static_cast<size_t>(property::health)] = sub_type == 0x02;
             break;
         }
         case 0x08: {
             if (data.size() > 25) {
                 auto signature = get_field<uint32_t>(data.begin(), data.end(), 21);
-                properties[property::tank_destroyed] = 0x02801006 == signature;
+                properties[static_cast<size_t>(property::tank_destroyed)] = 0x02801006 == signature;
             }
-
-            properties[property::clock] = true;
-            properties[property::player_id] = true;
-            properties[property::type] = true;
+            properties[static_cast<size_t>(property::clock)] = true;
+            properties[static_cast<size_t>(property::player_id)] = true;
+            properties[static_cast<size_t>(property::type)] = true;
             break;
         }
         default:
             if (data.size() >= 13) {
-                properties[property::player_id] = true;
+                properties[static_cast<size_t>(property::player_id)] = true;
             }
             if (data.size() >= 9) {
-                properties[property::clock] = true;
+                properties[static_cast<size_t>(property::clock)] = true;
             }
-            properties[property::type] = true;
+            properties[static_cast<size_t>(property::type)] = true;
             break;
     }
 }
