@@ -214,8 +214,8 @@ void parser::extract_replay(buffer_t &compressed_replay, buffer_t &replay) {
     debug_stream_content("out/replay-c.dat", compressed_replay.begin(), compressed_replay.end());
 
     z_stream strm = { 
-        .next_in  = reinterpret_cast<unsigned char*>(&(compressed_replay[0])),
-        .avail_in = static_cast<uInt>(compressed_replay.size())
+        reinterpret_cast<unsigned char*>(&(compressed_replay[0])),
+        static_cast<uInt>(compressed_replay.size())
     };
     
     int ret = inflateInit(&strm);
@@ -424,12 +424,12 @@ const std::vector<packet_t> &parser::get_packets() const {
     return packets;
 }
 
-bool parser::find_property(uint32_t clock, uint32_t player_id, property property, packet_t &out) const
+bool parser::find_property(uint32_t clock, uint32_t player_id, property_t property, packet_t &out) const
 {
     // inline function function for using with stl to finding the range with the same clock
     auto has_same_clock = [&](const packet_t &target) -> bool  {
         // packets without clock are included
-        return target.has_property(property::clock)
+        return target.has_property(property_t::clock)
           && target.clock() == clock;
     };
 
@@ -439,13 +439,13 @@ bool parser::find_property(uint32_t clock, uint32_t player_id, property property
     // find last packet with same clock
     auto it_clock_end = std::find_if_not(it_clock_begin, packets.cend(), [&](const packet_t &target) -> bool  {
         // packets without clock are included
-        return !target.has_property(property::clock)
+        return !target.has_property(property_t::clock)
         || target.clock() == clock;
     });
     
     auto is_related_with_property = [&](const packet_t &target) -> bool {
-        return target.has_property(property::clock) &&
-        target.has_property(property::player_id) &&
+        return target.has_property(property_t::clock) &&
+        target.has_property(property_t::player_id) &&
         target.has_property(property) &&
         target.player_id() == player_id;
     };
@@ -481,17 +481,17 @@ bool parser::find_property(uint32_t clock, uint32_t player_id, property property
     return found;
 }
 
-bool parser::find_property(size_t packet_id, property property, packet_t &out) const
+bool parser::find_property(size_t packet_id, property_t property, packet_t &out) const
 {
     auto packet = packets.begin() + packet_id;
     // method is useless if the packet does not have a clock or player_id
-    assert(packet->has_property(property::clock) && packet->has_property(property::player_id));
+    assert(packet->has_property(property_t::clock) && packet->has_property(property_t::player_id));
 
     // inline function function for using with stl to finding the range with the same clock
     auto has_same_clock =
         [&packet](const packet_t &target) -> bool  {
             // packets without clock are included
-            return !target.has_property(property::clock)
+            return !target.has_property(property_t::clock)
                 || target.clock() == packet->clock();
         };
     
@@ -503,8 +503,8 @@ bool parser::find_property(size_t packet_id, property property, packet_t &out) c
     auto it_clock_begin = (it_clock_rbegin + 1).base();
 
     auto is_related_with_property = [&](const packet_t &target) -> bool {
-        return target.has_property(property::clock) &&
-        target.has_property(property::player_id) &&
+        return target.has_property(property_t::clock) &&
+        target.has_property(property_t::player_id) &&
         target.has_property(property) &&
         target.player_id() == packet->player_id() &&
         target.clock() ==  packet->clock();
@@ -540,44 +540,46 @@ bool parser::find_property(size_t packet_id, property property, packet_t &out) c
     return found;
 }
 
-const game_info &parser::get_game_info() const {
+const game_info_t &parser::get_game_info() const {
     return game_info;
 }
 
-static std::map<std::string, std::array<std::array<int, 2>,2>> map_boundaries = {
-    { "01_karelia",         {-500, 500, -500, 500} },
-    { "02_malinovka",       {-500, 500, -500, 500} },
-    { "03_campania",        {-300, 300, -300, 300} },
-    { "04_himmelsdorf",     {-300, 400, -300, 400} },
-    { "05_prohorovka", 	    {-500, 500, -500, 500} },
-    { "06_ensk",            {-300, 300, -300, 300} },
-    { "07_lakeville",       {-400, 400, -400, 400} },
-    { "08_ruinberg",        {-400, 400, -400, 400} },
-    { "10_hills",           {-400, 400, -400, 400} },
-    { "11_murovanka",       {-400, 400, -400, 400} },
-    { "13_erlenberg",       {-500, 500, -500, 500} },
-    { "14_siegfried_line",  {-500, 500, -500, 500} },
-    { "15_komarin",         {-400, 400, -400, 400} },
-    { "17_munchen",         {-300, 300, -300, 300} },
-    { "18_cliff",           {-500, 500, -500, 500} },
-    { "19_monastery",       {-500, 500, -500, 500} },
-    { "22_slough",          {-500, 500, -500, 500} },
-    { "23_westfeld",        {-500, 500, -500, 500} },
-    { "28_desert",          {-500, 500, -500, 500} },
-    { "29_el_hallouf",      {-500, 500, -500, 500} },
-    { "31_airfield",        {-500, 500, -500, 500} },
-    { "33_fjord",           {-500, 500, -500, 500} },
-    { "34_redshire",        {-500, 500, -500, 500} },
-    { "35_steppes",         {-500, 500, -500, 500} },
-    { "36_fishing_bay",     {-500, 500, -500, 500} },
-    { "37_caucasus",        {-500, 500, -500, 500} },
-    { "38_mannerheim_line", {-500, 500, -500, 500} },
-    { "39_crimea",          {-500, 500, -500, 500} },
-    { "42_north_america",   {-400, 400, -400, 400} },
-    { "44_north_america",   {-500, 500, -500, 500} },
-    { "45_north_america",   {-500, 500, -500, 500} },
-    { "47_canada_a",        {-500, 500, -500, 500} },
-    { "51_asia",            {-500, 500, -500, 500} }
+
+static std::map<std::string, std::array<std::array<int, 2>,2>> map_boundaries =
+{
+    { "01_karelia",         {{ {{ -500, 500 }}, {{ -500, 500 }} }} },
+    { "02_malinovka",       {{ {{ -500, 500 }}, {{ -500, 500 }} }} },
+    { "03_campania",        {{ {{ -300, 300 }}, {{ -300, 300 }} }} },
+    { "04_himmelsdorf",     {{ {{ -300, 400 }}, {{ -300, 400 }} }} },
+    { "05_prohorovka", 	    {{ {{ -500, 500 }}, {{ -500, 500 }} }} },
+    { "06_ensk",            {{ {{ -300, 300 }}, {{ -300, 300 }} }} },
+    { "07_lakeville",       {{ {{ -400, 400 }}, {{ -400, 400 }} }} },
+    { "08_ruinberg",        {{ {{ -400, 400 }}, {{ -400, 400 }} }} },
+    { "10_hills",           {{ {{ -400, 400 }}, {{ -400, 400 }} }} },
+    { "11_murovanka",       {{ {{ -400, 400 }}, {{ -400, 400 }} }} },
+    { "13_erlenberg",       {{ {{ -500, 500 }}, {{ -500, 500 }} }} },
+    { "14_siegfried_line",  {{ {{ -500, 500 }}, {{ -500, 500 }} }} },
+    { "15_komarin",         {{ {{ -400, 400 }}, {{ -400, 400 }} }} },
+    { "17_munchen",         {{ {{ -300, 300 }}, {{ -300, 300 }} }} },
+    { "18_cliff",           {{ {{ -500, 500 }}, {{ -500, 500 }} }} },
+    { "19_monastery",       {{ {{ -500, 500 }}, {{ -500, 500 }} }} },
+    { "22_slough",          {{ {{ -500, 500 }}, {{ -500, 500 }} }} },
+    { "23_westfeld",        {{ {{ -500, 500 }}, {{ -500, 500 }} }} },
+    { "28_desert",          {{ {{ -500, 500 }}, {{ -500, 500 }} }} },
+    { "29_el_hallouf",      {{ {{ -500, 500 }}, {{ -500, 500 }} }} },
+    { "31_airfield",        {{ {{ -500, 500 }}, {{ -500, 500 }} }} },
+    { "33_fjord",           {{ {{ -500, 500 }}, {{ -500, 500 }} }} },
+    { "34_redshire",        {{ {{ -500, 500 }}, {{ -500, 500 }} }} },
+    { "35_steppes",         {{ {{ -500, 500 }}, {{ -500, 500 }} }} },
+    { "36_fishing_bay",     {{ {{ -500, 500 }}, {{ -500, 500 }} }} },
+    { "37_caucasus",        {{ {{ -500, 500 }}, {{ -500, 500 }} }} },
+    { "38_mannerheim_line", {{ {{ -500, 500 }}, {{ -500, 500 }} }} },
+    { "39_crimea",          {{ {{ -500, 500 }}, {{ -500, 500 }} }} },
+    { "42_north_america",   {{ {{ -400, 400 }}, {{ -400, 400 }} }} },
+    { "44_north_america",   {{ {{ -500, 500 }}, {{ -500, 500 }} }} },
+    { "45_north_america",   {{ {{ -500, 500 }}, {{ -500, 500 }} }} },
+    { "47_canada_a",        {{ {{ -500, 500 }}, {{ -500, 500 }} }} },
+    { "51_asia",            {{ {{ -500, 500 }}, {{ -500, 500 }} }} }
 };
 
 void parser::read_game_info() {
@@ -666,7 +668,7 @@ void wotreplay::write_parts_to_file(const parser &replay) {
               ostream_iterator<char>(replay_content));
 }
 
-void wotreplay::show_map_boundaries(const game_info &game_info, const std::vector<packet_t> &packets) {
+void wotreplay::show_map_boundaries(const game_info_t &game_info, const std::vector<packet_t> &packets) {
 
     float min_x = 0.f, min_y = 0.f, max_x = 0.f, max_y = 0.f;
 
@@ -750,7 +752,7 @@ void wotreplay::validate_parser(const std::string &path) {
         if (game_end.size() > 0)  {
             const std::vector<packet_t> &packets = parser.get_packets();
             size_t tank_destroyed_count = std::count_if(packets.begin(), packets.end(), [](const packet_t &packet) {
-                return packet.has_property(property::tank_destroyed);
+                return packet.has_property(property_t::tank_destroyed);
             });
 
             size_t dead_players = get_dead_player_count(game_end);

@@ -35,6 +35,7 @@
 #include <cmath>
 #include <set>
 #include <vector>
+#include <tuple>
 #include <array>
 #include "json/json.h"
 #include <boost/lexical_cast.hpp>
@@ -82,11 +83,13 @@ typedef accumulator_set<double, stats<tag::tail_quantile<boost::accumulators::le
  * @param height target map height to scale the coordinates too
  * @return The scaled 2d coordinates
  */
-std::tuple<float, float> get_2d_coord(const std::tuple<float, float, float> &position, const game_info &game_info, int width, int height) {
-    float x,y,z, min_x, max_x, min_y, max_y;
+std::tuple<float, float> get_2d_coord(const std::tuple<float, float, float> &position, const game_info_t &game_info, int width, int height) {
+    float x,y,z;
+    int min_x = game_info.boundaries[0][0];
+    int max_x = game_info.boundaries[0][1];
+    int min_y = game_info.boundaries[1][0];
+    int max_y = game_info.boundaries[1][1];
     std::tie(x,z,y) = position;
-    std::tie(min_x, max_x) = game_info.boundaries[0];
-    std::tie(min_y, max_y) = game_info.boundaries[1];
     x = (x - min_x) * (width / (max_x - min_x + 1));
     y = (max_y - y) * (height / (max_y - min_y + 1));
     return std::make_tuple(x,y);
@@ -99,7 +102,7 @@ std::tuple<float, float> get_2d_coord(const std::tuple<float, float, float> &pos
  * @param game_info The game info containing the seperate teams.
  * @return The team-id for the given player-id.
  */
-int get_team(const game_info &game_info, uint32_t player_id) {
+int get_team(const game_info_t &game_info, uint32_t player_id) {
     const auto &teams = game_info.teams;
     auto it = std::find_if(teams.begin(), teams.end(), [&](const std::set<int> &team) {
         return team.find(player_id) != team.end();
@@ -115,7 +118,7 @@ int get_team(const game_info &game_info, uint32_t player_id) {
  */
 void create_image(boost::multi_array<uint8_t, 3> &image, const parser &replay) {
     const std::vector<packet_t> &packets = replay.get_packets();
-    const game_info &game_info = replay.get_game_info();
+    const game_info_t &game_info = replay.get_game_info();
 
     auto shape = image.shape();
     int width = static_cast<int>(shape[1]);
@@ -123,7 +126,7 @@ void create_image(boost::multi_array<uint8_t, 3> &image, const parser &replay) {
 
     for (const packet_t &packet : packets) {
 
-        if (packet.has_property(property::position)) {
+        if (packet.has_property(property_t::position)) {
             uint32_t player_id = packet.player_id();
 
             float f_x,f_y;
@@ -159,11 +162,11 @@ void create_image(boost::multi_array<uint8_t, 3> &image, const parser &replay) {
             }
         }
 
-        if (packet.has_property(property::tank_destroyed)) {
+        if (packet.has_property(property_t::tank_destroyed)) {
             uint32_t target, killer;
             std::tie(target, killer) = packet.tank_destroyed();
             packet_t position_packet;
-            bool found = replay.find_property(packet.clock(), target, property::position, position_packet);
+            bool found = replay.find_property(packet.clock(), target, property_t::position, position_packet);
             if (found) {
                 auto position = position_packet.position();
                 static int offsets[][2] = {
@@ -355,10 +358,10 @@ void draw_image(boost::multi_array<uint8_t, 3> &base,
                 const boost::multi_array<float, 2> &team1,
                 const boost::multi_array<float, 2> &team2,
                 float l_quant, float u_quant) {
-    std::array<std::tuple<float, float>, 2> bounds = {
+    std::array<std::tuple<float, float>, 2> bounds = {{
         get_bounds(team1, l_quant, u_quant),
         get_bounds(team2, l_quant, u_quant)
-    };
+    }};
 
     auto shape = base.shape();
     for (size_t i = 0; i < shape[0]; ++i) {
@@ -414,7 +417,7 @@ void process_replay_directory(const path& directory) {
     auto f_draw_position = [](const packet_t &packet, process_result &result, boost::multi_array<float,3> &images) {
         uint32_t player_id = packet.player_id();
         const parser &replay = *result.replay;
-        const game_info &game_info = replay.get_game_info();
+        const game_info_t &game_info = replay.get_game_info();
 
         int team_id = get_team(game_info, player_id);
         if (team_id < 0) return;
@@ -447,19 +450,19 @@ void process_replay_directory(const path& directory) {
         std::set<uint32_t> dead_players;
 
         for (const packet_t &packet : replay.get_packets()) {
-            if (packet.has_property(property::tank_destroyed)) {
+            if (packet.has_property(property_t::tank_destroyed)) {
                 f_draw_death(packet, *result);
                 uint32_t killer, killed;
                 std::tie(killed, killer) = packet.tank_destroyed();
                 dead_players.insert(killed);
                 packet_t position_packet;
-                bool found = result->replay->find_property(packet.clock(), killed, property::position, position_packet);
+                bool found = result->replay->find_property(packet.clock(), killed, property_t::position, position_packet);
                 if (found) {
                     f_draw_position(position_packet, *result, result->death_image);
                 }
             }
-            if (packet.has_property(property::position)
-                && packet.has_property(property::player_id)
+            if (packet.has_property(property_t::position)
+                && packet.has_property(property_t::player_id)
                 && dead_players.find(packet.player_id()) == dead_players.end()) {
                 f_draw_position(packet, *result, result->position_image);
             }
@@ -516,11 +519,11 @@ void process_replay_directory(const path& directory) {
         if (result->error || result->replay->get_game_end().size() == 0 ) return result;
 
         const parser &replay = *result->replay;
-        const game_info &game_info = replay.get_game_info();
+        const game_info_t &game_info = replay.get_game_info();
 
         auto key = std::make_tuple(game_info.map_name, game_info.game_mode);
         if (images.find(key) == images.end()) {
-            images.insert(std::make_pair(key,boost::extents[500][500][4]));
+            images.insert({key, boost::multi_array<float,3>(boost::extents[500][500][4])});
         }
 
         boost::multi_array<float,3> &image = images[key];

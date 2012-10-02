@@ -38,10 +38,10 @@
 
 namespace wotreplay {
     /**
-     * @enum wot::property
+     * @enum wot::property_t
      * @brief A list of detectable properties in packets of a wot:replay_file.
      */
-    enum class property : size_t {
+    enum property_t {
         clock = 0,
         health,
         is_shot,
@@ -85,13 +85,13 @@ namespace wotreplay {
         /** @return A tuple of with the player_id's of the target and the killer. */
         std::tuple<uint32_t, uint32_t> tank_destroyed() const;
         /** @return An array of the properties available in this packet. */
-        const std::array<bool, static_cast<size_t>(property::property_nr_items)> &get_properties() const;
+        const std::array<bool, static_cast<size_t>(property_t::property_nr_items)> &get_properties() const;
         /**
          * Determines if the packet has the property specified.
          * @param p The property
          * @return \c true if the packet contains the property, \c false if not.
          */
-        bool has_property(property p) const;
+        bool has_property(property_t p) const;
 
         /**
          * Sets internal packet data to the data passed to the method, the properties
@@ -105,7 +105,7 @@ namespace wotreplay {
         const slice_t &get_data() const;
     private:
         /** An array containing the presence of each property. */
-        std::array<bool, static_cast<size_t>(property::property_nr_items)> properties;
+        std::array<bool, static_cast<size_t>(property_t::property_nr_items)> properties;
         /** The data content of this packet. */
         slice_t data;
     };

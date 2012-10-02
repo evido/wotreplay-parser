@@ -40,7 +40,7 @@
 
 namespace wotreplay {
     /** game_info describes a minimal number of properties from the replay file. */
-    struct game_info {
+    struct game_info_t {
         /** The name of the map. */
         std::string map_name;
         /** String containing the game_mode game mode: ass = assault, dom = domination (encounter), ctf = default. */
@@ -103,7 +103,7 @@ namespace wotreplay {
          * Returns a game_info object describing a minimal number of properties of the replay.
          * @return game_info object
          */
-        const game_info &get_game_info() const;
+        const game_info_t &get_game_info() const;
         /**
          * Returns a list with all the recorded and decoded packets.
          * @return A list with all the packets.
@@ -118,17 +118,17 @@ namespace wotreplay {
          * @return \c true if a packet was found, \c false if no packet with the required properties was found
          * @deprecated use find_property(uint32_t clock, uint32_t player_id, property property, packet_t &out) const instead
          */ 
-        bool find_property(size_t packet_id, property property, packet_t &out) const;
+        bool find_property(size_t packet_id, property_t property, packet_t &out) const;
         /**
          * Tries to find the required property which is the closest (with respect to \c clock) to the specified packet. This method uses the properties
-         * \c property::player_id and \c property::clock from the packet referenced by packet_id.
+         * \c property::player_id and \c property_t::clock from the packet referenced by packet_id.
          * @param clock the reference clock to determine the distance of the packet
          * @param player_id the player id for which to find a packet with a property
          * @param property required property of the packet to be found
          * @param out output variable containing the packet if one is found
          * @return \c true if a packet was found, \c false if no packet with the required properties was found
          */
-        bool find_property(uint32_t clock, uint32_t player_id, property property, packet_t &out) const;
+        bool find_property(uint32_t clock, uint32_t player_id, property_t property, packet_t &out) const;
         /**
          * Indicates if the parsed file is a legacy (< 0.7.2) replay file. This means 'game begin', 'game end' will be missing.
          * @return \c true if file is in a legacy format \c false if the file is in the 'new' format.
@@ -214,7 +214,7 @@ namespace wotreplay {
         /** The version string. */
         std::string version;
         /** The game_info object. */
-        game_info game_info;
+        game_info_t game_info;
         /** The legacy indicator. */
         bool legacy;
         /** The debug indicator */
@@ -245,7 +245,7 @@ namespace wotreplay {
      * @param game_info game_info object containing the team information
      * @param packets a list of all the packets in a replay
      */
-    void show_map_boundaries(const game_info &game_info, const std::vector<packet_t> &packets);
+    void show_map_boundaries(const game_info_t &game_info, const std::vector<packet_t> &packets);
 
     void validate_parser(const std::string &path);
 
