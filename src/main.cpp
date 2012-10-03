@@ -44,35 +44,13 @@
 #include <regex>
 #include <boost/multi_array.hpp>
 
-
-// generates unavoidable unused variable warnings
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunused-variable"
-
-#include <boost/accumulators/numeric/functional/vector.hpp>
-#include <boost/accumulators/numeric/functional/complex.hpp>
-#include <boost/accumulators/numeric/functional/valarray.hpp>
-#include <boost/accumulators/accumulators.hpp>
-#include <boost/accumulators/statistics/stats.hpp>
-#include <boost/accumulators/statistics/tail_quantile.hpp>
-
-#pragma clang diagnostic pop
-
 #include <atomic>
 
 using namespace std;
 using namespace wotreplay;
 using namespace tbb;
 using namespace boost::filesystem;
-using namespace boost::accumulators;
 using namespace boost;
-using boost::accumulators::left;
-using boost::accumulators::right;
-
-std::size_t c =  250000; // cache size
-
-typedef accumulator_set<double, stats<tag::tail_quantile<boost::accumulators::right>>> accumulator_t_right;
-typedef accumulator_set<double, stats<tag::tail_quantile<boost::accumulators::left>>> accumulator_t_left;
 
 /**
  * @fn std::tuple<float, float> get_2d_coord(const std::tuple<float, float, float> &position, const game_info &game_info, int width, int height)
@@ -90,8 +68,8 @@ std::tuple<float, float> get_2d_coord(const std::tuple<float, float, float> &pos
     int min_y = game_info.boundaries[1][0];
     int max_y = game_info.boundaries[1][1];
     std::tie(x,z,y) = position;
-    x = (x - min_x) * (width / (max_x - min_x + 1));
-    y = (max_y - y) * (height / (max_y - min_y + 1));
+    x = (x - min_x) * (static_cast<float>(width) / (max_x - min_x + 1));
+    y = (max_y - y) * (static_cast<float>(height) / (max_y - min_y + 1));
     return std::make_tuple(x,y);
 }
 
@@ -281,9 +259,9 @@ struct process_result {
      * Constructor for process_result, setting the path and the image sizes.
      */
     process_result(std::string path, int image_width, int image_height)
-        : path(path), position_image(boost::extents[image_width][image_height][2])
-        , death_image(boost::extents[image_width][image_height][2])
-        , hit_image(boost::extents[image_width][image_height][2])
+        : path(path), position_image(boost::extents[2][image_width][image_height])
+        , death_image(boost::extents[2][image_width][image_height])
+        , hit_image(boost::extents[2][image_width][image_height])
         , replay(nullptr), error(false)
     {
         
@@ -328,19 +306,14 @@ void read_mini_map(const std::string &map_name, const std::string &game_mode, bo
     read_png(mini_map, &row_pointers[0], width, height, channels);
 };
 
-std::tuple<float, float> get_bounds(const boost::multi_array<float, 2> &image, float l_quant,float r_quant)  {
-    accumulator_t_right r(tag::tail<boost::accumulators::right>::cache_size = c);
-    accumulator_t_left l(tag::tail<boost::accumulators::left>::cache_size = c);
-    auto shape = image.shape();
-    int size = static_cast<int>( shape[0]*shape[1] );
-    for (int i = 0; i < size; ++i) {
-        if (*(image.data() + i) > 0.f) {
-            r(*(image.data() + i));
-            l(*(image.data() + i));
-        }
-    }
-    auto lower_bound = quantile(l, quantile_probability = l_quant );
-    auto upper_bound = quantile(r, quantile_probability = r_quant );
+std::tuple<float, float> get_bounds(boost::multi_array<float, 3>::const_reference image, float l_quant,float r_quant) {
+    std::vector<float> values;
+    auto not_zero = [](float value) { return value != 0.f; };
+    std::copy_if(image.origin(), image.origin() + image.num_elements(), std::inserter(values, values.begin()), not_zero);
+    std::nth_element(values.begin(), values.begin() + static_cast<int>(l_quant*values.size()), values.end());
+    float lower_bound = *(values.begin() + static_cast<int>(l_quant*values.size()));
+    std::nth_element(values.begin(), values.begin() + static_cast<int>(r_quant*values.size()), values.end());
+    float upper_bound = *(values.begin() + static_cast<int>(r_quant*values.size()));
     return std::make_tuple(lower_bound, upper_bound);
 }
 
@@ -355,9 +328,10 @@ int mix(int v0, int v1, float a1, int v2, float a2) {
 }
 
 void draw_image(boost::multi_array<uint8_t, 3> &base,
-                const boost::multi_array<float, 2> &team1,
-                const boost::multi_array<float, 2> &team2,
+                boost::multi_array<float, 3>::const_reference team1,
+                boost::multi_array<float, 3>::const_reference team2,
                 float l_quant, float u_quant) {
+    
     std::array<std::tuple<float, float>, 2> bounds = {{
         get_bounds(team1, l_quant, u_quant),
         get_bounds(team2, l_quant, u_quant)
@@ -377,6 +351,49 @@ void draw_image(boost::multi_array<uint8_t, 3> &base,
     }
 };
 
+std::function<void(const blocked_range<size_t>&)> merge_image(boost::multi_array<float,3>::reference left,
+                                                        boost::multi_array<float,3>::reference right) {
+    return [=]( const blocked_range<size_t>& range )  {
+        boost::multi_array<float,3>::reference l(left);
+        boost::multi_array<float,3>::reference r(right);
+        for (size_t i = range.begin(); i != range.end(); ++i) {
+            l.origin()[i] += r.origin()[i];
+        }
+    };
+};
+
+void draw_position(const packet_t &packet, const game_info_t &game_info, boost::multi_array<float,3> &images) {
+    uint32_t player_id = packet.player_id();
+
+    int team_id = get_team(game_info, player_id);
+    if (team_id < 0) return;
+
+    auto shape = images.shape();
+    int width = static_cast<int>(shape[2]);
+    int height = static_cast<int>(shape[1]);
+
+    float x,y;
+    std::tie(x,y) = get_2d_coord( packet.position(), game_info, width, height);
+
+    if (x >= 0 && y >= 0 && x <= (width - 1) && y <= (height - 1)) {
+        float px = x - floor(x), py = y - floor(y);
+        images[team_id][floor(y)][floor(x)] += px*py;
+        images[team_id][ceil(y)][floor(x)] += px*(1-py);
+        images[team_id][floor(y)][ceil(x)] += (1-px)*py;
+        images[team_id][ceil(y)][ceil(x)] += (1-px)*(1-py);
+    }
+}
+
+void draw_death(const packet_t &packet, process_result &result) {
+    uint32_t killer, killed;
+    std::tie(killed, killer) = packet.tank_destroyed();
+    packet_t position_packet;
+    bool found = result.replay->find_property(packet.clock(), killed, property_t::position, position_packet);
+    if (found) {
+        draw_position(position_packet, result.replay->get_game_info(), result.death_image);
+    }
+}
+
 void process_replay_directory(const path& directory) {
     directory_iterator it(directory);
     // get out if no elements
@@ -391,6 +408,7 @@ void process_replay_directory(const path& directory) {
         } else {
             auto path = it->path();
             file_path = path.string();
+            ++count;
         }
         return new process_result{ file_path, 500, 500 };
     };
@@ -401,11 +419,9 @@ void process_replay_directory(const path& directory) {
             return result;
         }
         try {
-            // std::cout << result->path << "\n";
             ifstream is(result->path, std::ios::binary);
             result->replay = new parser(is);
             is.close();
-            // std::cout << result->replay->get_version() << "\n";
         } catch (std::exception &e) {
             result->error = true;
             std::cerr << "Error!" << std::endl;
@@ -414,36 +430,7 @@ void process_replay_directory(const path& directory) {
         return result;
     };
 
-    auto f_draw_position = [](const packet_t &packet, process_result &result, boost::multi_array<float,3> &images) {
-        uint32_t player_id = packet.player_id();
-        const parser &replay = *result.replay;
-        const game_info_t &game_info = replay.get_game_info();
-
-        int team_id = get_team(game_info, player_id);
-        if (team_id < 0) return;
-
-        auto shape = result.position_image[0].shape();
-        int width = static_cast<int>(shape[1]);
-        int height = static_cast<int>(shape[0]);
-        
-        float x,y;
-        auto position = packet.position();
-        std::tie(x,y) = get_2d_coord(position, game_info, width, height);
-        
-        if (__builtin_expect(x >= 0 && y >= 0 && x <= (width - 1) && y <= (height - 1), 1)) {
-            float px = x - floor(x), py = y - floor(y);
-            images[team_id][floor(y)][floor(x)] += px*py;
-            images[team_id][ceil(y)][floor(x)] += px*(1-py);
-            images[team_id][floor(y)][ceil(x)] += (1-px)*py;
-            images[team_id][ceil(y)][ceil(x)] += (1-px)*(1-py);
-        }
-    };
-    
-    auto f_draw_death = [](const packet_t &packet, process_result &result) {
-        
-    };
-    
-    auto f_process_replays = [&](process_result *result) -> process_result* {
+    auto f_process_replays = [](process_result *result) -> process_result* {
         if (result->error) return result;
 
         const parser &replay = *result->replay;
@@ -451,20 +438,16 @@ void process_replay_directory(const path& directory) {
 
         for (const packet_t &packet : replay.get_packets()) {
             if (packet.has_property(property_t::tank_destroyed)) {
-                f_draw_death(packet, *result);
+                draw_death(packet, *result);
                 uint32_t killer, killed;
                 std::tie(killed, killer) = packet.tank_destroyed();
                 dead_players.insert(killed);
-                packet_t position_packet;
-                bool found = result->replay->find_property(packet.clock(), killed, property_t::position, position_packet);
-                if (found) {
-                    f_draw_position(position_packet, *result, result->death_image);
-                }
             }
+            
             if (packet.has_property(property_t::position)
                 && packet.has_property(property_t::player_id)
                 && dead_players.find(packet.player_id()) == dead_players.end()) {
-                f_draw_position(packet, *result, result->position_image);
+                draw_position(packet, result->replay->get_game_info(), result->position_image);
             }
             
         }
@@ -474,15 +457,12 @@ void process_replay_directory(const path& directory) {
     auto f_create_image = [](process_result* result) -> process_result* {
         if (result->error) return result;
         boost::multi_array<uint8_t, 3> base(boost::extents[500][500][4]);
-        std::unique_ptr<png_bytep[]> row_pointers(new png_bytep[500]);
-        auto shape = base.shape();
-        for (int i = 0; i < shape[0]; ++i) {
-            row_pointers[i] = base.origin() + i*shape[1]*shape[2];
-        }
-        int width, height, channels;
+
         const parser &replay = *result->replay;
-        read_png(replay.get_game_info().mini_map, row_pointers.get(), width, height, channels);
-        bool alpha = channels == 4;
+        const game_info_t &game_info = replay.get_game_info();
+        
+        read_mini_map(game_info.map_name, game_info.game_mode, base);
+
         for (int i = 0; i < 500; ++i) {
             for (int j = 0; j < 500; ++j) {
                 if (result->position_image[0][i][j] > 0) {
@@ -499,38 +479,29 @@ void process_replay_directory(const path& directory) {
                 }
             }
         }
-        std::stringstream out_file_name;
-        out_file_name << "out/positions/" << result->path << ".png";
-        write_png(out_file_name.str(), row_pointers.get(), width, height, alpha);
+
+        std::stringstream death_image;
+        death_image << "out/deaths/" << game_info.map_name << "_" << game_info.game_mode << ".png";
+        write_image(death_image.str(), base);
         return result;
-    };
-
-
-    auto merge_image = [] (const boost::multi_array<float, 2> &left, const boost::multi_array<float, 2> &right) {
-        return [&]( const blocked_range<size_t>& range )  {
-            for (size_t i = range.begin(); i != range.end(); ++i) {
-                // left.data()[i] += right.data()[i];
-            }
-        };
     };
     
     std::map<std::tuple<std::string, std::string>, boost::multi_array<float,3>> images;
     auto f_merge_results = [&](process_result *result) -> process_result* {
-        if (result->error || result->replay->get_game_end().size() == 0 ) return result;
+        if (result->error /* || result->replay->get_game_end().size() == 0 */ ) return result;
 
         const parser &replay = *result->replay;
         const game_info_t &game_info = replay.get_game_info();
 
         auto key = std::make_tuple(game_info.map_name, game_info.game_mode);
         if (images.find(key) == images.end()) {
-            images.insert({key, boost::multi_array<float,3>(boost::extents[500][500][4])});
+            images.insert({key, boost::multi_array<float,3>(boost::extents[4][500][500])});
         }
 
         boost::multi_array<float,3> &image = images[key];
 
         auto shape = image[0].shape();
-        auto size = shape[0]*shape[1];
-
+        auto size = (shape[0])*(shape[1]);
         parallel_for(blocked_range<size_t>(0, size), merge_image(image[0], result->position_image[0]), auto_partitioner());
         parallel_for(blocked_range<size_t>(0, size), merge_image(image[1], result->position_image[1]), auto_partitioner());
         parallel_for(blocked_range<size_t>(0, size), merge_image(image[2], result->death_image[0]), auto_partitioner());
@@ -551,10 +522,11 @@ void process_replay_directory(const path& directory) {
                            tbb::make_filter<process_result*, process_result*>(tbb::filter::serial_out_of_order, f_merge_results) &
                            tbb::make_filter<process_result*, void>(tbb::filter::parallel, f_clean_up));
 
-    typedef std::map<std::tuple<std::string, std::string>, boost::multi_array<float, 3>>::value_type images_entry;
-    tbb::parallel_do(images.begin(), images.end(), [&](const images_entry &entry){
+    typedef std::map<std::tuple<std::string, std::string>, boost::multi_array<float, 3>>::const_reference images_entry;
+    tbb::parallel_do(images.begin(), images.end(), [](images_entry entry){
         const boost::multi_array<float, 3> &image = entry.second;
-        std::string map_name, game_mode;
+
+                std::string map_name, game_mode;
         std::tie(map_name, game_mode) = entry.first;
         boost::multi_array<uint8_t, 3> base;
 
@@ -574,24 +546,11 @@ void process_replay_directory(const path& directory) {
     });
 }
 
-
-auto get_bounds(const std::vector<float> &values) -> std::tuple<float, float> {
-    accumulator_t_right r(tag::tail<boost::accumulators::right>::cache_size = c);
-    accumulator_t_left l(tag::tail<boost::accumulators::left>::cache_size = c);
-    for (auto value : values) {
-        r(value);
-        l(value);
-    }
-    auto lower_bound = quantile(l, quantile_probability = 0.05 );
-    auto upper_bound = quantile(r, quantile_probability = 0.95 );
-    return std::make_tuple(lower_bound, upper_bound);
-};
-
 int main(int argc, const char * argv[]) {
     chdir("/Users/jantemmerman/Development/wotreplay-parser/data");
 
     // validate_parser("replays"); std::exit(0);
-    // process_replay_directory("replays"); std::exit(1);
+    process_replay_directory("replays"); std::exit(1);
     
     string file_names[] = {
         "replays/20120407_1046_ussr-KV-3_himmelsdorf.wotreplay",
