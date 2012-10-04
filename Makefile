@@ -1,6 +1,6 @@
 CC=g++
 #CC=clang
-CFLAGS=-Iext/jsoncpp/include -Isrc -std=c++0x -m64
+CFLAGS=-Iext/jsoncpp/include -Isrc -std=c++0x -m64 -Os
 LDFLAGS=-lcrypto -ltbb -ltbbmalloc -lpng -lboost_filesystem -lboost_system
 OBJS=obj/ext/jsoncpp/src/jsoncpp.o obj/src/packet.o obj/src/parser.o obj/src/main.o
 WOT_INSTALL_PATH=/media/windows/Games/World_of_Tanks/
