@@ -33,30 +33,15 @@
 #include <set>
 #include <vector>
 
-#include "types.h"
+#include "game.h"
 #include "packet.h"
+#include "types.h"
 
 /** @file */
 
 namespace wotreplay {
-    /** game_info describes a minimal number of properties from the replay file. */
-    struct game_info_t {
-        /** The name of the map. */
-        std::string map_name;
-        /** String containing the game_mode game mode: ass = assault, dom = domination (encounter), ctf = default. */
-        std::string game_mode;
-        /** Player id's seperated per team */
-        std::array<std::set<int>, 2> teams;
-        /** The player id recording this game. */
-        unsigned recorder_id;
-        /** Describes the boundaries of the current map: the first element describes the boundaries of the x-axis, the second element describes the boundaries of the y-axis */
-        std::array<std::array<int, 2>, 2> boundaries;
-        /** Relative path to the mini map associated with this replay */
-        std::string mini_map;
-    };
-
-    /** wotreplay::parser is a class responsible for parsing a World of Tanks replay file.  */
-    class parser {
+    /** wotreplay::parser_t is a class responsible for parsing a World of Tanks replay file.  */
+    class parser_t {
         /**
          * @brief Validate the inner workings of the class parser
          * Validate the inner workings of the class parser by:
@@ -69,76 +54,14 @@ namespace wotreplay {
         /** 
          * Default constructor for creating an empty replay_file 
          */
-        parser() = default;
-        /**
-         * Constructor for creating a replay_file from a valid std::inputstream.
-         * The inputstream will be consumed completely after returning from this method.
-         * @param is The inputstream containing the contest of a wot replay file.
-         * @param debug print diagnostic messages
-         */
-        parser(std::istream &is, bool debug = false);
-        /** 
-         * Returns the version string as stored in the replay file.
-         * @return The version string as stored in the replay file.
-         */
-        const std::string& get_version() const;
-        /** 
-         * Returns the data block 'game begin' containing a JSON string describing the start of the game.
-         * @return Data block 'game begin'
-         */
-        const buffer_t &get_game_begin() const;
-        /** 
-         * Returns the data block 'game end' containing a JSON string describing the end
-         * of the game. . This method is not supported for replays before version 0.7.2.
-         * @return Data block 'game end'
-         */
-        const buffer_t &get_game_end() const;
-        /**
-         * Returns the data block 'replay' containing a sequence of packets describing the actions in the game. This method
-         * is not supported for replays before version 0.7.2.
-         * @return Data block 'replay'
-         */
-        const buffer_t &get_replay() const;
-        /**
-         * Returns a game_info object describing a minimal number of properties of the replay.
-         * @return game_info object
-         */
-        const game_info_t &get_game_info() const;
-        /**
-         * Returns a list with all the recorded and decoded packets.
-         * @return A list with all the packets.
-         */
-        const std::vector<packet_t> &get_packets() const;
-        /** 
-         * Tries to find the required property which is the closest (with respect to \c clock) to the specified packet. This method uses the properties
-         * \c property::player_id and \c property::clock from the packet referenced by packet_id.
-         * @param packet_id index of the packet in the packet list
-         * @param property required property of the packet to be found
-         * @param out output variable containing the packet if one is found
-         * @return \c true if a packet was found, \c false if no packet with the required properties was found
-         * @deprecated use find_property(uint32_t clock, uint32_t player_id, property property, packet_t &out) const instead
-         */ 
-        bool find_property(size_t packet_id, property_t property, packet_t &out) const;
-        /**
-         * Tries to find the required property which is the closest (with respect to \c clock) to the specified packet. This method uses the properties
-         * \c property::player_id and \c property_t::clock from the packet referenced by packet_id.
-         * @param clock the reference clock to determine the distance of the packet
-         * @param player_id the player id for which to find a packet with a property
-         * @param property required property of the packet to be found
-         * @param out output variable containing the packet if one is found
-         * @return \c true if a packet was found, \c false if no packet with the required properties was found
-         */
+        parser_t(bool debug = false);
+       
         bool find_property(uint32_t clock, uint32_t player_id, property_t property, packet_t &out) const;
         /**
          * Indicates if the parsed file is a legacy (< 0.7.2) replay file. This means 'game begin', 'game end' will be missing.
          * @return \c true if file is in a legacy format \c false if the file is in the 'new' format.
          */
         bool is_legacy() const;
-        /**
-         * Parses the replay file from a buffer_t. The argument should contain the complete replay file.
-         * @param buffer The complete contents of a replay file.
-         */
-        void parse(buffer_t &buffer);
         /**
          * Set debug mode for this instance.
          * @param debug The new value for debug.
@@ -148,6 +71,18 @@ namespace wotreplay {
          * @return The debug setting for this parser instance.
          */
         bool get_debug() const;
+        /**
+         * Parses the replay file. The inputstream will be consumed completly.
+         * @param is The inputstream containing the replay file.
+         * @param game The output variable containing the parsed contents of the replay file.
+         */
+        void parse(std::istream &is, game_t &game);
+        /**
+         * Parses the replay file from the contents in the buffer.
+         * @param buffer Buffer containing the complete contents of the replay file.
+         * @param game The output variable containing the parsed contents of the replay file.
+         */
+        void parse(buffer_t &buffer, wotreplay::game_t &game);
     private:
         /**
          * Indicates if the passed buffer_t contains a legacy (< 0.7.2) replay file. 
@@ -195,26 +130,16 @@ namespace wotreplay {
         packet_t read_packet(iterator begin, iterator end);
         /**
          * Helper method to read all the packets contained in the buffer replay_file::replay.
+         * @param game Output variable game
          * @return Returns the number of bytes read.
          */
-        size_t read_packets();
+        size_t read_packets(game_t &game);
         /**
          * Extracts a game_info object from either the 'game begin' data block or parsed directly from the 'replay'
          * data block.
+         * @param game Output variable game
          */
-        void read_game_info();
-        /** The data block 'game begin' */
-        buffer_t game_begin;
-        /** The data block 'game end' */
-        buffer_t game_end;
-        /** The data block 'replay' */
-        buffer_t replay;
-        /** A list of all the decoded packets. */
-        std::vector<packet_t> packets;
-        /** The version string. */
-        std::string version;
-        /** The game_info object. */
-        game_info_t game_info;
+        void read_game_info(game_t &game);
         /** The legacy indicator. */
         bool legacy;
         /** The debug indicator */
@@ -222,7 +147,7 @@ namespace wotreplay {
     };
 
     template <typename iterator>
-    packet_t parser::read_packet(iterator begin, iterator end) {
+    packet_t parser_t::read_packet(iterator begin, iterator end) {
         return packet_t(boost::make_iterator_range(begin, end));
     }
 
@@ -233,27 +158,19 @@ namespace wotreplay {
     void show_packet_summary(const std::vector<packet_t>& packets);
 
     /**
-     * @fn void wotreplay::write_parts_to_file(const parser &replay)
-     * Writes each data block of a replay file to a file, for debugging purpopses.
-     * @param replay The parsed replay.
+     * @fn void validate_parser(const std::string &path)
+     * @brief Validate the parser to multiple replay files stored in the directory
+     * @param path The path of the directory containing replay files
      */
-    void write_parts_to_file(const parser &replay);
-
-    /**
-     * @fn void wotreplay::show_map_boundaries(const game_info_t &game_info, const std::vector<packet_t> &packets)
-     * Prints the position boundaries reached by any player in the map.
-     * @param game_info game_info object containing the team information
-     * @param packets a list of all the packets in a replay
-     */
-    void show_map_boundaries(const game_info_t &game_info, const std::vector<packet_t> &packets);
-
     void validate_parser(const std::string &path);
 
     /**
+     * @fn bool is_replayfile(const boost::filesystem::path &p);
      * @brief Basic function to check if a path might be a replay file.
+     * @param p The path of the file to inspect for being a replay file.
      * @return @c true if the path is expected to be a valid replay file, @c false if not
      */
     bool is_replayfile(const boost::filesystem::path &p);
 }
 
-#endif
+#endif /* defined(wotreplay_parser_h) */

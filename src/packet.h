@@ -130,6 +130,20 @@ namespace wotreplay {
      * @param packet The packet to print out.
      */
     void display_packet(const packet_t &packet);
+
+
+
+    /**
+     * @fn bool find_property(const std::vector<packet_t> &packets, uint32_t clock, uint32_t player_id, property_t property, packet_t &out)
+     * Tries to find the required property which is the closest (with respect to \c clock) to the specified packet. This method uses the properties
+     * \c property::player_id and \c property_t::clock from the packet referenced by packet_id.
+     * @param clock the reference clock to determine the distance of the packet
+     * @param player_id the player id for which to find a packet with a property
+     * @param property required property of the packet to be found
+     * @param out output variable containing the packet if one is found
+     * @return \c true if a packet was found, \c false if no packet with the required properties was found
+     */
+    bool find_property(const std::vector<packet_t> &packets, uint32_t clock, uint32_t player_id, property_t property, packet_t &out);
 }
 
-#endif
+#endif /* defined(wotreplay_packet_h) */

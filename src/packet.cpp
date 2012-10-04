@@ -129,4 +129,3 @@ void wotreplay::display_packet(const packet_t &packet) {
     }
     printf("\n");
 }
-

@@ -1,0 +1,194 @@
+/*
+ Copyright (c) 2012, Jan Temmerman
+ All rights reserved.
+
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are met:
+ * Redistributions of source code must retain the above copyright
+ notice, this list of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above copyright
+ notice, this list of conditions and the following disclaimer in the
+ documentation and/or other materials provided with the distribution.
+ * Neither the name of the <organization> nor the
+ names of its contributors may be used to endorse or promote products
+ derived from this software without specific prior written permission.
+
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ DISCLAIMED. IN NO EVENT SHALL Jan Temmerman BE LIABLE FOR ANY
+ DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#include "game.h"
+
+
+#include <algorithm>
+#include <fstream>
+#include <iostream>
+
+using namespace std;
+using namespace wotreplay;
+
+const std::vector<packet_t> &game_t::get_packets() const {
+    return packets;
+}
+
+const std::string &game_t::get_map_name() const {
+    return map_name;
+}
+
+const std::string &game_t::get_game_mode() const {
+    return game_mode;
+}
+
+const std::array<int, 4> &game_t::get_map_boundaries() const {
+    return map_boundaries;
+}
+
+const std::set<int> &game_t::get_team(int team_id) const {
+    return teams[team_id];
+}
+
+uint32_t game_t::get_recorder_id() const {
+    return recorder_id;
+}
+
+bool game_t::find_property(uint32_t clock, uint32_t player_id, property_t property, packet_t &out) const
+{
+    // inline function function for using with stl to finding the range with the same clock
+    auto has_same_clock = [&](const packet_t &target) -> bool  {
+        // packets without clock are included
+        return target.has_property(property_t::clock)
+        && target.clock() == clock;
+    };
+
+
+    // find first packet with same clock
+    auto it_clock_begin = std::find_if(packets.cbegin(), packets.cend(), has_same_clock);
+    // find last packet with same clock
+    auto it_clock_end = std::find_if_not(it_clock_begin, packets.cend(), [&](const packet_t &target) -> bool  {
+        // packets without clock are included
+        return !target.has_property(property_t::clock)
+        || target.clock() == clock;
+    });
+
+    auto is_related_with_property = [&](const packet_t &target) -> bool {
+        return target.has_property(property_t::clock) &&
+        target.has_property(property_t::player_id) &&
+        target.has_property(property) &&
+        target.player_id() == player_id;
+    };
+
+    auto it = std::find_if(it_clock_begin, it_clock_end, is_related_with_property);
+    bool found = it != it_clock_end;
+
+    if (!found) {
+        auto result_after = std::find_if(it_clock_end, packets.end(), is_related_with_property);
+        auto it_clock_rbegin = packets.crbegin() + (packets.size() - (it_clock_begin - packets.begin()));
+        auto result_before = std::find_if(it_clock_rbegin, packets.crend(), is_related_with_property);
+
+        if(result_after != packets.cend() && result_before != packets.crend()) {
+            // if both iterators point to items within the collection
+            auto cmp_by_clock = [](const packet_t &left, const packet_t &right) -> int {
+                return left.clock() <= right.clock();
+            };
+            out = std::min(*result_before, *result_after, cmp_by_clock);
+            found = true;
+        } else if (result_after == packets.end() && result_before != packets.rend()) {
+            // only result_before points to item in collection
+            out = *result_before;
+            found = true;
+        } else if (result_after != packets.end() && result_before == packets.rend()) {
+            // only result_after points to item in collection
+            out = *result_after;
+            found = true;
+        }
+    } else {
+        out = *it;
+    }
+
+    return found;
+}
+
+int game_t::get_team_id(int player_id) const {
+    auto it = std::find_if(teams.begin(), teams.end(), [&](const std::set<int> &team) {
+        return team.find(player_id) != team.end();
+    });
+    return it == teams.end() ? -1 : (static_cast<int>(it - teams.begin()));
+}
+
+const std::string &game_t::get_version() const {
+    return version;
+}
+
+const buffer_t &game_t::get_game_begin() const {
+    return game_begin;
+}
+
+const buffer_t &game_t::get_game_end() const {
+    return game_end;
+}
+
+const buffer_t &game_t::get_raw_replay() const {
+    return replay;
+}
+
+void wotreplay::write_parts_to_file(const game_t &game) {
+    ofstream game_begin("out/game_begin.txt", ios::binary | ios::ate);
+    std::copy(game.get_game_begin().begin(),
+              game.get_game_begin().end(),
+              ostream_iterator<char>(game_begin));
+    game_begin.close();
+
+    ofstream game_end("out/game_end.txt", ios::binary | ios::ate);
+    std::copy(game.get_game_end().begin(),
+              game.get_game_end().end(),
+              ostream_iterator<char>(game_end));
+    game_end.close();
+
+    ofstream replay_content("out/replay.dat", ios::binary | ios::ate);
+    std::copy(game.get_raw_replay().begin(),
+              game.get_raw_replay().end(),
+              ostream_iterator<char>(replay_content));
+}
+
+std::tuple<float, float> wotreplay::get_2d_coord(const std::tuple<float, float, float> &position, const game_t &game, int width, int height) {
+    float x,y,z;
+    int min_x, max_x, min_y, max_y;
+    std::tie(min_x, max_x, min_y, max_y) = game.get_map_boundaries();
+    std::tie(x,z,y) = position;
+    x = (x - min_x) * (static_cast<float>(width) / (max_x - min_x + 1));
+    y = (max_y - y) * (static_cast<float>(height) / (max_y - min_y + 1));
+    return std::make_tuple(x,y);
+}
+
+void wotreplay::show_map_boundaries(const game_t &game, const std::vector<packet_t> &packets) {
+
+    float min_x = 0.f, min_y = 0.f, max_x = 0.f, max_y = 0.f;
+
+    for (const packet_t &packet : packets) {
+        if (packet.type() != 0xa) {
+            continue;
+        }
+
+        uint32_t player_id = packet.player_id();
+        // only take into account positions of 'valid' players.
+        if (game.get_team_id(player_id) != -1) {
+            // update the boundaries
+            auto position = packet.position();
+            min_x = std::min(min_x, std::get<0>(position));
+            min_y = std::min(min_y, std::get<2>(position));
+            max_x = std::max(max_x, std::get<0>(position));
+            max_y = std::max(max_y, std::get<2>(position));
+            break;
+        }
+    }
+
+    printf("The boundaries of used positions in this replay are: min_x = %f max_x = %f min_y = %f max_y = %f\n", min_x, max_x, min_y, max_y);
+}
