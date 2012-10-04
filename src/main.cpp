@@ -52,6 +52,8 @@ using namespace tbb;
 using namespace boost::filesystem;
 using namespace boost;
 
+#define MAP_SIZE    300
+
 /**
  * @fn std::tuple<float, float> get_2d_coord(const std::tuple<float, float, float> &position, const game_info &game_info, int width, int height)
  * @brief Get 2D Coordinates from a WOT position scaled to given width and height.
@@ -298,11 +300,11 @@ void write_image(const std::string &file_name, boost::multi_array<uint8_t, 3> &i
 };
 
 void read_mini_map(const std::string &map_name, const std::string &game_mode, boost::multi_array<uint8_t, 3> &base) {
-    base.resize(boost::extents[500][500][4]);
+    base.resize(boost::extents[MAP_SIZE][MAP_SIZE][4]);
     std::vector<png_bytep> row_pointers;
     get_row_pointers(base, row_pointers);
     int width, height, channels;
-    std::string mini_map = "maps/no-border/" + map_name + "_" + game_mode + ".png";
+    std::string mini_map = "maps/no-border/" + map_name + ".png";
     read_png(mini_map, &row_pointers[0], width, height, channels);
 };
 
@@ -410,7 +412,7 @@ void process_replay_directory(const path& directory) {
             file_path = path.string();
             ++count;
         }
-        return new process_result{ file_path, 500, 500 };
+        return new process_result{ file_path, MAP_SIZE, MAP_SIZE };
     };
 
     auto f_create_replays = [](process_result* result) -> process_result* {
@@ -456,15 +458,15 @@ void process_replay_directory(const path& directory) {
 
     auto f_create_image = [](process_result* result) -> process_result* {
         if (result->error) return result;
-        boost::multi_array<uint8_t, 3> base(boost::extents[500][500][4]);
+        boost::multi_array<uint8_t, 3> base(boost::extents[MAP_SIZE][MAP_SIZE][4]);
 
         const parser &replay = *result->replay;
         const game_info_t &game_info = replay.get_game_info();
         
         read_mini_map(game_info.map_name, game_info.game_mode, base);
 
-        for (int i = 0; i < 500; ++i) {
-            for (int j = 0; j < 500; ++j) {
+        for (int i = 0; i < MAP_SIZE; ++i) {
+            for (int j = 0; j < MAP_SIZE; ++j) {
                 if (result->position_image[0][i][j] > 0) {
                     base[i][j][0] = 0x00;
                     base[i][j][1] = 0xFF;
@@ -495,7 +497,7 @@ void process_replay_directory(const path& directory) {
 
         auto key = std::make_tuple(game_info.map_name, game_info.game_mode);
         if (images.find(key) == images.end()) {
-            images.insert({key, boost::multi_array<float,3>(boost::extents[4][500][500])});
+            images.insert({key, boost::multi_array<float,3>(boost::extents[4][MAP_SIZE][MAP_SIZE])});
         }
 
         boost::multi_array<float,3> &image = images[key];
