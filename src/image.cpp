@@ -240,3 +240,34 @@ void image_t::load_base_map(const std::string &map_name, const std::string &game
     read_png(mini_map, &row_pointers[0], width, height, channels);
 }
 
+void wotreplay::read_png_ll(const std::string &in, boost::multi_array<uint8_t, 3> &image) {
+    FILE *fp = fopen(in.c_str(), "rb");
+    png_structp png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
+    png_infop info_ptr = png_create_info_struct(png_ptr);
+    png_infop end_info = png_create_info_struct(png_ptr);
+    if (setjmp(png_jmpbuf(png_ptr))) {
+        png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
+        fclose(fp);
+        return;
+    }
+    png_init_io(png_ptr, fp);
+    png_read_info(png_ptr, info_ptr);
+    int width = png_get_image_width(png_ptr, info_ptr);
+    int height = png_get_image_height(png_ptr, info_ptr);
+    png_byte color_type = png_get_color_type(png_ptr, info_ptr);
+    if (color_type == PNG_COLOR_TYPE_RGB) {
+        // add alpha channel
+        png_set_add_alpha(png_ptr, 0xff, PNG_FILLER_AFTER);
+    } else if (color_type == PNG_COLOR_TYPE_RGB_ALPHA) {
+        // do nothing extra
+    } else {
+        std::cerr << "Unsupported image type\n";
+    }
+
+    image.resize(boost::extents[height][width][4]);
+    std::vector<png_bytep> row_pointers;
+    get_row_pointers(image, row_pointers);
+    png_read_image(png_ptr, &row_pointers[0]);
+    png_read_end(png_ptr, info_ptr);
+    fclose(fp);
+}

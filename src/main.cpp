@@ -335,9 +335,11 @@ void process_replay_directory(const path& directory) {
     });
 }
 
+
+
 int main(int argc, const char * argv[]) {
     chdir("/Users/jantemmerman/Development/wotreplay-parser/data");
-
+    
     // validate_parser("replays"); std::exit(0);
     // process_replay_directory("replays"); std::exit(1);
     

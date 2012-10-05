@@ -127,14 +127,14 @@ namespace wotreplay {
     };
 
     /**
-     * @fn void wotreplay::write_parts_to_file(const parser_t &replay)
+     * @fn void wotreplay::write_parts_to_file(const game_t &game)
      * Writes each data block of a replay file to a file, for debugging purpopses.
      * @param game The parsed replay.
      */
     void write_parts_to_file(const game_t &game);
 
     /**
-     * @fn std::tuple<float, float> get_2d_coord(const std::tuple<float, float, float> &position, const game_info_t &game_info, int width, int height)
+     * @fn std::tuple<float, float> get_2d_coord(const std::tuple<float, float, float> &position, const game_t &game, int width, int height)
      * @brief Get 2D Coordinates from a WOT position scaled to given width and height.
      * @param position The position to convert to a 2d coordinate
      * @param game_info game_info object containing the boundaries of the map

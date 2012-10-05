@@ -150,12 +150,21 @@ namespace wotreplay {
     void read_mini_map(const std::string &map_name, const std::string &game_mode, boost::multi_array<uint8_t, 3> &base);
 
     /**
-     * @fn void create_image(boost::multi_array<uint8_t, 3> &image, const parser_t &replay)
+     * @fn void create_image(boost::multi_array<uint8_t, 3> &image, const game_t &replay)
      * @brief Draw an a 500x500 image (with alpha channel) the positions of the tanks, and the death positions.
      * @param image The target image to draw on.
      * @param replay The replay with the information to draw
      */
     void create_image(boost::multi_array<uint8_t, 3> &image, const game_t &replay);
+
+    /**
+     * @fn void read_png_ll(const std::string &in, boost::multi_array<uint8_t, 3> &image)
+     * Reads RGB or RGBA image from string into an RGBA image
+     * @param in Path of the image to be read
+     * @param image The output variable, the array will be resized to contain the contents of 
+     * the image.
+     */
+    void read_png_ll(const std::string &in, boost::multi_array<uint8_t, 3> &image);
 }
 
 #endif /* defined(wotreplay_image_h) */
