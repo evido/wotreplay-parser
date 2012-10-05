@@ -112,10 +112,6 @@ float calculate_alpha(const std::tuple<float, float> &bounds, float value) {
     return std::min(std::max( nominator /  denominator, 0.f), 1.f);
 }
 
-int mix(int v0, int v1, float a1, int v2, float a2) {
-    return (1-a2)*((1-a1)*v0 + a1*v1) + a2 * v2;
-}
-
 void draw_image(boost::multi_array<uint8_t, 3> &base,
                 boost::multi_array<float, 3>::const_reference team1,
                 boost::multi_array<float, 3>::const_reference team2,
@@ -391,9 +387,14 @@ int main(int argc, const char * argv[]) {
     write_parts_to_file(game);
 
     // create image
-    boost::multi_array<uint8_t, 3> image;
-    read_mini_map(game.get_map_name(), game.get_game_mode(), image);
-    create_image(image, game);
-    write_image("out/replay.png", image);
+    // boost::multi_array<uint8_t, 3> image;
+    // read_mini_map(game.get_map_name(), game.get_game_mode(), image);
+    // create_image(image, game);
+    // write_image("out/replay.png", image);
+    image_t image(game.get_map_name(), game.get_game_mode());
+    image.update(game);
+    image.finish();
+    image.write_image("test.png");
+    
     return EXIT_SUCCESS;
 }

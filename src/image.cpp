@@ -25,8 +25,10 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "image.h"
 #include "game.h"
+#include "image.h"
+
+#include <stdexcept>
 
 using namespace wotreplay;
 
@@ -100,90 +102,14 @@ void wotreplay::read_mini_map(const std::string &map_name, const std::string &ga
     read_png(mini_map, &row_pointers[0], width, height, channels);
 }
 
-
-void wotreplay::create_image(boost::multi_array<uint8_t, 3> &image, const game_t &game) {
-    const std::vector<packet_t> &packets = game.get_packets();
-
-    const size_t *shape = image.shape();
-    int width = static_cast<int>(shape[1]);
-    int height = static_cast<int>(shape[0]);
-
-    for (const packet_t &packet : packets) {
-
-        if (packet.has_property(property_t::position)) {
-            uint32_t player_id = packet.player_id();
-
-            float f_x,f_y;
-            auto position = packet.position();
-            std::tie(f_x,f_y) = get_2d_coord(position, game, width, height);
-            int x = std::round(f_x);
-            int y = std::round(f_y);
-
-            if (player_id == game.get_recorder_id()) {
-                image[y][x][2]= 0xff;
-                image[y][x][1] = image[y][x][0] = 0x00;
-                image[y][x][3] = 0xff;
-                continue;
-            }
-
-            int team_id = game.get_team_id(player_id);
-            if (team_id < 0) continue;
-
-
-            if (__builtin_expect(f_x >= 0 && f_y >= 0 && f_x <= (width - 1) && f_y <= (height - 1), 1)) {
-                switch (team_id) {
-                    case 0:
-                        image[y][x][0] = image[y][x][2] = 0x00;
-                        image[y][x][1] = 0xff;
-                        image[y][x][3] = 0xff;
-                        break;
-                    case 1:
-                        image[y][x][0]= 0xff;
-                        image[y][x][1] = image[y][x][2] = 0x00;
-                        image[y][x][3] = 0xff;
-                        break;
-                }
-            }
-        }
-
-        if (packet.has_property(property_t::tank_destroyed)) {
-            uint32_t target, killer;
-            std::tie(target, killer) = packet.tank_destroyed();
-            packet_t position_packet;
-            bool found = game.find_property(packet.clock(), target, property_t::position, position_packet);
-            if (found) {
-                auto position = position_packet.position();
-                static int offsets[][2] = {
-                    {-1, -1},
-                    {-1,  0},
-                    {-1,  1},
-                    { 0,  1},
-                    { 1,  1},
-                    { 1,  0},
-                    { 1, -1},
-                    { 0, -1},
-                    { 0,  0}
-                };
-                for (auto offset : offsets) {
-                    float f_x, f_y;
-                    std::tie(f_x,f_y) = get_2d_coord(position, game, width, height);
-                    int x = std::round(f_x) + offset[0];
-                    int y = std::round(f_y) + offset[1];
-                    image[y][x][3] = 0xff;
-                    image[y][x][0] = image[y][x][1] = 0xFF;
-                    image[y][x][2] = 0x00;
-                }
-            }
-        }
-    }
-}
-
 image_t::image_t(const std::string &map_name, const std::string &game_mode)
-    : base(boost::extents[500][500][4]),
-        positions(boost::extents[2][500][500]),
-        deaths(boost::extents[2][500][500])
 {
+    // base map determines the size of the 'images'
     load_base_map(map_name, game_mode);
+    const size_t *shape = base.shape();
+    size_t height = shape[0], width = shape[1];
+    positions.resize(boost::extents[3][height][width]);
+    deaths.resize(boost::extents[3][height][width]);
 }
 
 void image_t::draw_death(const packet_t &packet, const game_t &game) {
@@ -210,18 +136,18 @@ void image_t::draw_position(const packet_t &packet, const game_t &game, boost::m
     std::tie(x,y) = get_2d_coord( packet.position(), game, width, height);
 
     if (x >= 0 && y >= 0 && x <= (width - 1) && y <= (height - 1)) {
-        float px = x - floor(x), py = y - floor(y);
-        image[team_id][floor(y)][floor(x)] += px*py;
-        image[team_id][ceil(y)][floor(x)] += px*(1-py);
-        image[team_id][floor(y)][ceil(x)] += (1-px)*py;
-        image[team_id][ceil(y)][ceil(x)] += (1-px)*(1-py);
+        image[team_id][y][x] = 1;
+
+        if (player_id == game.get_recorder_id()) {
+            image[2][y][x] = 1;
+        }
     }
 }
 
 void image_t::update(const game_t &game) {
     for (const packet_t &packet : game.get_packets()) {
         if (packet.has_property(property_t::position)
-                && dead_players.find(packet.player_id()) != dead_players.end()) {
+                && dead_players.find(packet.player_id()) == dead_players.end()) {
             draw_position(packet, game, this->positions);
         } else if (packet.has_property(property_t::tank_destroyed)) {
             uint32_t target, killer;
@@ -233,11 +159,8 @@ void image_t::update(const game_t &game) {
 }
 
 void image_t::load_base_map(const std::string &map_name, const std::string &game_mode) {
-    std::vector<png_bytep> row_pointers;
-    get_row_pointers(base, row_pointers);
-    int width, height, channels;
     std::string mini_map = "maps/no-border/" + map_name + "_" + game_mode + ".png";
-    read_png(mini_map, &row_pointers[0], width, height, channels);
+    read_png_ll(mini_map,this->base);
 }
 
 void wotreplay::read_png_ll(const std::string &in, boost::multi_array<uint8_t, 3> &image) {
@@ -261,7 +184,7 @@ void wotreplay::read_png_ll(const std::string &in, boost::multi_array<uint8_t, 3
     } else if (color_type == PNG_COLOR_TYPE_RGB_ALPHA) {
         // do nothing extra
     } else {
-        std::cerr << "Unsupported image type\n";
+        throw std::runtime_error("Unsupported image type");
     }
 
     image.resize(boost::extents[height][width][4]);
@@ -270,4 +193,64 @@ void wotreplay::read_png_ll(const std::string &in, boost::multi_array<uint8_t, 3
     png_read_image(png_ptr, &row_pointers[0]);
     png_read_end(png_ptr, info_ptr);
     fclose(fp);
+}
+
+void image_t::write_image(const std::string &path) {
+    wotreplay::write_image(path, result);
+}
+
+void image_t::finish() {
+    // copy background to result
+    const size_t *shape = base.shape();
+    result.resize(boost::extents[shape[0]][shape[1]][shape[2]]);
+    result = base;
+    
+    for (int i = 0; i < shape[0]; ++i) {
+        for (int j = 0; j < shape[1]; ++j) {
+            if (positions[0][i][j] > positions[1][i][j]) {
+                // position claimed by first team
+                result[i][j][0] = result[i][j][2] = 0x00;
+                result[i][j][1] = result[i][j][3] = 0xFF;
+            } else if (positions[0][i][j] < positions[1][i][j]) {
+                // position claimed by second team
+                result[i][j][1] = result[i][j][2] = 0x00;
+                result[i][j][0] = result[i][j][3] = 0xFF;
+            } else {
+                // no change
+            }
+
+            if (positions[2][i][j] > 0.f) {
+                // position claimed by second team
+                result[i][j][0] = result[i][j][1] = 0x00;
+                result[i][j][2] = result[i][j][3] = 0xFF;
+            }
+
+
+            if (deaths[0][i][j] + deaths[1][i][j] > 0.f) {
+                static int offsets[][2] = {
+                    {-1, -1},
+                    {-1,  0},
+                    {-1,  1},
+                    { 0,  1},
+                    { 1,  1},
+                    { 1,  0},
+                    { 1, -1},
+                    { 0, -1},
+                    { 0,  0}
+                };
+
+            
+                for (auto offset : offsets) {
+                    int x = j + offset[0];
+                    int y = i + offset[1];
+                    result[y][x][3] = result[y][x][0] = result[y][x][1] = 0xFF;                    
+                    result[y][x][2] = 0x00;
+                }
+            }
+        }
+    }
+}
+
+int wotreplay::mix(int v0, int v1, float a1, int v2, float a2) {
+    return (1-a2)*((1-a1)*v0 + a1*v1) + a2 * v2;
 }

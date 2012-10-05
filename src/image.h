@@ -98,10 +98,23 @@ namespace wotreplay {
         boost::multi_array<float, 3> positions;
         /** Image containing the frequency a player has died on a coordinate */
         boost::multi_array<float, 3> deaths;
+        /** Contains the resulting image. */
+        boost::multi_array<uint8_t, 3> result;
         /** A collection of dead players, as seen by the updates from packets */
         std::set<int> dead_players;
     };
 
+    /**
+     * @fn int mix(int v0, int v1, float a1, int v2, float a2)
+     * Helper function to mix colors.
+     * @param v0 base value
+     * @param v1 new value 1
+     * @param a1 alpha value 1
+     * @param v2 new value 2
+     * @param a2 alpha value 2
+     */
+    int mix(int v0, int v1, float a1, int v2, float a2);
+    
     /**
      * @fn bool write_png(const std::string &out, png_bytepp image, size_t width, size_t height, bool alpha)
      * @brief Write out an image to path out with given width and height.
@@ -148,14 +161,6 @@ namespace wotreplay {
      * @param base Output variable to store the contents of the image.
      */
     void read_mini_map(const std::string &map_name, const std::string &game_mode, boost::multi_array<uint8_t, 3> &base);
-
-    /**
-     * @fn void create_image(boost::multi_array<uint8_t, 3> &image, const game_t &replay)
-     * @brief Draw an a 500x500 image (with alpha channel) the positions of the tanks, and the death positions.
-     * @param image The target image to draw on.
-     * @param replay The replay with the information to draw
-     */
-    void create_image(boost::multi_array<uint8_t, 3> &image, const game_t &replay);
 
     /**
      * @fn void read_png_ll(const std::string &in, boost::multi_array<uint8_t, 3> &image)

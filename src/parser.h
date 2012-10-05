@@ -55,8 +55,6 @@ namespace wotreplay {
          * Default constructor for creating an empty replay_file 
          */
         parser_t(bool debug = false);
-       
-        bool find_property(uint32_t clock, uint32_t player_id, property_t property, packet_t &out) const;
         /**
          * Indicates if the parsed file is a legacy (< 0.7.2) replay file. This means 'game begin', 'game end' will be missing.
          * @return \c true if file is in a legacy format \c false if the file is in the 'new' format.
@@ -119,14 +117,13 @@ namespace wotreplay {
          * @param replay The output variable that will contain the decompressed replay after the execution of this method.
          */
         void extract_replay(buffer_t &compressed_replay, buffer_t &replay);
-        // methods helping with packet processing
-        template <typename iterator>
         /**
          * Helper method to read a single packet from a begin and end iterator.
          * @param begin iterator to denote the beginning of the packet.
          * @param end iterator to denote the end of the packet.
          * @return The newly constructed packet.
          */
+        template <typename iterator>
         packet_t read_packet(iterator begin, iterator end);
         /**
          * Helper method to read all the packets contained in the buffer replay_file::replay.

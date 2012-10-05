@@ -160,8 +160,9 @@ void wotreplay::write_parts_to_file(const game_t &game) {
 
 std::tuple<float, float> wotreplay::get_2d_coord(const std::tuple<float, float, float> &position, const game_t &game, int width, int height) {
     float x,y,z;
-    int min_x, max_x, min_y, max_y;
-    std::tie(min_x, max_x, min_y, max_y) = game.get_map_boundaries();
+    const std::array<int, 4> &map_boundaries = game.get_map_boundaries();
+    int min_x = map_boundaries[0], max_x = map_boundaries[1], min_y = map_boundaries[2], max_y = map_boundaries[3];
+    // std::tie(min_x, max_x, min_y, max_y) = game.get_map_boundaries();
     std::tie(x,z,y) = position;
     x = (x - min_x) * (static_cast<float>(width) / (max_x - min_x + 1));
     y = (max_y - y) * (static_cast<float>(height) / (max_y - min_y + 1));
