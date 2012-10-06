@@ -52,7 +52,7 @@ using namespace tbb;
 using namespace boost::filesystem;
 using namespace boost;
 
-#define MAP_SIZE    300
+#define MAP_SIZE    512
 
 /**
  * @fn std::tuple<float, float> get_2d_coord(const std::tuple<float, float, float> &position, const game_info &game_info, int width, int height)
