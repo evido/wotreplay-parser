@@ -254,3 +254,8 @@ void image_t::finish() {
 int wotreplay::mix(int v0, int v1, float a1, int v2, float a2) {
     return (1-a2)*((1-a1)*v0 + a1*v1) + a2 * v2;
 }
+
+void image_t::reset() {
+    std::fill(positions.origin(), positions.origin() + deaths.num_elements(), 0.f);
+    std::fill(positions.origin(), positions.origin() + positions.num_elements(), 0.f);
+}

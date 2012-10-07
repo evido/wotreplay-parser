@@ -73,6 +73,11 @@ namespace wotreplay {
          * @param path The location of the new image.
          */
         void write_image(const std::string &path);
+        /**
+         * Merge the contents of an image with this image.
+         * @param image target image to merge this image with
+         */
+        void merge(const image_t &image);
     private:
         /**
          * Load a background image from the combination map name and game mode.

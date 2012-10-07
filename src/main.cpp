@@ -384,13 +384,8 @@ int main(int argc, const char * argv[]) {
     show_packet_summary(game.get_packets());
     write_parts_to_file(game);
     show_map_boundaries(game, game.get_packets());
-    write_parts_to_file(game);
 
     // create image
-    // boost::multi_array<uint8_t, 3> image;
-    // read_mini_map(game.get_map_name(), game.get_game_mode(), image);
-    // create_image(image, game);
-    // write_image("out/replay.png", image);
     image_t image(game.get_map_name(), game.get_game_mode());
     image.update(game);
     image.finish();
