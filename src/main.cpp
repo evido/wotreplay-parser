@@ -1,4 +1,3 @@
-#include "image.h"
 #include "image_util.h"
 #include "image_writer.h"
 #include "json/json.h"
