@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 
+/** @file */
+
 namespace wotreplay {
     /**
      * @fn int mix(int v0, int v1, float a1, int v2, float a2)

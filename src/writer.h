@@ -15,7 +15,7 @@ namespace wotreplay {
         /**
          * Initializes the object.
          * @param map The name of the map.
-         * @param move The game mode.
+         * @param mode The game mode.
          */
         virtual void init(const std::string &map, const std::string &mode) = 0;
         /**
