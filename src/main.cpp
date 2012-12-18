@@ -1,31 +1,6 @@
-/*
- Copyright (c) 2012, Jan Temmerman
- All rights reserved.
-
- Redistribution and use in source and binary forms, with or without
- modification, are permitted provided that the following conditions are met:
- * Redistributions of source code must retain the above copyright
- notice, this list of conditions and the following disclaimer.
- * Redistributions in binary form must reproduce the above copyright
- notice, this list of conditions and the following disclaimer in the
- documentation and/or other materials provided with the distribution.
- * Neither the name of the <organization> nor the
- names of its contributors may be used to endorse or promote products
- derived from this software without specific prior written permission.
-
- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- DISCLAIMED. IN NO EVENT SHALL Jan Temmerman BE LIABLE FOR ANY
- DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
 #include "image.h"
+#include "image_util.h"
+#include "image_writer.h"
 #include "json/json.h"
 #include "parser.h"
 
@@ -156,7 +131,6 @@ void draw_position(const packet_t &packet, const game_t &game, boost::multi_arra
     auto shape = images.shape();
     int width = static_cast<int>(shape[2]);
     int height = static_cast<int>(shape[1]);
-
     float x,y;
     std::tie(x,y) = get_2d_coord( packet.position(), game, width, height);
 
@@ -191,7 +165,7 @@ void process_replay_directory(const path& directory) {
         if (it == directory_iterator()) {
             fc.stop();
         } else {
-            auto path = it->path();
+            const auto &path = it->path();
             file_path = path.string();
             ++count;
         }
@@ -268,7 +242,8 @@ void process_replay_directory(const path& directory) {
 
         std::stringstream death_image;
         death_image << "out/deaths/" << replay.get_map_name() << "_" << replay.get_game_mode() << ".png";
-        write_image(death_image.str(), base);
+        std::ofstream file(death_image.str(), std::ios::binary);
+        write_png(file, base);
         return result;
     };
     
@@ -320,18 +295,32 @@ void process_replay_directory(const path& directory) {
         draw_image(base, image[0], image[1], 0.02, 0.98);
         std::stringstream position_image;
         position_image << "out/positions/" << map_name << "_" << game_mode << ".png";
-        write_image(position_image.str(), base);
+        std::ofstream position_image_file(position_image.str(), std::ios::binary);
+        write_png(position_image_file, base);
 
         // process deaths
         read_mini_map(map_name, game_mode, base);
         draw_image(base, image[2], image[3], .33, .66);
         std::stringstream death_image;
         death_image << "out/deaths/" << map_name << "_" << game_mode << ".png";
-        write_image(death_image.str(), base);
+        std::ofstream death_image_file(death_image.str(), std::ios::binary);
+        write_png(death_image_file, base);
     });
 }
 
-
+void dump_positions(const game_t &game) {
+    std::ofstream os("positions.csv");
+    os << "clock;player_id;team_id;x;z;y\n";
+    const std::vector<packet_t> &packets = game.get_packets();
+    for (const packet_t &packet : packets) {
+        if (packet.has_property(property_t::position)) {
+            auto position = packet.position();
+            os << packet.clock() << ";" << packet.player_id() << ";" << game.get_team_id(packet.player_id()) << ";"
+                << std::get<0>(position) << ";" << std::get<1>(position) << ";" << std::get<2>(position) << std::endl;
+        }
+    }
+    os.close();
+}
 
 int main(int argc, const char * argv[]) {
     chdir("/Users/jantemmerman/Development/wotreplay-parser/data");
@@ -374,11 +363,14 @@ int main(int argc, const char * argv[]) {
         std::cerr << "Something went wrong with reading file: " << file_name << std::endl;
         std::exit(-1);
     }
-    
+
     parser_t parser;
     game_t game;
     parser.parse(is, game);
     is.close();
+
+    dump_positions(game);
+
 
     // display some info about the replay
     show_packet_summary(game.get_packets());
@@ -386,10 +378,11 @@ int main(int argc, const char * argv[]) {
     show_map_boundaries(game, game.get_packets());
 
     // create image
-    image_t image(game.get_map_name(), game.get_game_mode());
-    image.update(game);
-    image.finish();
-    image.write_image("test.png");
-    
+    std::unique_ptr<image_writer_t> writer(new image_writer_t());
+    writer->init(game.get_map_name(), game.get_game_mode());
+    writer->update(game);
+    writer->finish();
+    std::ofstream file("test2.png");
+    writer->write(file);
     return EXIT_SUCCESS;
 }
