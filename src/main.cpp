@@ -35,7 +35,7 @@ struct process_result {
     /** The path for the replay file to proces. */
     std::string path;
     /** An instance of the parser for the member path. */
-    game_t *replay;
+    game_t replay;
     /** images for both teams containing the number of times this position was filled by a team member. */
     boost::multi_array<float, 3> position_image;
     /** images for both teams containing the number of team member was killed on a specific position. */
@@ -46,7 +46,7 @@ struct process_result {
      * Constructor for process_result, setting the path and the image sizes.
      */
     process_result(std::string path, int image_width, int image_height)
-        : error(false), path(path), replay(nullptr)
+        : error(false), path(path)
         , position_image(boost::extents[2][image_width][image_height])
         , death_image(boost::extents[2][image_width][image_height])
         , hit_image(boost::extents[2][image_width][image_height])
@@ -61,12 +61,6 @@ struct process_result {
      * No assignation possible.
      */
     process_result & operator= (const process_result & other) = delete;
-    /** 
-     * Destructor for the class process_result.
-     */
-    ~process_result() {
-        delete replay;
-    }
 };
 
 std::tuple<float, float> get_bounds(boost::multi_array<float, 3>::const_reference image, float l_quant,float r_quant) {
@@ -146,10 +140,25 @@ void draw_death(const packet_t &packet, process_result &result) {
     uint32_t killer, killed;
     std::tie(killed, killer) = packet.tank_destroyed();
     packet_t position_packet;
-    bool found = result.replay->find_property(packet.clock(), killed, property_t::position, position_packet);
+    bool found = result.replay.find_property(packet.clock(), killed, property_t::position, position_packet);
     if (found) {
-        draw_position(position_packet, *result.replay, result.death_image);
+        draw_position(position_packet, result.replay, result.death_image);
     }
+}
+
+struct result_t {
+    std::string path;
+    game_t game;
+    bool error;
+};
+
+void process_replay_directory2(const path& directory) {
+    directory_iterator it(directory);
+
+    // get out if no elements
+    if (it == directory_iterator()) return;
+
+    
 }
 
 void process_replay_directory(const path& directory) {
@@ -168,7 +177,7 @@ void process_replay_directory(const path& directory) {
             file_path = path.string();
             ++count;
         }
-        return new process_result{ file_path, 500, 500 };
+        return new process_result(file_path, 500, 500);
     };
 
     auto f_create_replays = [](process_result* result) -> process_result* {
@@ -179,13 +188,11 @@ void process_replay_directory(const path& directory) {
         try {
             ifstream is(result->path, std::ios::binary);
             parser_t parser;
-            result->replay = new game_t();
-            parser.parse(is, *result->replay);
+            parser.parse(is, result->replay);
             is.close();
         } catch (std::exception &e) {
             result->error = true;
             std::cerr << "Error!" << std::endl;
-            result->replay = nullptr;
         }
         return result;
     };
@@ -193,7 +200,7 @@ void process_replay_directory(const path& directory) {
     auto f_process_replays = [](process_result *result) -> process_result* {
         if (result->error) return result;
 
-        const game_t &replay = *result->replay;
+        const game_t &replay = result->replay;
         std::set<uint32_t> dead_players;
 
         for (const packet_t &packet : replay.get_packets()) {
@@ -218,7 +225,7 @@ void process_replay_directory(const path& directory) {
         if (result->error) return result;
         boost::multi_array<uint8_t, 3> base(boost::extents[500][500][4]);
 
-        const game_t &replay = *result->replay;
+        const game_t &replay = result->replay;
         
         read_mini_map(replay.get_map_name(), replay.get_game_mode(), base);
 
@@ -250,7 +257,7 @@ void process_replay_directory(const path& directory) {
     auto f_merge_results = [&](process_result *result) -> process_result* {
         if (result->error /* || result->replay->get_game_end().size() == 0 */ ) return result;
 
-        const game_t &replay = *result->replay;
+        const game_t &replay = result->replay;
 
         auto key = std::make_tuple(replay.get_map_name(), replay.get_game_mode());
         if (images.find(key) == images.end()) {
@@ -383,5 +390,6 @@ int main(int argc, const char * argv[]) {
     writer->finish();
     std::ofstream file("test2.png");
     writer->write(file);
+    
     return EXIT_SUCCESS;
 }

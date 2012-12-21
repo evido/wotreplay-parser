@@ -21,9 +21,19 @@ namespace wotreplay {
         virtual void finish() override;
         virtual void reset() override;
         virtual void write(std::ostream &os) override;
-        virtual bool is_initialized() const;
-        virtual void init(const std::string &map, const std::string &mode);
+        virtual bool is_initialized() const override;
+        virtual void init(const std::string &map, const std::string &mode) override;
         virtual void clear() override;
+        /**
+         * Set if the recording player should be drawn on the map in a seperate color.
+         * @param show_self Show the recording player ?
+         */
+        virtual void set_show_self(bool show_self);
+        /**
+         * Returns if the recording player is drawn on the map in a seperate color.
+         * @return Show the recording player ?
+         */
+        virtual bool get_show_self() const;
     private:
         /**
          * Load a background image from the combination map name and game mode.
@@ -53,7 +63,8 @@ namespace wotreplay {
         /** Contains the resulting image. */
         boost::multi_array<uint8_t, 3> result;
         
-        bool initialized;
+        bool initialized = false;
+        bool show_self = false;
     };
 }
 

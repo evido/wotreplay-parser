@@ -1,5 +1,6 @@
 #include "image_util.h"
 
+#include <boost/format.hpp>
 #include <fstream>
 
 using namespace wotreplay;
@@ -57,7 +58,6 @@ void wotreplay::read_png(std::istream &is, boost::multi_array<uint8_t, 3> &image
 
 
 bool wotreplay::write_png(std::ostream &os, boost::multi_array<uint8_t, 3> &image) {
-
     png_structp png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
     png_infop info_ptr = png_create_info_struct(png_ptr);
 
@@ -78,7 +78,6 @@ bool wotreplay::write_png(std::ostream &os, boost::multi_array<uint8_t, 3> &imag
                  8, alpha ? PNG_COLOR_TYPE_RGBA : PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE,
                  PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
 
-
     std::vector<png_bytep> row_pointers;
     get_row_pointers(image, row_pointers);
     png_set_rows(png_ptr, info_ptr, &row_pointers[0]);
@@ -97,7 +96,7 @@ void wotreplay::get_row_pointers(boost::multi_array<uint8_t, 3> &image, std::vec
 }
 
 void wotreplay::read_mini_map(const std::string &map_name, const std::string &game_mode, boost::multi_array<uint8_t, 3> &base) {
-    std::string mini_map = "maps/no-border/" + map_name + "_" + game_mode + ".png";
+    std::string mini_map = (boost::format("maps/no-border/%1%_%2%.png") % map_name % game_mode).str();
     std::ifstream file(mini_map, std::ios::binary);
     read_png(file, base);
 }

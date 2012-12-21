@@ -1,10 +1,7 @@
-#include "game.h"
 #include "image_util.h"
 #include "image_writer.h"
 
-#include <boost/math/special_functions.hpp>
 #include <fstream>
-#include <stdexcept>
 
 using namespace wotreplay;
 
@@ -106,7 +103,7 @@ void image_writer_t::finish() {
                 // no change
             }
 
-            if (positions[2][i][j] > 0.f) {
+            if (this->show_self && positions[2][i][j] > 0.f) {
                 // position claimed by second team
                 result[i][j][0] = result[i][j][1] = 0x00;
                 result[i][j][2] = result[i][j][3] = 0xFF;
@@ -146,4 +143,12 @@ void image_writer_t::reset() {
 
 bool image_writer_t::is_initialized() const {
     return initialized;
+}
+
+void image_writer_t::set_show_self(bool show_self) {
+    this->show_self = show_self;
+}
+
+bool image_writer_t::get_show_self() const {
+    return show_self;
 }
