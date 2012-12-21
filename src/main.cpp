@@ -26,6 +26,8 @@ using namespace tbb;
 using namespace boost::filesystem;
 using namespace boost;
 
+#define MAP_SIZE    512
+
 /**
  * Collection of values used and filled in during the processing of the replay
  * file, an instance of this object is passed allong the pipeline.
@@ -172,7 +174,7 @@ void process_replay_directory(const path& directory) {
             file_path = path.string();
             ++count;
         }
-        return new process_result(file_path, 500, 500);
+        return new process_result{ file_path, MAP_SIZE, MAP_SIZE };
     };
 
     auto f_create_replays = [](process_result* result) -> process_result* {
@@ -218,14 +220,14 @@ void process_replay_directory(const path& directory) {
 
     auto f_create_image = [](process_result* result) -> process_result* {
         if (result->error) return result;
-        boost::multi_array<uint8_t, 3> base(boost::extents[500][500][4]);
+        boost::multi_array<uint8_t, 3> base(boost::extents[MAP_SIZE][MAP_SIZE][4]);
 
         const game_t &replay = result->replay;
         
         read_mini_map(replay.get_map_name(), replay.get_game_mode(), base);
 
-        for (int i = 0; i < 500; ++i) {
-            for (int j = 0; j < 500; ++j) {
+        for (int i = 0; i < MAP_SIZE; ++i) {
+            for (int j = 0; j < MAP_SIZE; ++j) {
                 if (result->position_image[0][i][j] > 0) {
                     base[i][j][0] = 0x00;
                     base[i][j][1] = 0xFF;
@@ -256,7 +258,7 @@ void process_replay_directory(const path& directory) {
 
         auto key = std::make_tuple(replay.get_map_name(), replay.get_game_mode());
         if (images.find(key) == images.end()) {
-            images.insert({key, boost::multi_array<float,3>(boost::extents[4][500][500])});
+            images.insert({key, boost::multi_array<float,3>(boost::extents[4][MAP_SIZE][MAP_SIZE])});
         }
 
         boost::multi_array<float,3> &image = images[key];
