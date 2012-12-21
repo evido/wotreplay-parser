@@ -6,17 +6,18 @@
 #include <algorithm>
 #include <array>
 #include <atomic>
-#include <boost/multi_array.hpp>
+#include <boost/format.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/multi_array.hpp>
 #include <cmath>
 #include <cstdio>
 #include <fstream>
 #include <iostream>
 #include <map>
 #include <set>
-#include <tuple>
 #include <tbb/tbb.h>
+#include <tuple>
 #include <vector>
 
 using namespace std;
@@ -145,12 +146,6 @@ void draw_death(const packet_t &packet, process_result &result) {
         draw_position(position_packet, result.replay, result.death_image);
     }
 }
-
-struct result_t {
-    std::string path;
-    game_t game;
-    bool error;
-};
 
 void process_replay_directory2(const path& directory) {
     directory_iterator it(directory);
@@ -299,17 +294,15 @@ void process_replay_directory(const path& directory) {
         // process positions
         read_mini_map(map_name, game_mode, base);
         draw_image(base, image[0], image[1], 0.02, 0.98);
-        std::stringstream position_image;
-        position_image << "out/positions/" << map_name << "_" << game_mode << ".png";
-        std::ofstream position_image_file(position_image.str(), std::ios::binary);
+        std::string position_image = (boost::format("out/positions/%1%/%2%.png") % map_name % game_mode).str();
+        std::ofstream position_image_file(position_image, std::ios::binary);
         write_png(position_image_file, base);
 
         // process deaths
         read_mini_map(map_name, game_mode, base);
         draw_image(base, image[2], image[3], .33, .66);
-        std::stringstream death_image;
-        death_image << "out/deaths/" << map_name << "_" << game_mode << ".png";
-        std::ofstream death_image_file(death_image.str(), std::ios::binary);
+        std::string death_image = (boost::format("out/deaths/%1%/%2%.png") % map_name % game_mode).str();
+        std::ofstream death_image_file(death_image, std::ios::binary);
         write_png(death_image_file, base);
     });
 }
@@ -385,6 +378,7 @@ int main(int argc, const char * argv[]) {
 
     // create image
     std::unique_ptr<image_writer_t> writer(new image_writer_t());
+    writer->set_show_self(true);
     writer->init(game.get_map_name(), game.get_game_mode());
     writer->update(game);
     writer->finish();
