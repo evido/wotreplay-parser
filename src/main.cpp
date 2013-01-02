@@ -323,46 +323,28 @@ void dump_positions(const game_t &game) {
     os.close();
 }
 
-int main(int argc, const char * argv[]) {
-    chdir("/Users/jantemmerman/Development/wotreplay-parser/data");
-    
-    // validate_parser("replays"); std::exit(0);
-    // process_replay_directory("replays"); std::exit(1);
-    
-    string file_names[] = {
-        "replays/20120407_1046_ussr-KV-3_himmelsdorf.wotreplay",
-        "replays/8.0/20120929_1204_ussr-IS-3_28_desert.wotreplay",
-        "replays/old/20120317_2037_ussr-KV-3_lakeville.wotreplay",
-        "replays/20120610_1507_germany-E-75_caucasus.wotreplay",
-        "replays/20120408_2137_ussr-KV-3_ruinberg.wotreplay",
-        "replays/20120407_1322_ussr-KV_fjord.wotreplay",
-        "replays/20120407_1046_ussr-KV-3_himmelsdorf.wotreplay",
-        "replays/20120405_2122_germany-PzVIB_Tiger_II_redshire.wotreplay",
-        "replays/20120405_2112_germany-PzVIB_Tiger_II_monastery.wotreplay",
-        "replays/20120405_2204_ussr-KV_caucasus.wotreplay",
-        "replays/20120707_2059_germany-E-75_himmelsdorf.wotreplay",
-        "replays/20120815_0309_germany-E-75_02_malinovka.wotreplay",
-        "replays/8.0/20120906_2352_germany-Panther_II_02_malinovka.wotreplay",
-        "replays/20120826_0013_france-AMX_13_90_04_himmelsdorf.wotreplay",
-        "replays/20120826_0019_france-AMX_13_90_45_north_america.wotreplay",
-        "replays/20120701_1247_germany-E-75_monastery.wotreplay",
-        "replays/20120826_2059_france-AMX_13_90_02_malinovka.wotreplay",
-        "replays/20120826_1729_france-AMX_13_90_04_himmelsdorf.wotreplay",
-        "replays/20120920_2130_france-AMX_13_90_14_siegfried_line.wotreplay",
-        "replays/20120921_0042_ussr-IS-3_02_malinovka.wotreplay",
-        "replays/old/20120319_2306_ussr-KV-3_malinovka.wotreplay",
-        "replays/old/20120318_0044_germany-PzVIB_Tiger_II_himmelsdorf.wotreplay",
-        "replays/old/20120317_2037_ussr-KV-3_lakeville.wotreplay",
-        "replays/8.0/20120929_1724_ussr-IS-3_17_munchen.wotreplay",
-        
-    };
+void print_usage(int argc, const char * argv[]) {
+     std::cerr << boost::format("usage: %1% <root> <path replay> <output>\n") % argv[0];
+}
 
-    auto file_name = file_names[11];
+int main(int argc, const char * argv[]) {
+    if (argc < 4) {
+        print_usage(argc, argv);
+        std::exit(0);
+    }
+
+    std::string root(argv[1]);
+    if (chdir(root.c_str()) != 0) {
+        std::cerr << boost::format("cannot change working directory to: %1%\n") % root;
+        std::exit(0);
+    }
+
+    std::string file_name(argv[2]);
     ifstream is(file_name, std::ios::binary);
 
     if (!is) {
         std::cerr << "Something went wrong with reading file: " << file_name << std::endl;
-        std::exit(-1);
+        std::exit(0);
     }
 
     parser_t parser;
@@ -384,7 +366,7 @@ int main(int argc, const char * argv[]) {
     writer->init(game.get_map_name(), game.get_game_mode());
     writer->update(game);
     writer->finish();
-    std::ofstream file("test2.png");
+    std::ofstream file(argv[3]);
     writer->write(file);
     
     return EXIT_SUCCESS;
