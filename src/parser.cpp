@@ -8,6 +8,7 @@
 #include <memory>
 #include <openssl/blowfish.h>
 #include <ostream>
+#include <regex>
 #include <stdexcept>
 #include <sstream>
 #include <string>
@@ -117,10 +118,31 @@ void parser_t::parse(buffer_t &buffer, wotreplay::game_t &game) {
 
     extract_replay(raw_replay, game.replay);
     read_packets(game);
+
     // read version string
     uint32_t version_string_sz = get_field<uint32_t>(game.replay.begin(), game.replay.end(), 12);
     game.version.assign(game.replay.begin() + 16, game.replay.begin() + 16 + version_string_sz);
-    std::cout << "version string: " << game.version << std::endl;
+
+    if (!this->is_compatible(game)) {
+        std::cerr << boost::format("Warning: Replay version (%1%) not marked as compatible.\n") % game.version;
+    }
+}
+
+bool parser_t::is_compatible(const game_t &game) const {
+    std::string version;
+    std::regex re(R"(v\.(\d+\.\d+\.\d+))");
+    std::smatch match;
+
+    if (std::regex_search(game.version, match, re)) {
+        version = match[1];
+    }
+
+    std::vector<std::string> compatible_versions{
+        "0.8.2"
+    };
+
+    return std::find(compatible_versions.begin(), compatible_versions.end(), version)
+                != compatible_versions.end();
 }
 
 void parser_t::set_debug(bool debug) {
