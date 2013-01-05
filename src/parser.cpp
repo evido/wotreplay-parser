@@ -1,6 +1,7 @@
 #include "json/json.h"
 #include "parser.h"
 
+#include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
 #include <fstream>
 #include <map>
@@ -73,41 +74,42 @@ void parser_t::parse(buffer_t &buffer, wotreplay::game_t &game) {
     } else {
         get_data_blocks(buffer, data_blocks);
 
+#if DEBUG_REPLAY_FILE
+        for (int i = 0; i < data_blocks.size(); ++i) {
+            debug_stream_content((boost::format("data_block%1%.dat") % i).str(),
+                                 data_blocks[i].begin(), data_blocks[i].end());
+        }
+#endif
+
+        if (data_blocks.size() < 2) {
+            std::string message((boost::format("Unexpected number of data blocks (%1%).") % data_blocks.size()).str());
+            throw std::runtime_error(message);
+        }
+
+        buffer_t &game_begin = game.game_begin;
+        game_begin.resize(data_blocks[0].size());
+        std::copy(data_blocks[0].begin(), data_blocks[0].end(), game_begin.begin());
+
         switch(data_blocks.size()) {
-            case 3: {
+            case 4: {
                 buffer_t &game_end = game.game_end;
                 game_end.resize(data_blocks[1].size());
                 std::copy(data_blocks[1].begin(), data_blocks[1].end(), game_end.begin());
-
-                buffer_t &game_begin = game.game_begin;
-                game_begin.resize(data_blocks[0].size());
-                std::copy(data_blocks[0].begin(), data_blocks[0].end(), game_begin.begin());
-
-                raw_replay.resize(data_blocks[2].size());
-                std::copy(data_blocks[2].begin(), data_blocks[2].end(), raw_replay.begin());
-                break;
             }
-            case 2: {
-                // data blocks contain at least game begin state and replay data
-                buffer_t &game_begin = game.game_begin;
-                game_begin.resize(data_blocks[0].size());
-                std::copy(data_blocks[0].begin(), data_blocks[0].end(), game_begin.begin());
-
-                raw_replay.resize(data_blocks[1].size());
-                std::copy(data_blocks[1].begin(), data_blocks[1].end(), raw_replay.begin());
-
-                break;
+            case 3: {
+                // third block contains game summary
             }
-            default:
-                std::stringstream msg;
-                msg << __func__
-                << "Unexpected number of data blocks ("
-                << data_blocks.size()
-                << ") !\n";
-                throw std::runtime_error(msg.str());
         }
 
-        const unsigned char key[] = { 0xDE, 0x72, 0xBE, 0xA0, 0xDE, 0x04, 0xBE, 0xB1, 0xDE, 0xFE, 0xBE, 0xEF, 0xDE, 0xAD, 0xBE, 0xEF};
+        raw_replay.resize(data_blocks.back().size());
+        std::copy(data_blocks.back().begin(), data_blocks.back().end(), raw_replay.begin());
+
+        static const unsigned char key[] = {
+            0xDE, 0x72, 0xBE, 0xA0,
+            0xDE, 0x04, 0xBE, 0xB1,
+            0xDE, 0xFE, 0xBE, 0xEF,
+            0xDE, 0xAD, 0xBE, 0xEF
+        };
 
         decrypt_replay(raw_replay, key);
         read_game_info(game);
@@ -118,6 +120,7 @@ void parser_t::parse(buffer_t &buffer, wotreplay::game_t &game) {
     // read version string
     uint32_t version_string_sz = get_field<uint32_t>(game.replay.begin(), game.replay.end(), 12);
     game.version.assign(game.replay.begin() + 16, game.replay.begin() + 16 + version_string_sz);
+    std::cout << "version string: " << game.version << std::endl;
 }
 
 void parser_t::set_debug(bool debug) {

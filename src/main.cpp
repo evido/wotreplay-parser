@@ -324,7 +324,8 @@ void dump_positions(const game_t &game) {
 }
 
 void print_usage(int argc, const char * argv[]) {
-     std::cerr << boost::format("usage: %1% <root> <path replay> <output>\n") % argv[0];
+    std::string program_name(argv[0]);
+    std::cerr << boost::format("usage: %1% <root> <path replay> <output>\n") % program_name;
 }
 
 int main(int argc, const char * argv[]) {
@@ -339,11 +340,11 @@ int main(int argc, const char * argv[]) {
         std::exit(0);
     }
 
-    std::string file_name(argv[2]);
-    ifstream is(file_name, std::ios::binary);
+    std::string input(argv[2]);
+    ifstream is(input, std::ios::binary);
 
     if (!is) {
-        std::cerr << "Something went wrong with reading file: " << file_name << std::endl;
+        std::cerr << boost::format("Something went wrong with reading file: %1%\n") % input;
         std::exit(0);
     }
 
@@ -353,7 +354,6 @@ int main(int argc, const char * argv[]) {
     is.close();
 
     dump_positions(game);
-
 
     // display some info about the replay
     show_packet_summary(game.get_packets());
@@ -366,7 +366,9 @@ int main(int argc, const char * argv[]) {
     writer->init(game.get_map_name(), game.get_game_mode());
     writer->update(game);
     writer->finish();
-    std::ofstream file(argv[3]);
+
+    std::string output(argv[3]);
+    std::ofstream file(output);
     writer->write(file);
     
     return EXIT_SUCCESS;
