@@ -522,10 +522,6 @@ void wotreplay::show_packet_summary(const std::vector<packet_t>& packets) {
     printf("Total packets = %lu\n", packets.size());
 }
 
-
-
-
-
 bool wotreplay::is_replayfile(const boost::filesystem::path &p) {
     return is_regular_file(p) && p.extension() == ".wotreplay" ;
 }
@@ -587,7 +583,7 @@ void wotreplay::validate_parser(const std::string &path) {
             });
 
             size_t dead_players = get_dead_player_count(game_end);
-            ss << "kills:" << (tank_destroyed_count == dead_players);
+            ss << boost::format("kills: %d") % (tank_destroyed_count == dead_players);
         } else {
             ss << "n/a";
         }
