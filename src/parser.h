@@ -56,6 +56,11 @@ namespace wotreplay {
         void parse(buffer_t &buffer, wotreplay::game_t &game);
     private:
         /**
+         * Indicates if the parser is compatible with the version of wot replay.
+         * @return \c true if parser is compatible \c false if not
+         */
+        bool is_compatible(const game_t &game) const;
+        /**
          * Indicates if the passed buffer_t contains a legacy (< 0.7.2) replay file. 
          * @return \c true if file is in a legacy format \c false if the file is in the 'new' format.
          */

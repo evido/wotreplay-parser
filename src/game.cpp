@@ -113,13 +113,13 @@ const buffer_t &game_t::get_raw_replay() const {
 }
 
 void wotreplay::write_parts_to_file(const game_t &game) {
-    ofstream game_begin("out/game_begin.txt", ios::binary | ios::ate);
+    ofstream game_begin("out/game_begin.json", ios::binary | ios::ate);
     std::copy(game.get_game_begin().begin(),
               game.get_game_begin().end(),
               ostream_iterator<char>(game_begin));
     game_begin.close();
 
-    ofstream game_end("out/game_end.txt", ios::binary | ios::ate);
+    ofstream game_end("out/game_end.json", ios::binary | ios::ate);
     std::copy(game.get_game_end().begin(),
               game.get_game_end().end(),
               ostream_iterator<char>(game_end));

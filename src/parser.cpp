@@ -1,12 +1,14 @@
 #include "json/json.h"
 #include "parser.h"
 
+#include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
 #include <fstream>
 #include <map>
 #include <memory>
 #include <openssl/blowfish.h>
 #include <ostream>
+#include <regex>
 #include <stdexcept>
 #include <sstream>
 #include <string>
@@ -73,51 +75,79 @@ void parser_t::parse(buffer_t &buffer, wotreplay::game_t &game) {
     } else {
         get_data_blocks(buffer, data_blocks);
 
+        if (debug) {
+            for (int i = 0; i < data_blocks.size(); ++i) {
+                debug_stream_content((boost::format("out/data-block-%1%.dat") % i).str(),
+                                    data_blocks[i].begin(), data_blocks[i].end());
+            }
+        }
+
+        if (data_blocks.size() < 2) {
+            std::string message((boost::format("Unexpected number of data blocks (%1%).") % data_blocks.size()).str());
+            throw std::runtime_error(message);
+        }
+
+        buffer_t &game_begin = game.game_begin;
+        game_begin.resize(data_blocks[0].size());
+        std::copy(data_blocks[0].begin(), data_blocks[0].end(), game_begin.begin());
+
         switch(data_blocks.size()) {
-            case 3: {
+            case 4: {
                 buffer_t &game_end = game.game_end;
                 game_end.resize(data_blocks[1].size());
                 std::copy(data_blocks[1].begin(), data_blocks[1].end(), game_end.begin());
-
-                buffer_t &game_begin = game.game_begin;
-                game_begin.resize(data_blocks[0].size());
-                std::copy(data_blocks[0].begin(), data_blocks[0].end(), game_begin.begin());
-
-                raw_replay.resize(data_blocks[2].size());
-                std::copy(data_blocks[2].begin(), data_blocks[2].end(), raw_replay.begin());
-                break;
             }
-            case 2: {
-                // data blocks contain at least game begin state and replay data
-                buffer_t &game_begin = game.game_begin;
-                game_begin.resize(data_blocks[0].size());
-                std::copy(data_blocks[0].begin(), data_blocks[0].end(), game_begin.begin());
-
-                raw_replay.resize(data_blocks[1].size());
-                std::copy(data_blocks[1].begin(), data_blocks[1].end(), raw_replay.begin());
-
-                break;
+            case 3: {
+                // third block contains game summary
             }
-            default:
-                std::stringstream msg;
-                msg << __func__
-                << "Unexpected number of data blocks ("
-                << data_blocks.size()
-                << ") !\n";
-                throw std::runtime_error(msg.str());
         }
 
-        const unsigned char key[] = { 0xDE, 0x72, 0xBE, 0xA0, 0xDE, 0x04, 0xBE, 0xB1, 0xDE, 0xFE, 0xBE, 0xEF, 0xDE, 0xAD, 0xBE, 0xEF};
+        raw_replay.resize(data_blocks.back().size());
+        std::copy(data_blocks.back().begin(), data_blocks.back().end(), raw_replay.begin());
+
+        static const unsigned char key[] = {
+            0xDE, 0x72, 0xBE, 0xA0,
+            0xDE, 0x04, 0xBE, 0xB1,
+            0xDE, 0xFE, 0xBE, 0xEF,
+            0xDE, 0xAD, 0xBE, 0xEF
+        };
 
         decrypt_replay(raw_replay, key);
         read_game_info(game);
     }
 
     extract_replay(raw_replay, game.replay);
-    read_packets(game);
+    
     // read version string
     uint32_t version_string_sz = get_field<uint32_t>(game.replay.begin(), game.replay.end(), 12);
     game.version.assign(game.replay.begin() + 16, game.replay.begin() + 16 + version_string_sz);
+
+    if (!this->is_compatible(game)) {
+        std::cerr << boost::format("Warning: Replay version (%1%) not marked as compatible.\n") % game.version;
+    }
+    
+    read_packets(game);
+
+    if (debug) {
+        show_packet_summary(game.get_packets());
+    }
+}
+
+bool parser_t::is_compatible(const game_t &game) const {
+    std::string version;
+    std::regex re(R"(v\.(\d+\.\d+\.\d+))");
+    std::smatch match;
+
+    if (std::regex_search(game.version, match, re)) {
+        version = match[1];
+    }
+
+    std::vector<std::string> compatible_versions{
+        "0.8.2"
+    };
+
+    return std::find(compatible_versions.begin(), compatible_versions.end(), version)
+                != compatible_versions.end();
 }
 
 void parser_t::set_debug(bool debug) {
@@ -272,6 +302,7 @@ static std::map<uint8_t, int> packet_lengths = {
     {0x1D, 21},
     {0x1A, 16},
     {0x1E, 16},  // modified for 0.7.2 {0x1e, 160},
+    {0x1F, 17},
     {0x20, 21},  // modified for 0.8.0 {0x20, 4}
     {0x31,  4},  // indication of restart of the replay, probably not a part of the replay but necessary because of wrong detection of the start of the replay
     {0x0D, 22},
@@ -310,12 +341,16 @@ size_t parser_t::read_packets(game_t &game) {
                 }
                 continue;
             } else {
+                int unread = (int) buffer.size() - (int) ix;
+                if (unread > 25) {
+                    std::cerr <<
+                        boost::format("Warning: Unexpected end of replay, %1d bytes left.\n") % unread;
+                }
                 if (debug) {
                     const packet_t &last_packet = game.packets.back();
                     const slice_t &packet_data = last_packet.get_data();
                     size_t packet_size = packet_data.size();
                     size_t prev_ix = ix - packet_size;
-                    int unread = (int) buffer.size() - (int) ix;
                     std::cerr << "Bytes read: " << ix << std::endl
                         << "Packets read: " << count << std::endl
                         << "Last packets start: " << prev_ix << std::endl
@@ -337,6 +372,7 @@ size_t parser_t::read_packets(game_t &game) {
                 packet_length += get_field<uint16_t>(buffer.begin(), buffer.end(), ix + 17);
                 break;
             }
+            case 0x1F:
             case 0x17: {
                 packet_length += get_field<uint8_t>(buffer.begin(), buffer.end(), ix + 9);
                 break;
@@ -374,7 +410,7 @@ size_t parser_t::read_packets(game_t &game) {
         }
 
         if (debug) {
-              std::cerr << (int) buffer[ix + 1] << " " << ix << " " << packet_length << "\n";
+            std::cerr << boost::format("[%2%] type=0x%1$02X size=%3%\n") % (int) buffer[ix + 1] % ix % packet_length;
         }
         
         ix += packet_length;
