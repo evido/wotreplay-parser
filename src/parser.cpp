@@ -342,7 +342,11 @@ size_t parser_t::read_packets(game_t &game) {
                 continue;
             } else {
                 int unread = (int) buffer.size() - (int) ix;
-                if (unread > 25 || debug) {
+                if (unread > 25) {
+                    std::cerr <<
+                        boost::format("Warning: Unexpected end of replay, %1d bytes left.\n") % unread;
+                }
+                if (debug) {
                     const packet_t &last_packet = game.packets.back();
                     const slice_t &packet_data = last_packet.get_data();
                     size_t packet_size = packet_data.size();
