@@ -350,14 +350,13 @@ int main(int argc, const char * argv[]) {
 
     parser_t parser;
     game_t game;
+    parser.set_debug(true);
     parser.parse(is, game);
     is.close();
 
     dump_positions(game);
 
     // display some info about the replay
-    show_packet_summary(game.get_packets());
-    write_parts_to_file(game);
     show_map_boundaries(game, game.get_packets());
 
     // create image
