@@ -1,5 +1,6 @@
 #include "image_util.h"
 #include "image_writer.h"
+#include "json_writer.h"
 #include "json/json.h"
 #include "parser.h"
 
@@ -397,11 +398,13 @@ int main(int argc, const char * argv[]) {
     show_map_boundaries(game, game.get_packets());
 
     std::unique_ptr<writer_t> writer;
-
+    
     if (type == "png") {
         writer = std::unique_ptr<writer_t>(new image_writer_t());
-        image_writer_t &image_writer = dynamic_cast<image_writer_t&>(*writer);
+        auto &image_writer = dynamic_cast<image_writer_t&>(*writer);
         image_writer.set_show_self(true);
+    } else if (type == "json") {
+        writer = std::unique_ptr<writer_t>(new json_writer_t());
     } else {
         std::cout << "Invalid output type, supported types: png" << std::endl;
     }

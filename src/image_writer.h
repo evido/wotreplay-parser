@@ -1,8 +1,8 @@
 #ifndef wotreplay__image_writer_h
 #define wotreplay__image_writer_h
 
+#include "game.h"
 #include "packet.h"
-#include "parser.h"
 #include "writer.h"
 
 #include <boost/multi_array.hpp>
