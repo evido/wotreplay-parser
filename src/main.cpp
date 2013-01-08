@@ -392,11 +392,6 @@ int main(int argc, const char * argv[]) {
     parser.parse(is, game);
     is.close();
 
-    dump_positions(game);
-
-    // display some info about the replay
-    show_map_boundaries(game, game.get_packets());
-
     std::unique_ptr<writer_t> writer;
     
     if (type == "png") {
