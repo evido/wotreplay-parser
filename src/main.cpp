@@ -10,6 +10,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/multi_array.hpp>
+#include <boost/program_options.hpp>
 #include <cmath>
 #include <cstdio>
 #include <fstream>
@@ -25,6 +26,9 @@ using namespace wotreplay;
 using namespace tbb;
 using namespace boost::filesystem;
 using namespace boost;
+
+namespace po = boost::program_options;
+
 
 #define MAP_SIZE    512
 
@@ -323,24 +327,55 @@ void dump_positions(const game_t &game) {
     os.close();
 }
 
-void print_usage(int argc, const char * argv[]) {
+void show_help(int argc, const char *argv[], po::options_description &desc) {
     std::string program_name(argv[0]);
-    std::cerr << boost::format("usage: %1% <root> <path replay> <output>\n") % program_name;
+    std::cout
+        << boost::format("Usage: %1% --root <working directory> --type <output type> --input <input file> --output <output file>\n\n") % program_name
+        << desc << "\n";
+}
+
+bool has_required_options(po::variables_map &vm) {
+    return vm.count("output") > 0 || vm.count("type") > 0
+            || vm.count("root") > 0|| vm.count("input") > 0;
 }
 
 int main(int argc, const char * argv[]) {
-    if (argc < 4) {
-        print_usage(argc, argv);
+    po::options_description desc("Allowed options");
+
+    std::string type, output, input, root;
+    
+    desc.add_options()
+        ("type,t"  , po::value(&type), "select output type")
+        ("output,o", po::value(&output), "target file")
+        ("input,i" , po::value(&input), "input file")
+        ("root,r"  , po::value(&root), "set root directory")
+        ("help,h"  , "produce help message")
+        ("debug"   , "enable parser debugging");
+
+    po::variables_map vm;
+    
+    try {
+        po::store(po::parse_command_line(argc, argv, desc), vm);
+        po::notify(vm);
+    } catch (std::exception &e) {
+        show_help(argc, argv, desc);
+        std::exit(-1);
+    } catch (...) {
+        std::cerr << "Unknown error." << std::endl;
+        std::exit(-1);
+    }
+
+    if (vm.count("help")
+            || !has_required_options(vm)) {
+        show_help(argc, argv, desc);
         std::exit(0);
     }
 
-    std::string root(argv[1]);
     if (chdir(root.c_str()) != 0) {
         std::cerr << boost::format("cannot change working directory to: %1%\n") % root;
         std::exit(0);
     }
 
-    std::string input(argv[2]);
     ifstream is(input, std::ios::binary);
 
     if (!is) {
@@ -350,7 +385,9 @@ int main(int argc, const char * argv[]) {
 
     parser_t parser;
     game_t game;
-    parser.set_debug(true);
+    
+    bool debug = vm.count("debug") > 0;
+    parser.set_debug(debug);
     parser.parse(is, game);
     is.close();
 
@@ -359,14 +396,20 @@ int main(int argc, const char * argv[]) {
     // display some info about the replay
     show_map_boundaries(game, game.get_packets());
 
-    // create image
-    std::unique_ptr<image_writer_t> writer(new image_writer_t());
-    writer->set_show_self(true);
+    std::unique_ptr<writer_t> writer;
+
+    if (type == "png") {
+        writer = std::unique_ptr<writer_t>(new image_writer_t());
+        image_writer_t &image_writer = dynamic_cast<image_writer_t&>(*writer);
+        image_writer.set_show_self(true);
+    } else {
+        std::cout << "Invalid output type, supported types: png" << std::endl;
+    }
+
     writer->init(game.get_map_name(), game.get_game_mode());
     writer->update(game);
     writer->finish();
-
-    std::string output(argv[3]);
+    
     std::ofstream file(output);
     writer->write(file);
     
