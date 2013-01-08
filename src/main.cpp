@@ -402,13 +402,14 @@ int main(int argc, const char * argv[]) {
         writer = std::unique_ptr<writer_t>(new image_writer_t());
         image_writer_t &image_writer = dynamic_cast<image_writer_t&>(*writer);
         image_writer.set_show_self(true);
-        image_writer.init(game.get_map_name(), game.get_game_mode());
-        image_writer.update(game);
-        image_writer.finish();
     } else {
         std::cout << "Invalid output type, supported types: png" << std::endl;
     }
 
+    writer->init(game.get_map_name(), game.get_game_mode());
+    writer->update(game);
+    writer->finish();
+    
     std::ofstream file(output);
     writer->write(file);
     
