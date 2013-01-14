@@ -82,7 +82,7 @@ int main(int argc, const char * argv[]) {
     } else if (type == "json") {
         writer = std::unique_ptr<writer_t>(new json_writer_t());
     } else {
-        std::cout << "Invalid output type, supported types: png" << std::endl;
+        std::cout << boost::format("Invalid output type (%1%), supported types: png and json.\n") % type;
     }
 
     writer->init(game.get_map_name(), game.get_game_mode());
