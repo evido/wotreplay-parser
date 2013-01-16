@@ -27,8 +27,16 @@ void json_writer_t::update(const game_t &game) {
     for (auto &packet : game.get_packets()) {
         Json::Value value(Json::objectValue);
 
+        if (packet.has_property(property_t::clock)) {
+            value["clock"] = packet.clock();
+        }
+
         if (packet.has_property(property_t::player_id)) {
             value["player_id"] = packet.player_id();
+            int team_id = game.get_team_id(packet.player_id());
+            if (team_id != -1) {
+                value["team"] = team_id;
+            }
         }
 
         if (packet.has_property(property_t::position)) {
