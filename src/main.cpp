@@ -17,8 +17,7 @@ void show_help(int argc, const char *argv[], po::options_description &desc) {
 }
 
 bool has_required_options(po::variables_map &vm) {
-    return vm.count("output") > 0 || vm.count("type") > 0
-            || vm.count("root") > 0|| vm.count("input") > 0;
+    return vm.count("type") > 0;
 }
 
 int main(int argc, const char * argv[]) {
@@ -53,16 +52,22 @@ int main(int argc, const char * argv[]) {
         std::exit(0);
     }
 
-    if (chdir(root.c_str()) != 0) {
+    if (vm.count("root") >  0
+            && chdir(root.c_str()) != 0) {
         std::cerr << boost::format("cannot change working directory to: %1%\n") % root;
         std::exit(0);
     }
 
-    std::ifstream is(input, std::ios::binary);
+    std::istream *is;
 
-    if (!is) {
-        std::cerr << boost::format("Something went wrong with reading file: %1%\n") % input;
-        std::exit(0);
+    if (vm.count("input") > 0) {
+        is = new std::ifstream(input, std::ios::binary);
+        if (!is) {
+            std::cerr << boost::format("Something went wrong with opening file: %1%\n") % input;
+            std::exit(0);
+        }
+    } else {
+        is = &std::cin;
     }
 
     parser_t parser;
@@ -70,8 +75,11 @@ int main(int argc, const char * argv[]) {
     
     bool debug = vm.count("debug") > 0;
     parser.set_debug(debug);
-    parser.parse(is, game);
-    is.close();
+    parser.parse(*is, game);
+
+    if (dynamic_cast<std::ifstream&>(*is)) {
+        dynamic_cast<std::ifstream&>(*is).close();
+    }    
 
     std::unique_ptr<writer_t> writer;
     
@@ -88,9 +96,25 @@ int main(int argc, const char * argv[]) {
     writer->init(game.get_map_name(), game.get_game_mode());
     writer->update(game);
     writer->finish();
-    
-    std::ofstream file(output);
-    writer->write(file);
+
+
+    std::ostream *os;
+
+    if (vm.count("output") > 0) {
+        os = new std::ofstream(output, std::ios::binary);
+        if (!os) {
+            std::cerr << boost::format("Something went wrong with opening file: %1%\n") % input;
+            std::exit(0);
+        }
+    } else {
+        os = &std::cout;
+    }
+
+    writer->write(*os);
+
+    if (dynamic_cast<std::ofstream*>(os)) {
+        dynamic_cast<std::ofstream*>(os)->close();
+    }
     
     return EXIT_SUCCESS;
 }

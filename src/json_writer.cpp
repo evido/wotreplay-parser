@@ -55,6 +55,10 @@ void json_writer_t::update(const game_t &game) {
             value["destroyed_by"] = destroyed_by;
         }
 
+        if (packet.has_property(property_t::health)) {
+            value["health"] = packet.health();
+        }
+
         packets.append(value);
     }
 }
