@@ -49,7 +49,7 @@ namespace wotreplay {
          */
         virtual bool is_initialized() const = 0;
 
-        virtual ~writer_t() = default;
+        virtual ~writer_t() {};
     };
 }
 
