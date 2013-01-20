@@ -17,7 +17,7 @@ void show_help(int argc, const char *argv[], po::options_description &desc) {
 }
 
 bool has_required_options(po::variables_map &vm) {
-    return vm.count("type") > 0;
+    return vm.count("type") > 0 && vm.count("input") > 0;
 }
 
 int main(int argc, const char * argv[]) {
@@ -54,33 +54,24 @@ int main(int argc, const char * argv[]) {
 
     if (vm.count("root") >  0
             && chdir(root.c_str()) != 0) {
-        std::cerr << boost::format("cannot change working directory to: %1%\n") % root;
+        std::cerr << boost::format("Cannot change working directory to: %1%\n") % root;
         std::exit(0);
     }
 
-    std::istream *is;
 
-    if (vm.count("input") > 0) {
-        is = new std::ifstream(input, std::ios::binary);
-        if (!is) {
-            std::cerr << boost::format("Something went wrong with opening file: %1%\n") % input;
-            std::exit(0);
-        }
-    } else {
-        is = &std::cin;
+    
+    std::ifstream in(input, std::ios::binary);
+    if (!in) {
+        std::cerr << boost::format("Something went wrong with opening file: %1%\n") % input;
+        std::exit(0);
     }
 
     parser_t parser;
     game_t game;
-    
+
     bool debug = vm.count("debug") > 0;
     parser.set_debug(debug);
-    parser.parse(*is, game);
-
-    if (dynamic_cast<std::ifstream&>(*is)) {
-        dynamic_cast<std::ifstream&>(*is).close();
-        delete is;
-    }    
+    parser.parse(in, game);
 
     std::unique_ptr<writer_t> writer;
     
@@ -98,23 +89,23 @@ int main(int argc, const char * argv[]) {
     writer->update(game);
     writer->finish();
 
-    std::ostream *os;
+    std::ostream *out;
 
     if (vm.count("output") > 0) {
-        os = new std::ofstream(output, std::ios::binary);
-        if (!os) {
+        out = new std::ofstream(output, std::ios::binary);
+        if (!out) {
             std::cerr << boost::format("Something went wrong with opening file: %1%\n") % input;
             std::exit(0);
         }
     } else {
-        os = &std::cout;
+        out = &std::cout;
     }
 
-    writer->write(*os);
+    writer->write(*out);
 
-    if (dynamic_cast<std::ofstream*>(os)) {
-        dynamic_cast<std::ofstream*>(os)->close();
-        delete os;
+    if (dynamic_cast<std::ofstream*>(out)) {
+        dynamic_cast<std::ofstream*>(out)->close();
+        delete out;
     }
     
     return EXIT_SUCCESS;

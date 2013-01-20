@@ -41,22 +41,8 @@ parser_t::parser_t(bool debug)
     // empty
 }
 
-static size_t get_size(istream& is) {
-    is.seekg(0, ios::end);
-    ios::pos_type size = is.tellg();
-    is.seekg(0, ios::beg);
-    return static_cast<size_t>(size);
-}
-
-static void read(istream& is, buffer_t &buffer) {
-    ios::pos_type size = get_size(is);
-    buffer.resize(size);
-    is.read(reinterpret_cast<char*>(&buffer[0]), size);
-}
-
 void parser_t::parse(std::istream &is, wotreplay::game_t &game) {
-    buffer_t buffer;
-    read(is, buffer);
+    buffer_t buffer((std::istreambuf_iterator<char>(is)), std::istreambuf_iterator<char>());
     parse(buffer, game);
 }
 
