@@ -15,15 +15,31 @@
 #include <type_traits>
 #include <zlib.h>
 
+// use libcpp regex implementation if possible
+#ifdef _LIBCPP_VERSION
+
+using std::regex;
+using std::smatch;
+using std::regex_search;
+
+#else
+
+// fallback to boost
+#include <boost/regex.hpp>
+using boost::regex;
+using boost::smatch;
+using boost::regex_search;
+
+#endif
+
 using namespace wotreplay;
-using namespace std;
 using namespace boost::filesystem;
 
 #if DEBUG_REPLAY_FILE
 
 template <typename T>
-static void debug_stream_content(const string &file_name, T begin, T end) {
-    ofstream os(file_name, ios::binary | ios::ate);
+static void debug_stream_content(const std::string &file_name, T begin, T end) {
+    std::ofstream os(file_name, std::ios::binary | std::ios::ate);
     std::copy(begin, end, std::ostream_iterator<typename std::iterator_traits<T>::value_type>(os));
     os.close();
 }
@@ -121,10 +137,10 @@ void parser_t::parse(buffer_t &buffer, wotreplay::game_t &game) {
 
 bool parser_t::is_compatible(const game_t &game) const {
     std::string version;
-    std::regex re(R"(v\.(\d+\.\d+\.\d+))");
-    std::smatch match;
+    regex re(R"(v\.(\d+\.\d+\.\d+))");
+    smatch match;
 
-    if (std::regex_search(game.version, match, re)) {
+    if (regex_search(game.version, match, re)) {
         version = match[1];
     }
 
@@ -238,7 +254,7 @@ void parser_t::extract_replay(buffer_t &compressed_replay, buffer_t &replay) {
     }
 }
 
-void parser_t::get_data_blocks(buffer_t &buffer, vector<slice_t> &data_blocks) const {
+void parser_t::get_data_blocks(buffer_t &buffer, std::vector<slice_t> &data_blocks) const {
     // determine number of data blocks
     uint32_t nr_data_blocks = get_data_block_count(buffer);
     
@@ -481,8 +497,8 @@ void parser_t::read_game_info(game_t& game) {
             game.map_name = "44_north_america";
         } else {
             for (auto entry : map_boundaries) {
-                string map_name = entry.first;
-                string short_map_name(map_name.begin() + 3, map_name.end());
+                std::string map_name = entry.first;
+                std::string short_map_name(map_name.begin() + 3, map_name.end());
                 if (short_map_name == game.map_name) {
                     // rewrite map name
                     game.map_name = map_name;
@@ -549,7 +565,7 @@ void wotreplay::validate_parser(const std::string &path) {
         ss << "file:" << it->path().string();
         
         // parse the path as a replay file, using methods internal to parser
-        ifstream is(it->path().string(), std::ios::binary);
+        std::ifstream is(it->path().string(), std::ios::binary);
         parser_t parser(false);
         game_t game;
         parser.parse(is, game);
