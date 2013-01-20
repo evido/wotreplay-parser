@@ -79,6 +79,7 @@ int main(int argc, const char * argv[]) {
 
     if (dynamic_cast<std::ifstream&>(*is)) {
         dynamic_cast<std::ifstream&>(*is).close();
+        delete is;
     }    
 
     std::unique_ptr<writer_t> writer;
@@ -97,7 +98,6 @@ int main(int argc, const char * argv[]) {
     writer->update(game);
     writer->finish();
 
-
     std::ostream *os;
 
     if (vm.count("output") > 0) {
@@ -114,6 +114,7 @@ int main(int argc, const char * argv[]) {
 
     if (dynamic_cast<std::ofstream*>(os)) {
         dynamic_cast<std::ofstream*>(os)->close();
+        delete os;
     }
     
     return EXIT_SUCCESS;
