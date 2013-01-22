@@ -1,6 +1,5 @@
 #include "game.h"
 
-
 #include <algorithm>
 #include <fstream>
 #include <iostream>
@@ -32,30 +31,24 @@ uint32_t game_t::get_recorder_id() const {
     return recorder_id;
 }
 
-bool game_t::find_property(uint32_t clock, uint32_t player_id, property_t property, packet_t &out) const
-{
+bool game_t::find_property(uint32_t clock, uint32_t player_id, property_t property, packet_t &out) const {
     // inline function function for using with stl to finding the range with the same clock
     auto has_same_clock = [&](const packet_t &target) -> bool  {
         // packets without clock are included
         return target.has_property(property_t::clock)
-        && target.clock() == clock;
+            && target.clock() == clock;
     };
-
 
     // find first packet with same clock
     auto it_clock_begin = std::find_if(packets.cbegin(), packets.cend(), has_same_clock);
     // find last packet with same clock
-    auto it_clock_end = std::find_if_not(it_clock_begin, packets.cend(), [&](const packet_t &target) -> bool  {
-        // packets without clock are included
-        return !target.has_property(property_t::clock)
-        || target.clock() == clock;
-    });
+    auto it_clock_end = std::find_if_not(it_clock_begin, packets.cend(), has_same_clock);
 
     auto is_related_with_property = [&](const packet_t &target) -> bool {
         return target.has_property(property_t::clock) &&
-        target.has_property(property_t::player_id) &&
-        target.has_property(property) &&
-        target.player_id() == player_id;
+            target.has_property(property_t::player_id) &&
+            target.has_property(property) &&
+            target.player_id() == player_id;
     };
 
     auto it = std::find_if(it_clock_begin, it_clock_end, is_related_with_property);
@@ -134,8 +127,10 @@ void wotreplay::write_parts_to_file(const game_t &game) {
 std::tuple<float, float> wotreplay::get_2d_coord(const std::tuple<float, float, float> &position, const game_t &game, int width, int height) {
     float x,y,z;
     const std::array<int, 4> &map_boundaries = game.get_map_boundaries();
-    int min_x = map_boundaries[0], max_x = map_boundaries[1], min_y = map_boundaries[2], max_y = map_boundaries[3];
-    // std::tie(min_x, max_x, min_y, max_y) = game.get_map_boundaries();
+    int min_x = map_boundaries[0],
+        max_x = map_boundaries[1],
+        min_y = map_boundaries[2],
+        max_y = map_boundaries[3];
     std::tie(x,z,y) = position;
     x = (x - min_x) * (static_cast<float>(width) / (max_x - min_x + 1));
     y = (max_y - y) * (static_cast<float>(height) / (max_y - min_y + 1));
@@ -143,8 +138,10 @@ std::tuple<float, float> wotreplay::get_2d_coord(const std::tuple<float, float, 
 }
 
 void wotreplay::show_map_boundaries(const game_t &game, const std::vector<packet_t> &packets) {
-
-    float min_x = 0.f, min_y = 0.f, max_x = 0.f, max_y = 0.f;
+    float min_x = 0.f,
+        min_y = 0.f,
+        max_x = 0.f,
+        max_y = 0.f;
 
     for (const packet_t &packet : packets) {
         if (packet.type() != 0xa) {

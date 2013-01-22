@@ -72,7 +72,9 @@ void json_writer_t::reset() {
     this->initialized = false;
 }
 
-bool json_writer_t::is_initialized() const { return initialized; }
+bool json_writer_t::is_initialized() const {
+    return initialized;
+}
 
 void json_writer_t::clear() {
     value["packets"].clear();

@@ -25,7 +25,6 @@ void image_writer_t::draw_position(const packet_t &packet, const game_t &game, b
     int width = static_cast<int>(shape[2]);
     int height = static_cast<int>(shape[1]);
 
-
     float x,y;
     std::tie(x,y) = get_2d_coord( packet.position(), game, width, height);
 
@@ -73,7 +72,6 @@ void image_writer_t::init(const std::string &map, const std::string &mode) {
     size_t height = shape[0], width = shape[1];
     positions.resize(boost::extents[3][height][width]);
     deaths.resize(boost::extents[3][height][width]);
-
     initialized = true;
 }
 
@@ -109,7 +107,6 @@ void image_writer_t::finish() {
                 result[i][j][2] = result[i][j][3] = 0xFF;
             }
 
-
             if (deaths[0][i][j] + deaths[1][i][j] > 0.f) {
                 static int offsets[][2] = {
                     {-1, -1},
@@ -122,7 +119,6 @@ void image_writer_t::finish() {
                     { 0, -1},
                     { 0,  0}
                 };
-
 
                 for (const auto &offset : offsets) {
                     int x = j + offset[0];

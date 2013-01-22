@@ -26,4 +26,3 @@ namespace wotreplay {
 }
 
 #endif // wotreplay__json_writer_h
-
