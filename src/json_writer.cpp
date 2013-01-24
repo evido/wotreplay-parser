@@ -3,26 +3,35 @@
 using namespace wotreplay;
 
 void json_writer_t::init(const std::string &map, const std::string &mode) {
-    value = Json::Value(Json::objectValue);
-
+    root = (Json::Value(Json::objectValue));
     Json::Value mapValue(map.c_str());
     Json::Value modeValue(mode.c_str());
 
-    value["map"] = mapValue;
-    value["mode"] = modeValue;
-    value["packets"] = Json::Value(Json::arrayValue);
+    root["map"] = mapValue;
+    root["mode"] = modeValue;
+    root["packets"] = Json::Value(Json::arrayValue);
 
     this->initialized = true;
 }
 
 void json_writer_t::write(std::ostream &os) {
-    os << value;
+    os << root;
 }
 
 void json_writer_t::update(const game_t &game) {
-    auto &packets = value["packets"];
+    auto &packets = root["packets"];
 
-    value["recorder_id"] = game.get_recorder_id();
+    root["recorder_id"] = game.get_recorder_id();
+
+    Json::Value summary;
+    Json::Reader reader;
+    
+    const buffer_t &buffer = game.get_game_end().size() == 0 ?
+        game.get_game_end() : game.get_game_begin();
+    std::string summary_str(buffer.begin(), buffer.end());
+    reader.parse(summary_str, summary);
+
+    root["summary"] = summary;
 
     for (auto &packet : game.get_packets()) {
         Json::Value value(Json::objectValue);
@@ -68,7 +77,7 @@ void json_writer_t::finish() {
 }
 
 void json_writer_t::reset() {
-    value.clear();
+    root.clear();
     this->initialized = false;
 }
 
@@ -77,5 +86,5 @@ bool json_writer_t::is_initialized() const {
 }
 
 void json_writer_t::clear() {
-    value["packets"].clear();
+    root["packets"].clear();
 }

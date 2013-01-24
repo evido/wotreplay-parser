@@ -20,7 +20,7 @@ namespace wotreplay {
         virtual void init(const std::string &map, const std::string &mode) override;
         virtual void clear() override;
     private:
-        Json::Value value;
+        Json::Value root;
         bool initialized;
     };
 }
