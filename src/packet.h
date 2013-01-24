@@ -3,9 +3,10 @@
 
 #include "types.h"
 
-#include <tuple>
+#include <algorithm>
 #include <array>
 #include <stdint.h>
+#include <tuple>
 
 /** @file packet.h */
 
@@ -76,6 +77,11 @@ namespace wotreplay {
          * @return The data of this packet.
          */
         const slice_t &get_data() const;
+        template <typename T>
+        bool find(const T &value) const {
+            const uint8_t *arr = reinterpret_cast<const uint8_t*>(&value);
+            return std::search(data.begin(), data.end(), arr, arr + sizeof(value)) != data.end();
+        }
     private:
         /** An array containing the presence of each property. */
         std::array<bool, static_cast<size_t>(property_t::property_nr_items)> properties;

@@ -145,7 +145,8 @@ bool parser_t::is_compatible(const game_t &game) const {
     }
 
     std::vector<std::string> compatible_versions{
-        "0.8.2"
+        "0.8.2",
+        "0.8.3"
     };
 
     return std::find(compatible_versions.begin(), compatible_versions.end(), version)

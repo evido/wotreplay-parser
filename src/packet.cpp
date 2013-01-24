@@ -58,7 +58,7 @@ void packet_t::set_data(const slice_t &data) {
             properties[static_cast<size_t>(property_t::player_id)] = true;
             properties[static_cast<size_t>(property_t::is_shot)] = true;
             uint8_t sub_type = get_field<uint8_t>(data.begin(), data.end(), 13);
-            properties[static_cast<size_t>(property_t::health)] = sub_type == 0x02;
+            properties[static_cast<size_t>(property_t::health)] = sub_type == 0x04;
             break;
         }
         case 0x08: {
@@ -72,9 +72,6 @@ void packet_t::set_data(const slice_t &data) {
             break;
         }
         default:
-            if (data.size() >= 13) {
-                properties[static_cast<size_t>(property_t::player_id)] = true;
-            }
             if (data.size() >= 9) {
                 properties[static_cast<size_t>(property_t::clock)] = true;
             }
