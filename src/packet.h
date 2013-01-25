@@ -24,6 +24,8 @@ namespace wotreplay {
         sub_type,
         type,
         tank_destroyed,
+        target,
+        target_health,
         property_nr_items
     };
 
@@ -54,6 +56,10 @@ namespace wotreplay {
         std::tuple<float, float, float> position() const;
         /** @return The remaining health of a player. */
         uint16_t health() const;
+        /** @return The remaining health of a player. */
+        uint16_t target_health() const;
+        /** @return The remaining health of a player. */
+        uint32_t target() const;
         /** @return Indicates the player_id was hit. */
         bool is_shot() const;
         /** @return A tuple of with the player_id's of the target and the killer. */

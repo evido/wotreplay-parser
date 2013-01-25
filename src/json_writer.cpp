@@ -68,6 +68,14 @@ void json_writer_t::update(const game_t &game) {
             value["health"] = packet.health();
         }
 
+        if (packet.has_property(property_t::target)) {
+            value["target"] = packet.target();
+        }
+
+        if (packet.has_property(property_t::target_health)) {
+            value["target_health"] = packet.target_health();
+        }
+
         packets.append(value);
     }
 }

@@ -69,6 +69,15 @@ void packet_t::set_data(const slice_t &data) {
             properties[static_cast<size_t>(property_t::clock)] = true;
             properties[static_cast<size_t>(property_t::player_id)] = true;
             properties[static_cast<size_t>(property_t::type)] = true;
+            uint8_t sub_type = get_field<uint8_t>(data.begin(), data.end(), 13);
+            switch (sub_type) {
+                case 0x02:
+                    properties[static_cast<size_t>(property_t::target_health)] = true;
+                    properties[static_cast<size_t>(property_t::target)] = true;
+                    break;
+                default:
+                    break;
+            }
             break;
         }
         default:
@@ -78,6 +87,16 @@ void packet_t::set_data(const slice_t &data) {
             properties[static_cast<size_t>(property_t::type)] = true;
             break;
     }
+}
+
+uint16_t packet_t::target_health() const {
+    assert(has_property(property_t::target_health));
+    return get_field<uint16_t>(data.begin(), data.end(), 21);
+}
+
+uint32_t packet_t::target() const {
+    assert(has_property(property_t::target));
+    return get_field<uint32_t>(data.begin(), data.end(), 23);
 }
 
 const slice_t &packet_t::get_data() const {
