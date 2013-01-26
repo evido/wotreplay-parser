@@ -107,6 +107,6 @@ int main(int argc, const char * argv[]) {
         dynamic_cast<std::ofstream*>(out)->close();
         delete out;
     }
-    
+
     return EXIT_SUCCESS;
 }

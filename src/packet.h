@@ -26,6 +26,7 @@ namespace wotreplay {
         tank_destroyed,
         target,
         target_health,
+        turret_direction,
         property_nr_items
     };
 
@@ -54,6 +55,8 @@ namespace wotreplay {
         uint32_t player_id() const;
         /** @return The position value of this packet. */
         std::tuple<float, float, float> position() const;
+        /** @return The turret direction value of this packet. */
+        std::tuple<float, float, float> turret_direction() const;
         /** @return The remaining health of a player. */
         uint16_t health() const;
         /** @return The remaining health of a player. */

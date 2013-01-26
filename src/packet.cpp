@@ -29,6 +29,14 @@ std::tuple<float, float, float> packet_t::position() const {
     return std::make_tuple(x,y,z);
 }
 
+std::tuple<float, float, float> packet_t::turret_direction() const {
+    assert(type() == 0x0a);
+    float x = get_field<float>(data.begin(), data.end(), 45);
+    float y = get_field<float>(data.begin(), data.end(), 49);
+    float z = get_field<float>(data.begin(), data.end(), 53);
+    return std::make_tuple(x,y,z);
+}
+
 uint16_t packet_t::health() const {
     assert(has_property(property_t::health));
     return get_field<uint16_t>(data.begin(), data.end(), 21);
@@ -48,6 +56,7 @@ void packet_t::set_data(const slice_t &data) {
     switch(get_field<uint8_t>(data.begin(), data.end(), 1)) {
         case 0x0a:
             properties[static_cast<size_t>(property_t::position)] = true;
+            properties[static_cast<size_t>(property_t::turret_direction)] = true;
             properties[static_cast<size_t>(property_t::type)] = true;
             properties[static_cast<size_t>(property_t::clock)] = true;
             properties[static_cast<size_t>(property_t::player_id)] = true;
