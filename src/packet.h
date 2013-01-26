@@ -56,7 +56,7 @@ namespace wotreplay {
         /** @return The position value of this packet. */
         std::tuple<float, float, float> position() const;
         /** @return The turret direction value of this packet. */
-        std::tuple<float, float, float> turret_direction() const;
+        float turret_direction() const;
         /** @return The remaining health of a player. */
         uint16_t health() const;
         /** @return The remaining health of a player. */

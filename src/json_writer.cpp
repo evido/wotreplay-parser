@@ -58,12 +58,9 @@ void json_writer_t::update(const game_t &game) {
         }
 
         if (packet.has_property(property_t::turret_direction)) {
-            Json::Value turretDirectionValue(Json::arrayValue);
+            Json::Value turretDirectionValue(Json::realValue);
             const auto &turret_direction = packet.turret_direction();
-            turretDirectionValue.append(std::get<0>(turret_direction));
-            turretDirectionValue.append(std::get<1>(turret_direction));
-            turretDirectionValue.append(std::get<2>(turret_direction));
-            value["turret_direction"] = turretDirectionValue;
+            value["turret_direction"] = turret_direction;
         }
 
         if (packet.has_property(property_t::tank_destroyed)) {

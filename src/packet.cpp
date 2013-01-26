@@ -29,12 +29,9 @@ std::tuple<float, float, float> packet_t::position() const {
     return std::make_tuple(x,y,z);
 }
 
-std::tuple<float, float, float> packet_t::turret_direction() const {
+float packet_t::turret_direction() const {
     assert(type() == 0x0a);
-    float x = get_field<float>(data.begin(), data.end(), 45);
-    float y = get_field<float>(data.begin(), data.end(), 49);
-    float z = get_field<float>(data.begin(), data.end(), 53);
-    return std::make_tuple(x,y,z);
+    return get_field<float>(data.begin(), data.end(), 45);
 }
 
 uint16_t packet_t::health() const {
