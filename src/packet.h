@@ -24,9 +24,9 @@ namespace wotreplay {
         sub_type,
         type,
         tank_destroyed,
-        target,
-        target_health,
-        turret_direction,
+        source,
+        hull_orientation,
+        turret_orientation,
         property_nr_items
     };
 
@@ -55,14 +55,14 @@ namespace wotreplay {
         uint32_t player_id() const;
         /** @return The position value of this packet. */
         std::tuple<float, float, float> position() const;
-        /** @return The turret direction value of this packet. */
-        float turret_direction() const;
+        /** @return The hull orentation value of this packet. */
+        std::tuple<float, float, float> hull_orientation() const;
+        /** @return The turret orentation value of this packet. */
+        float turret_orientation() const;
         /** @return The remaining health of a player. */
         uint16_t health() const;
-        /** @return The remaining health of a player. */
-        uint16_t target_health() const;
-        /** @return The remaining health of a player. */
-        uint32_t target() const;
+        /** @return The remaining health update source of a player. */
+        uint32_t source() const;
         /** @return Indicates the player_id was hit. */
         bool is_shot() const;
         /** @return A tuple of with the player_id's of the target and the killer. */
@@ -86,6 +86,11 @@ namespace wotreplay {
          * @return The data of this packet.
          */
         const slice_t &get_data() const;
+        /**
+         * Find a binary value in this packet.
+         * @param value The value to be found in this packet.
+         * @return \c true if the packet contains the value, \c false if not
+         */
         template <typename T>
         bool find(const T &value) const {
             const uint8_t *arr = reinterpret_cast<const uint8_t*>(&value);

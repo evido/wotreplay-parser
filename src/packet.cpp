@@ -12,12 +12,12 @@ uint8_t packet_t::type() const {
 }
 
 uint32_t packet_t::player_id() const {
-    assert(has_property(property_t::player_id));
+    // assert(has_property(property_t::player_id));
     return get_field<uint32_t>(data.begin(), data.end(), 9);
 }
 
 float packet_t::clock() const {
-    assert(has_property(property_t::clock));
+    // assert(has_property(property_t::clock));
     return get_field<float>(data.begin(), data.end(), 5);
 }
 
@@ -29,9 +29,17 @@ std::tuple<float, float, float> packet_t::position() const {
     return std::make_tuple(x,y,z);
 }
 
-float packet_t::turret_direction() const {
-    assert(type() == 0x0a);
-    return get_field<float>(data.begin(), data.end(), 45);
+std::tuple<float, float, float> packet_t::hull_orientation() const {
+    assert(has_property(property_t::hull_orientation));
+    float x = get_field<float>(data.begin(), data.end(), 45);
+    float y = get_field<float>(data.begin(), data.end(), 49);
+    float z = get_field<float>(data.begin(), data.end(), 53);
+    return std::make_tuple(x,y,z);
+}
+
+float packet_t::turret_orientation() const {
+    assert(property_t::turret_orientation);
+    return get_field<float>(data.begin(), data.end(), 53);
 }
 
 uint16_t packet_t::health() const {
@@ -53,7 +61,7 @@ void packet_t::set_data(const slice_t &data) {
     switch(get_field<uint8_t>(data.begin(), data.end(), 1)) {
         case 0x0a:
             properties[static_cast<size_t>(property_t::position)] = true;
-            properties[static_cast<size_t>(property_t::turret_direction)] = true;
+            properties[static_cast<size_t>(property_t::hull_orientation)] = true;
             properties[static_cast<size_t>(property_t::type)] = true;
             properties[static_cast<size_t>(property_t::clock)] = true;
             properties[static_cast<size_t>(property_t::player_id)] = true;
@@ -78,10 +86,11 @@ void packet_t::set_data(const slice_t &data) {
             uint8_t sub_type = get_field<uint8_t>(data.begin(), data.end(), 13);
             switch (sub_type) {
                 case 0x02:
-                    properties[static_cast<size_t>(property_t::target_health)] = true;
-                    properties[static_cast<size_t>(property_t::target)] = true;
+                    properties[static_cast<size_t>(property_t::health)] = true;
+                    properties[static_cast<size_t>(property_t::source)] = true;
                     break;
-                default:
+                case 0x19:
+                    // related to tank destroyed
                     break;
             }
             break;
@@ -95,13 +104,8 @@ void packet_t::set_data(const slice_t &data) {
     }
 }
 
-uint16_t packet_t::target_health() const {
-    assert(has_property(property_t::target_health));
-    return get_field<uint16_t>(data.begin(), data.end(), 21);
-}
-
-uint32_t packet_t::target() const {
-    assert(has_property(property_t::target));
+uint32_t packet_t::source() const {
+    assert(has_property(property_t::source));
     return get_field<uint32_t>(data.begin(), data.end(), 23);
 }
 

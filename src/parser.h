@@ -56,10 +56,11 @@ namespace wotreplay {
         void parse(buffer_t &buffer, wotreplay::game_t &game);
     private:
         /**
-         * Indicates if the parser is compatible with the version of wot replay.
-         * @return \c true if parser is compatible \c false if not
+         * Configures parser configuration using the version string.
+         * @param version the version string
+         * @return Returns if the method was able to configure the parser to match the version
          */
-        bool is_compatible(const game_t &game) const;
+        bool setup(const version_t &version);
         /**
          * Indicates if the passed buffer_t contains a legacy (< 0.7.2) replay file. 
          * @return \c true if file is in a legacy format \c false if the file is in the 'new' format.
@@ -106,9 +107,8 @@ namespace wotreplay {
         /**
          * Helper method to read all the packets contained in the buffer replay_file::replay.
          * @param game Output variable game
-         * @return Returns the number of bytes read.
          */
-        size_t read_packets(game_t &game);
+        void read_packets(game_t &game);
         /**
          * Extracts a game_info object from either the 'game begin' data block or parsed directly from the 'replay'
          * data block.
@@ -119,6 +119,8 @@ namespace wotreplay {
         bool legacy;
         /** The debug indicator */
         bool debug;
+        /** Packet lengths */
+        std::map<uint8_t, int> packet_lengths;
     };
 
     template <typename iterator>

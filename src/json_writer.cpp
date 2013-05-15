@@ -26,8 +26,7 @@ void json_writer_t::update(const game_t &game) {
     Json::Value summary;
     Json::Reader reader;
     
-    const buffer_t &buffer = game.get_game_end().size() == 0 ?
-        game.get_game_end() : game.get_game_begin();
+    const buffer_t &buffer = game.get_game_begin();
     std::string summary_str(buffer.begin(), buffer.end());
     reader.parse(summary_str, summary);
 
@@ -57,10 +56,13 @@ void json_writer_t::update(const game_t &game) {
             value["position"] = positionValue;
         }
 
-        if (packet.has_property(property_t::turret_direction)) {
-            Json::Value turretDirectionValue(Json::realValue);
-            const auto &turret_direction = packet.turret_direction();
-            value["turret_direction"] = turret_direction;
+        if (packet.has_property(property_t::hull_orientation)) {
+            Json::Value orientationValue(Json::arrayValue);
+            const auto &orientation = packet.hull_orientation();
+            orientationValue.append(std::get<0>(orientation));
+            orientationValue.append(std::get<1>(orientation));
+            orientationValue.append(std::get<2>(orientation));
+            value["hull_orientation"] = orientationValue;
         }
 
         if (packet.has_property(property_t::tank_destroyed)) {
@@ -74,12 +76,8 @@ void json_writer_t::update(const game_t &game) {
             value["health"] = packet.health();
         }
 
-        if (packet.has_property(property_t::target)) {
-            value["target"] = packet.target();
-        }
-
-        if (packet.has_property(property_t::target_health)) {
-            value["target_health"] = packet.target_health();
+        if (packet.has_property(property_t::source)) {
+            value["source"] = packet.source();
         }
 
         packets.append(value);

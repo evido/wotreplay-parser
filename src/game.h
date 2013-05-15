@@ -10,6 +10,14 @@
 /** @file */
 
 namespace wotreplay {
+
+    struct version_t {
+        version_t() = default;
+        version_t(const std::string &);
+        int major, minor;
+        std::string text;
+    };
+
     /**
      * An object wrapping the properties of the game with the actions
      * by the players in the game represented by a list of packets.
@@ -74,7 +82,7 @@ namespace wotreplay {
          * Returns the version string as stored in the replay file.
          * @return The version string as stored in the replay file.
          */
-        const std::string& get_version() const;
+        const version_t& get_version() const;
         /**
          * Returns the data block 'game begin' containing a JSON string describing the start of the game.
          * @return Data block 'game begin'
@@ -92,11 +100,11 @@ namespace wotreplay {
         std::array<std::set<int>, 2> teams;
         std::string game_mode;
         std::string map_name;
-        std::string version;
         buffer_t game_begin;
         buffer_t game_end;
         buffer_t replay;
         uint32_t recorder_id;
+        version_t version;
     };
 
     /**

@@ -1,9 +1,12 @@
 #include "game.h"
 
 #include <algorithm>
+#include <boost/lexical_cast.hpp>
 #include <fstream>
 #include <iostream>
+#include <regex>
 
+using namespace boost;
 using namespace std;
 using namespace wotreplay;
 
@@ -89,7 +92,7 @@ int game_t::get_team_id(int player_id) const {
     return it == teams.end() ? -1 : (static_cast<int>(it - teams.begin()));
 }
 
-const std::string &game_t::get_version() const {
+const version_t &game_t::get_version() const {
     return version;
 }
 
@@ -124,7 +127,8 @@ void wotreplay::write_parts_to_file(const game_t &game) {
               ostream_iterator<char>(replay_content));
 }
 
-std::tuple<float, float> wotreplay::get_2d_coord(const std::tuple<float, float, float> &position, const game_t &game, int width, int height) {
+std::tuple<float, float> wotreplay::get_2d_coord(const std::tuple<float, float, float> &position, const game_t &game, int width, int height)
+{
     float x,y,z;
     const std::array<int, 4> &map_boundaries = game.get_map_boundaries();
     int min_x = map_boundaries[0],
@@ -162,4 +166,16 @@ void wotreplay::show_map_boundaries(const game_t &game, const std::vector<packet
     }
 
     printf("The boundaries of used positions in this replay are: min_x = %f max_x = %f min_y = %f max_y = %f\n", min_x, max_x, min_y, max_y);
+}
+
+version_t::version_t(const std::string & text)
+    : text(text)
+{
+    regex re(R"(v\.(\d+)\.(\d+)\.(\d+))");
+    smatch match;
+
+    if (regex_search(text, match, re)) {
+        major = lexical_cast<int>(match[2]);
+        minor = lexical_cast<int>(match[3]);
+    }
 }
