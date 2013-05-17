@@ -1,26 +1,41 @@
 #ifndef wotreplay_packet_reader_80_h
 #define wotreplay_packet_reader_80_h
 
-#include "game.h"
 #include "packet_reader.h"
 
 #include <map>
 
 namespace wotreplay {
-    struct packet_size_t {
+    /**
+     * Contains parameter to read a packet
+     */
+    struct packet_config_t {
+        /**
+         * The base packet size
+         */
         int size;
-        int payload_size_offset;
-        int payload_size_type;
+        /**
+         * The position of the payload length indicator
+         */
+        int payload_length_offset;
+        /**
+         * The type of the payload length indicator, 1 = uint8, 2 = uint16, 4 = uint32
+         */
+        int payload_length_type;
     };
 
+    /**
+     * Read WOT 8.0 type replays
+     */
     class packet_reader_80_t : public packet_reader_t {
     public:
-        packet_reader_80_t(const version_t &version, buffer_t &buffer);
+        virtual void init(const version_t &version, buffer_t *buffer);
         virtual packet_t next();
         virtual bool has_next();
+        virtual bool is_compatible(const version_t &version);
     private:
-        std::map<uint8_t, packet_size_t> packet_sizes;
-        buffer_t &buffer;
+        std::map<uint8_t, packet_config_t> packet_configs;
+        buffer_t *buffer;
         version_t version;
         int pos;
     };

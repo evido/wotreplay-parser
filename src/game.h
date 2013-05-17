@@ -10,11 +10,26 @@
 /** @file */
 
 namespace wotreplay {
-
+    /**
+     * The game version of a replay file
+     */
     struct version_t {
         version_t() = default;
-        version_t(const std::string &);
-        int major, minor;
+        /**
+         * @param version_string the string representation of the game version
+         */
+        version_t(const std::string &version_string);
+        /** 
+         * The major version number
+         */
+        int major;
+        /**
+         * The minor version number
+         */
+        int minor;
+        /**
+         * The string representation of the version
+         */
         std::string text;
     };
 

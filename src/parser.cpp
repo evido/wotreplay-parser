@@ -272,7 +272,8 @@ void parser_t::get_data_blocks(buffer_t &buffer, std::vector<slice_t> &data_bloc
 }
 
 void parser_t::read_packets(game_t &game) {
-    std::unique_ptr<packet_reader_t> packet_reader(new packet_reader_80_t(game.version, game.replay));
+    std::unique_ptr<packet_reader_t> packet_reader(new packet_reader_80_t());
+    packet_reader->init(game.version, &game.replay);
     while (packet_reader->has_next()) {
         game.packets.push_back(packet_reader->next());
     }

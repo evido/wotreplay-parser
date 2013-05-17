@@ -1,6 +1,7 @@
 #ifndef wotreplay_packet_reader_h
 #define wotreplay_packet_reader_h
 
+#include "game.h"
 #include "packet.h"
 #include "types.h"
 
@@ -21,6 +22,18 @@ namespace wotreplay {
          * @return \c true if there is a next packet available \c false if there is no such packet
          */
         virtual bool has_next() = 0;
+        /**
+         * Determines if the reader is compatible with the given version
+         * @param version the game version of the replay buffer
+         * @return \c true if the reader is compatible with version \c false if not
+         */
+        virtual bool is_compatible(const version_t &version) = 0;
+        /**
+         * Initializes the packet reader
+         * @param version the game version of the replay buffer
+         * @param buffer the replay buffer
+         */
+        virtual void init(const version_t &version, buffer_t *buffer) = 0;
         virtual ~packet_reader_t() {}
     };
 }

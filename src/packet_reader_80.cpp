@@ -4,7 +4,7 @@
 
 using namespace wotreplay;
 
-static std::map<uint8_t, packet_size_t> base_packet_sizes = {
+static std::map<uint8_t, packet_config_t> base_packet_configs = {
     {0x00, {22, 15, 4}},
     {0x03, {24,  0, 0}},
     {0x04, {16,  0, 0}},
@@ -37,57 +37,59 @@ static std::map<uint8_t, packet_size_t> base_packet_sizes = {
 
 static std::array<uint8_t, 6> marker = {{0x2C, 0x01, 0x01, 0x00, 0x00, 0x00}};
 
-packet_reader_80_t::packet_reader_80_t(const version_t &version, buffer_t &buffer)
-    : packet_sizes(base_packet_sizes), buffer(buffer), version(version), pos(0)
+void packet_reader_80_t::init(const version_t &version, buffer_t *buffer)
 {
+    this->packet_configs = base_packet_configs;
+    this->buffer= buffer;
+    this->version = version;
+    this->pos = 0;
+
     if (!(version.major == 8 && version.minor >= 5)
             || version.major < 8) {
-        packet_sizes[0x16] = {52, 0};
+        packet_configs[0x16] = {52, 0, 0};
     }
 
     if (version.major < 8) {
-        packet_sizes[0x20] = {4, 0};
+        packet_configs[0x20] = { 4, 0, 0};
     }
 
-    //    if (is_legacy()) {
-    //        packet_lengths[0x16] = 44;
-    //    }
+    // if (is_legacy()) {
+    //     packet_lengths[0x16] = 44;
+    // }
 
-    auto start = std::search(buffer.begin(), buffer.end(),marker.begin(), marker.end());
-    if (start != buffer.end()) {
-        pos = static_cast<int>(std::distance(buffer.begin(), start) + marker.size());
+    auto start = std::search(buffer->begin(), buffer->end(),marker.begin(), marker.end());
+    if (start != buffer->end()) {
+        pos = static_cast<int>(std::distance(buffer->begin(), start) + marker.size());
 //        if (debug) {
 //            std::cerr << "OFFSET: " << offset << "\n";
 //        }
     }
 }
 
-
-
 packet_t packet_reader_80_t::next() {
 
-    auto it = base_packet_sizes.find(buffer[pos + 1]);
-    if (it == base_packet_sizes.end()) {
+    auto it = base_packet_configs.find((*buffer)[pos + 1]);
+    if (it == base_packet_configs.end()) {
         throw std::runtime_error("no such packet type");
     }
 
-    packet_size_t packet_size  = it->second;
+    packet_config_t packet_config  = it->second;
     
-    int total_packet_size = packet_size.size;
+    int total_packet_size = packet_config.size;
 
-    if (packet_size.payload_size_offset > 0) {
-        switch(packet_size.payload_size_type) {
+    if (packet_config.payload_length_offset > 0) {
+        switch(packet_config.payload_length_type) {
         case 1:
-            total_packet_size += get_field<uint8_t>(buffer.begin(), buffer.end(),
-                                                    pos + packet_size.payload_size_offset);
+            total_packet_size += get_field<uint8_t>(buffer->begin(), buffer->end(),
+                                                    pos + packet_config.payload_length_offset);
             break;
         case 2:
-            total_packet_size += get_field<uint16_t>(buffer.begin(), buffer.end(),
-                                                     pos + packet_size.payload_size_offset);
+            total_packet_size += get_field<uint16_t>(buffer->begin(), buffer->end(),
+                                                     pos + packet_config.payload_length_offset);
             break;
         case 4:
-            total_packet_size += get_field<uint32_t>(buffer.begin(), buffer.end(),
-                                                     pos + packet_size.payload_size_offset);
+            total_packet_size += get_field<uint32_t>(buffer->begin(), buffer->end(),
+                                                     pos + packet_config.payload_length_offset);
             break;
         default:
             throw std::runtime_error("illegal payload_size_type");
@@ -96,7 +98,7 @@ packet_t packet_reader_80_t::next() {
     }
 
     // include 25 byte ?
-    if (pos + total_packet_size > buffer.size()) {
+    if ((pos + 25 + total_packet_size) > buffer->size()) {
         throw std::runtime_error("packet outside of bounds");
     }
 
@@ -104,7 +106,7 @@ packet_t packet_reader_80_t::next() {
     //        std::cerr << boost::format("[%2%] type=0x%1$02X size=%3%\n") % (int) buffer[pos + 1] % pos % total_packet_size;
     //    }
 
-    auto packet_begin = buffer.begin() + pos;
+    auto packet_begin = buffer->begin() + pos;
     auto packet_end = packet_begin + total_packet_size;
 
     pos += total_packet_size;
@@ -113,6 +115,10 @@ packet_t packet_reader_80_t::next() {
 }
 
 bool packet_reader_80_t::has_next() {
-    // in normal circumstances the buffer ends wit 25 remaining bytes
-    return (pos + 25) < buffer.size();
+    // in normal circumstances the buffer ends with 25 remaining bytes
+    return (pos + 25) < buffer->size();
+}
+
+bool packet_reader_80_t::is_compatible(const version_t &version) {
+    return version.major == 8 && (version.minor >= 0 && version.minor <= 5);
 }
