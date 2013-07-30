@@ -143,7 +143,8 @@ void parser_t::parse(buffer_t &buffer, wotreplay::game_t &game) {
 }
 
 bool parser_t::setup(const version_t &version) {
-    return false;
+    this->packet_reader = std::unique_ptr<packet_reader_t>(new packet_reader_80_t());
+    return packet_reader->is_compatible(version);
 }
 
 void parser_t::set_debug(bool debug) {
@@ -275,7 +276,6 @@ void parser_t::get_data_blocks(buffer_t &buffer, std::vector<slice_t> &data_bloc
 }
 
 void parser_t::read_packets(game_t &game) {
-    std::unique_ptr<packet_reader_t> packet_reader(new packet_reader_80_t());
     packet_reader->init(game.version, &game.replay);
     while (packet_reader->has_next()) {
         game.packets.push_back(packet_reader->next());

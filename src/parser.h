@@ -8,6 +8,7 @@
 
 #include "game.h"
 #include "packet.h"
+#include "packet_reader.h"
 #include "types.h"
 
 /** @file */
@@ -121,6 +122,7 @@ namespace wotreplay {
         bool debug;
         /** Packet lengths */
         std::map<uint8_t, int> packet_lengths;
+        std::unique_ptr<packet_reader_t> packet_reader;
     };
 
     template <typename iterator>

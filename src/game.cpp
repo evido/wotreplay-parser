@@ -1,6 +1,7 @@
 #include "game.h"
 
 #include <algorithm>
+#include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
 #include <fstream>
 #include <iostream>
@@ -191,6 +192,14 @@ version_t::version_t(const std::string & text)
     if (regex_search(text, match, re)) {
         major = boost::lexical_cast<int>(match[2]);
         minor = boost::lexical_cast<int>(match[3]);
+    } else {
+        regex re(R"( *(\d+), *(\d+), *(\d+), *(\d+))");
+        if (regex_search(text, match, re)) {
+            major = boost::lexical_cast<int>(match[2]);
+            minor = boost::lexical_cast<int>(match[3]);
+        } else {
+            throw std::runtime_error((boost::format("could not read version %1%") % text).str());
+        }
     }
 
 }
