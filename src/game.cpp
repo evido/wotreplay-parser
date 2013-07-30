@@ -4,11 +4,26 @@
 #include <boost/lexical_cast.hpp>
 #include <fstream>
 #include <iostream>
+
+using namespace wotreplay;
+
+#ifdef _LIBCPP_VERSION
 #include <regex>
 
-using namespace boost;
-using namespace std;
-using namespace wotreplay;
+using std::regex;
+using std::smatch;
+using std::regex_search;
+
+#else
+
+// fallback to boost
+#include <boost/regex.hpp>
+using boost::regex;
+using boost::smatch;
+using boost::regex_search;
+
+#endif
+
 
 const std::vector<packet_t> &game_t::get_packets() const {
     return packets;
@@ -109,22 +124,22 @@ const buffer_t &game_t::get_raw_replay() const {
 }
 
 void wotreplay::write_parts_to_file(const game_t &game) {
-    ofstream game_begin("out/game_begin.json", ios::binary | ios::ate);
+    std::ofstream game_begin("out/game_begin.json", std::ios::binary | std::ios::ate);
     std::copy(game.get_game_begin().begin(),
               game.get_game_begin().end(),
-              ostream_iterator<char>(game_begin));
+              std::ostream_iterator<char>(game_begin));
     game_begin.close();
 
-    ofstream game_end("out/game_end.json", ios::binary | ios::ate);
+    std::ofstream game_end("out/game_end.json", std::ios::binary | std::ios::ate);
     std::copy(game.get_game_end().begin(),
               game.get_game_end().end(),
-              ostream_iterator<char>(game_end));
+              std::ostream_iterator<char>(game_end));
     game_end.close();
 
-    ofstream replay_content("out/replay.dat", ios::binary | ios::ate);
+    std::ofstream replay_content("out/replay.dat", std::ios::binary | std::ios::ate);
     std::copy(game.get_raw_replay().begin(),
               game.get_raw_replay().end(),
-              ostream_iterator<char>(replay_content));
+              std::ostream_iterator<char>(replay_content));
 }
 
 std::tuple<float, float> wotreplay::get_2d_coord(const std::tuple<float, float, float> &position, const game_t &game, int width, int height)
@@ -174,8 +189,8 @@ version_t::version_t(const std::string & text)
     regex re(R"(v\.(\d+)\.(\d+)\.(\d+))");
     smatch match;
     if (regex_search(text, match, re)) {
-        major = lexical_cast<int>(match[2]);
-        minor = lexical_cast<int>(match[3]);
+        major = boost::lexical_cast<int>(match[2]);
+        minor = boost::lexical_cast<int>(match[3]);
     }
 
 }
