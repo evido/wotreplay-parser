@@ -80,6 +80,10 @@ void json_writer_t::update(const game_t &game) {
             value["source"] = packet.source();
         }
 
+        if (packet.has_property(property_t::message)) {
+            value["message"] = packet.message();
+        }
+
         packets.append(value);
     }
 }

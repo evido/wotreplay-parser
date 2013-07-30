@@ -27,6 +27,7 @@ namespace wotreplay {
         source,
         hull_orientation,
         turret_orientation,
+        message,
         property_nr_items
     };
 
@@ -96,6 +97,12 @@ namespace wotreplay {
             const uint8_t *arr = reinterpret_cast<const uint8_t*>(&value);
             return std::search(data.begin(), data.end(), arr, arr + sizeof(value)) != data.end();
         }
+        /**
+         * contains a message for the battle log formatted as a html element
+         * example: <font color='#DA0400'>SmurfingBird[RDDTX] (VK 36.01 H)&nbsp;:&nbsp;</font><font color='#FFFFFF'>so far so good</font>
+         * @return the message contained by this packet
+         */
+        std::string message() const;
     private:
         /** An array containing the presence of each property. */
         std::array<bool, static_cast<size_t>(property_t::property_nr_items)> properties;

@@ -18,10 +18,6 @@ namespace wotreplay {
          * The position of the payload length indicator
          */
         int payload_length_offset;
-        /**
-         * The type of the payload length indicator, 1 = uint8, 2 = uint16, 4 = uint32
-         */
-        int payload_length_type;
     };
 
     /**

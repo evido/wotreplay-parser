@@ -95,6 +95,11 @@ void packet_t::set_data(const slice_t &data) {
             }
             break;
         }
+        case 0x1F: {
+            properties[static_cast<size_t>(property_t::type)] = true;
+            properties[static_cast<size_t>(property_t::clock)] = true;
+            properties[static_cast<size_t>(property_t::message)] = true;
+        }
         default:
             if (data.size() >= 9) {
                 properties[static_cast<size_t>(property_t::clock)] = true;
@@ -119,6 +124,11 @@ std::tuple<uint32_t, uint32_t> packet_t::tank_destroyed() const {
         get_field<uint32_t>(data.begin(), data.end(), 26),
         get_field<uint32_t>(data.begin(), data.end(), 31)
     );
+}
+
+std::string packet_t::message() const {
+    size_t field_size = get_field<uint32_t>(data.begin(), data.end(), 9);
+    return std::string(data.begin() + 13, data.begin() + 13 + field_size);
 }
 
 void wotreplay::display_packet(const packet_t &packet) {
