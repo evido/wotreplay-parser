@@ -1,6 +1,8 @@
 #include "image_writer.h"
 #include "json_writer.h"
+#include "logger.h"
 #include "parser.h"
+#include "logger.h"
 
 #include <boost/format.hpp>
 #include <boost/program_options.hpp>
@@ -13,6 +15,7 @@ namespace po = boost::program_options;
 
 void show_help(int argc, const char *argv[], po::options_description &desc) {
     std::string program_name(argv[0]);
+    wotreplay::log.write(log_level::warning, "test");
     std::cout
         << boost::format("Usage: %1% --root <working directory> --type <output type> --input <input file> --output <output file>\n\n") % program_name
         << desc << "\n";
@@ -109,9 +112,6 @@ int main(int argc, const char * argv[]) {
         dynamic_cast<std::ofstream*>(out)->close();
         delete out;
     }
-
-    std::exit(1);
-
     // find values
     const auto &packets = game.get_packets();
     show_packet_summary(packets);

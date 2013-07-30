@@ -173,9 +173,9 @@ version_t::version_t(const std::string & text)
 {
     regex re(R"(v\.(\d+)\.(\d+)\.(\d+))");
     smatch match;
-
     if (regex_search(text, match, re)) {
         major = lexical_cast<int>(match[2]);
         minor = lexical_cast<int>(match[3]);
     }
+
 }

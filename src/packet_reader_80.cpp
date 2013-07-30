@@ -49,6 +49,12 @@ void packet_reader_80_t::init(const version_t &version, buffer_t *buffer)
         packet_configs[0x16] = {52, 0, 0};
     }
 
+    if ((version.major == 8 && version.minor >= 7) || version.major > 8) {
+        packet_configs[0x21] = {16, 0, 0};
+        packet_configs[0x22] = {52, 0, 0};
+        packet_configs[0x16] = {64, 0, 0};
+    }
+
     if (version.major < 8) {
         packet_configs[0x20] = { 4, 0, 0};
     }
@@ -60,16 +66,16 @@ void packet_reader_80_t::init(const version_t &version, buffer_t *buffer)
     auto start = std::search(buffer->begin(), buffer->end(),marker.begin(), marker.end());
     if (start != buffer->end()) {
         pos = static_cast<int>(std::distance(buffer->begin(), start) + marker.size());
-//        if (debug) {
-//            std::cerr << "OFFSET: " << offset << "\n";
-//        }
+#ifdef DEBUG
+        std::cerr << "OFFSET: " << pos << "\n";
+#endif
     }
 }
 
 packet_t packet_reader_80_t::next() {
 
-    auto it = base_packet_configs.find((*buffer)[pos + 1]);
-    if (it == base_packet_configs.end()) {
+    auto it = packet_configs.find((*buffer)[pos + 1]);
+    if (it == packet_configs.end()) {
         throw std::runtime_error("no such packet type");
     }
 
@@ -102,10 +108,10 @@ packet_t packet_reader_80_t::next() {
         throw std::runtime_error("packet outside of bounds");
     }
 
-    //    if (debug) {
-    //        std::cerr << boost::format("[%2%] type=0x%1$02X size=%3%\n") % (int) buffer[pos + 1] % pos % total_packet_size;
-    //    }
-
+#ifdef DEBUG
+    std::cerr << boost::format("[%2%] type=0x%1$02X size=%3%\n") % (int) (*buffer)[pos + 1] % pos % total_packet_size;
+#endif
+    
     auto packet_begin = buffer->begin() + pos;
     auto packet_end = packet_begin + total_packet_size;
 
@@ -120,5 +126,5 @@ bool packet_reader_80_t::has_next() {
 }
 
 bool packet_reader_80_t::is_compatible(const version_t &version) {
-    return version.major == 8 && (version.minor >= 0 && version.minor <= 5);
+    return version.major == 8 && (version.minor >= 0 && version.minor <= 7);
 }

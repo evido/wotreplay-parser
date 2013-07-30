@@ -85,7 +85,7 @@ void parser_t::parse(buffer_t &buffer, wotreplay::game_t &game) {
                                     data_blocks[i].begin(), data_blocks[i].end());
             }
         }
-
+        
         if (data_blocks.size() < 2) {
             std::string message((boost::format("Unexpected number of data blocks (%1%).") % data_blocks.size()).str());
             throw std::runtime_error(message);
@@ -130,12 +130,15 @@ void parser_t::parse(buffer_t &buffer, wotreplay::game_t &game) {
     if (!this->setup(game.version)) {
         std::cerr << boost::format("Warning: Replay version (%1%) not marked as compatible.\n") % game.version.text;
     }
-    
+
+    if (debug) {
+        debug_stream_content("out/replay.dat", game.replay.begin(), game.replay.end());
+    }
+
     read_packets(game);
 
     if (debug) {
         show_packet_summary(game.get_packets());
-        debug_stream_content("out/replay.dat", game.replay.begin(), game.replay.end());
     }
 }
 
