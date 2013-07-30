@@ -76,7 +76,7 @@ packet_t packet_reader_80_t::next() {
 
     auto it = packet_configs.find((*buffer)[pos + 1]);
     if (it == packet_configs.end()) {
-        throw std::runtime_error("no such packet type");
+        throw std::runtime_error((boost::format("no such packet type 0x%1$02X") % (*buffer)[pos + 1]).str());
     }
 
     packet_config_t packet_config  = it->second;
