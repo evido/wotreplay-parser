@@ -1,3 +1,4 @@
+#include "logger.h"
 #include "packet_reader_80.h"
 
 #include <boost/format.hpp>
@@ -67,9 +68,7 @@ void packet_reader_80_t::init(const version_t &version, buffer_t *buffer)
     auto start = std::search(buffer->begin(), buffer->end(),marker.begin(), marker.end());
     if (start != buffer->end()) {
         pos = static_cast<int>(std::distance(buffer->begin(), start) + marker.size());
-#ifdef DEBUG
-        std::cerr << "OFFSET: " << pos << "\n";
-#endif
+        wotreplay::log.write(log_level::debug, (boost::format("OFFSET: %1%\n") % pos).str());
     }
 }
 
@@ -87,7 +86,6 @@ packet_t packet_reader_80_t::next() {
     if (packet_config.payload_length_offset > 0) {
         total_packet_size += get_field<uint32_t>(buffer->begin(), buffer->end(),
                                                pos + packet_config.payload_length_offset);
-      
     }
 
     // include 25 byte ?
@@ -95,9 +93,10 @@ packet_t packet_reader_80_t::next() {
         throw std::runtime_error("packet outside of bounds");
     }
 
-#ifdef DEBUG
-    std::cerr << boost::format("[%2%] type=0x%1$02X size=%3%\n") % (int) (*buffer)[pos + 1] % pos % total_packet_size;
-#endif
+    wotreplay::log.write(wotreplay::log_level::debug,
+        (boost::format("[%2%] type=0x%1$02X size=%3%\n") % (int) (*buffer)[pos + 1]
+                                                         % pos
+                                                         % total_packet_size).str());
     
     auto packet_begin = buffer->begin() + pos;
     auto packet_end = packet_begin + total_packet_size;

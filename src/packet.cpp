@@ -87,7 +87,9 @@ void packet_t::set_data(const slice_t &data) {
             switch (sub_type) {
                 case 0x02:
                     properties[static_cast<size_t>(property_t::health)] = true;
-                    properties[static_cast<size_t>(property_t::source)] = true;
+                    if (data.size() > 26) {
+                        properties[static_cast<size_t>(property_t::source)] = true;
+                    }
                     break;
                 case 0x19:
                     // related to tank destroyed
