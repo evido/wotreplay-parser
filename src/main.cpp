@@ -15,7 +15,6 @@ namespace po = boost::program_options;
 
 void show_help(int argc, const char *argv[], po::options_description &desc) {
     std::string program_name(argv[0]);
-    wotreplay::log.write(log_level::warning, "test");
     std::cout
         << boost::format("Usage: %1% --root <working directory> --type <output type> --input <input file> --output <output file>\n\n") % program_name
         << desc << "\n";
@@ -62,8 +61,6 @@ int main(int argc, const char * argv[]) {
         std::cerr << boost::format("Cannot change working directory to: %1%\n") % root;
         std::exit(0);
     }
-
-
     
     std::ifstream in(input, std::ios::binary);
     if (!in) {
@@ -112,6 +109,7 @@ int main(int argc, const char * argv[]) {
         dynamic_cast<std::ofstream*>(out)->close();
         delete out;
     }
+
     // find values
     const auto &packets = game.get_packets();
     show_packet_summary(packets);

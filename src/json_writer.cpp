@@ -35,6 +35,10 @@ void json_writer_t::update(const game_t &game) {
     for (auto &packet : game.get_packets()) {
         Json::Value value(Json::objectValue);
 
+        if (packet.has_property(property_t::type)) {
+            value["type"] = packet.type();
+        }
+        
         if (packet.has_property(property_t::clock)) {
             value["clock"] = packet.clock();
         }
