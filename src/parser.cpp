@@ -288,7 +288,7 @@ static std::map<std::string, std::array<int, 4>> map_boundaries =
     { "02_malinovka",       {{ -500, 500, -500, 500 }} },
     { "03_campania",        {{ -300, 300, -300, 300 }} },
     { "04_himmelsdorf",     {{ -300, 400, -300, 400 }} },
-    { "05_prohorovka", 	    {{ -500, 500, -500, 500 }} },
+    { "05_prohorovka",         {{ -500, 500, -500, 500 }} },
     { "06_ensk",            {{ -300, 300, -300, 300 }} },
     { "07_lakeville",       {{ -400, 400, -400, 400 }} },
     { "08_ruinberg",        {{ -400, 400, -400, 400 }} },
@@ -316,7 +316,10 @@ static std::map<std::string, std::array<int, 4>> map_boundaries =
     { "44_north_america",   {{ -500, 500, -500, 500 }} },
     { "45_north_america",   {{ -500, 500, -500, 500 }} },
     { "47_canada_a",        {{ -500, 500, -500, 500 }} },
-    { "51_asia",            {{ -500, 500, -500, 500 }} }
+    { "51_asia",            {{ -500, 500, -500, 500 }} },
+    { "60_asia_miao",       {{ -500, 500, -500, 500 }} },
+    { "73_asia_korea",      {{ -500, 500, -500, 500 }} },
+    { "85_winter",          {{ -500, 500, -500, 500 }} }
 };
 
 void parser_t::read_game_info(game_t& game) {
