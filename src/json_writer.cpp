@@ -88,6 +88,10 @@ void json_writer_t::update(const game_t &game) {
             value["message"] = packet.message();
         }
 
+        if (packet.has_property(property_t::sub_type)) {
+            value["sub_type"] = packet.sub_type();
+        }
+        
         packets.append(value);
     }
 }

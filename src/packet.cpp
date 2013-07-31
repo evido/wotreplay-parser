@@ -83,13 +83,23 @@ void packet_t::set_data(const slice_t &data) {
             properties[static_cast<size_t>(property_t::clock)] = true;
             properties[static_cast<size_t>(property_t::player_id)] = true;
             properties[static_cast<size_t>(property_t::type)] = true;
-            uint8_t sub_type = get_field<uint8_t>(data.begin(), data.end(), 13);
-            switch (sub_type) {
-                case 0x02:
+            properties[static_cast<size_t>(property_t::sub_type)] = true;
+            switch (this->sub_type()) {
+                case 0x01:
+                    properties[static_cast<size_t>(property_t::source)] = true;
                     properties[static_cast<size_t>(property_t::health)] = true;
-                    if (data.size() > 26) {
-                        properties[static_cast<size_t>(property_t::source)] = true;
-                    }
+                case 0x02:
+                    // < 8.5
+                    // properties[static_cast<size_t>(property_t::health)] = true;
+                    // properties[static_cast<size_t>(property_t::source)] = true;
+                    break;
+                case 0x05:
+                    // hit
+                    properties[static_cast<size_t>(property_t::source)] = true;
+                    break;
+                case 0x0B:
+                    // module damage
+                    // properties[static_cast<size_t>(property_t::source)] = true;
                     break;
                 case 0x19:
                     // related to tank destroyed
@@ -111,9 +121,15 @@ void packet_t::set_data(const slice_t &data) {
     }
 }
 
+uint32_t packet_t::sub_type() const {
+    assert(has_property(property_t::sub_type));
+    return get_field<uint32_t>(data.begin(), data.end(), 13);
+}
+
 uint32_t packet_t::source() const {
     assert(has_property(property_t::source));
-    return get_field<uint32_t>(data.begin(), data.end(), 23);
+    int pos = (sub_type() == 0x01) ? 23 : 21;
+    return get_field<uint32_t>(data.begin(), data.end(), pos);
 }
 
 const slice_t &packet_t::get_data() const {

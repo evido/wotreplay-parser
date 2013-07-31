@@ -98,6 +98,10 @@ namespace wotreplay {
             return std::search(data.begin(), data.end(), arr, arr + sizeof(value)) != data.end();
         }
         /**
+         * Get packet sub type, relevant for packet type 0x08 and 0x07
+         */
+        uint32_t sub_type() const;
+        /**
          * contains a message for the battle log formatted as a html element
          * example: <font color='#DA0400'>SmurfingBird[RDDTX] (VK 36.01 H)&nbsp;:&nbsp;</font><font color='#FFFFFF'>so far so good</font>
          * @return the message contained by this packet
