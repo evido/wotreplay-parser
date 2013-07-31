@@ -28,6 +28,7 @@ namespace wotreplay {
         hull_orientation,
         turret_orientation,
         message,
+        target,
         property_nr_items
     };
 
@@ -107,6 +108,11 @@ namespace wotreplay {
          * @return the message contained by this packet
          */
         std::string message() const;
+        /**
+         * Target information, object of the actin in 0x08 / 0x1B packets
+         * @return get target player id
+         */
+        uint32_t target() const;
     private:
         /** An array containing the presence of each property. */
         std::array<bool, static_cast<size_t>(property_t::property_nr_items)> properties;

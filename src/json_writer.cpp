@@ -91,6 +91,10 @@ void json_writer_t::update(const game_t &game) {
         if (packet.has_property(property_t::sub_type)) {
             value["sub_type"] = packet.sub_type();
         }
+
+        if (packet.has_property(property_t::target)) {
+            value["target"] = packet.target();
+        }
         
         packets.append(value);
     }

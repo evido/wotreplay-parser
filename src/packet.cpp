@@ -59,6 +59,12 @@ void packet_t::set_data(const slice_t &data) {
     this->data = data;
     std::fill(properties.begin(), properties.end(), false);
     switch(get_field<uint8_t>(data.begin(), data.end(), 1)) {
+        case 0x03:
+        case 0x05:
+            properties[static_cast<size_t>(property_t::clock)] = true;
+            properties[static_cast<size_t>(property_t::type)] = true;
+            properties[static_cast<size_t>(property_t::player_id)] = true;
+            break;
         case 0x0a:
             properties[static_cast<size_t>(property_t::position)] = true;
             properties[static_cast<size_t>(property_t::hull_orientation)] = true;
@@ -99,7 +105,15 @@ void packet_t::set_data(const slice_t &data) {
                     break;
                 case 0x0B:
                     // module damage
-                    // properties[static_cast<size_t>(property_t::source)] = true;
+                    properties[static_cast<size_t>(property_t::source)] = true;
+                    properties[static_cast<size_t>(property_t::target)] = true;
+                    break;
+                case 0x11:
+                    // tracer information
+                    break;
+                case 0x17:
+                    // tracked ?
+                    properties[static_cast<size_t>(property_t::target)] = true;
                     break;
                 case 0x19:
                     // related to tank destroyed
@@ -128,7 +142,24 @@ uint32_t packet_t::sub_type() const {
 
 uint32_t packet_t::source() const {
     assert(has_property(property_t::source));
-    int pos = (sub_type() == 0x01) ? 23 : 21;
+    int pos;
+    switch (sub_type()) {
+        case 0x01:
+            pos = 23;
+            break;
+        case 0x0B:
+            pos = 27;
+            break;
+        default:
+            pos = 21;
+            break;
+    }
+    return get_field<uint32_t>(data.begin(), data.end(), pos);
+}
+
+uint32_t packet_t::target() const {
+    assert(has_property(property_t::target));
+    int pos = (sub_type() == 0x17) ? 25 : 21;
     return get_field<uint32_t>(data.begin(), data.end(), pos);
 }
 
