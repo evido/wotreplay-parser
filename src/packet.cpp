@@ -136,13 +136,6 @@ void packet_t::set_data(const slice_t &data) {
             uint8_t value = get_field<uint8_t>(data.begin(), data.end(), 18);
             properties[static_cast<size_t>(property_t::destroyed_track_id)] =
                 (value == 0xF0 || value == 0xF6);
-            if (data.size() == 23) {
-                std::cout << "CHECK\n";
-                display_packet(*this);
-            } else {
-                std::cout << "NON CHECK\n";
-                display_packet(*this);
-            }
             // goes together with destroyed_track_id
             properties[static_cast<size_t>(property_t::alt_track_state)] =
                 properties[static_cast<size_t>(property_t::destroyed_track_id)];
