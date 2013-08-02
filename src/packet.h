@@ -30,6 +30,7 @@ namespace wotreplay {
         message,
         target,
         destroyed_track_id,
+        alt_track_state,
         property_nr_items
     };
 
@@ -119,6 +120,11 @@ namespace wotreplay {
          * @return id of the destroyed track
          */
         uint8_t destroyed_track_id() const;
+        /**
+         * get status of alternative track, 0xFO indicates the track works, 0xF6 indicates the track is broken
+         * @return alt track state
+         */
+        uint8_t alt_track_state() const;
     private:
         /** An array containing the presence of each property. */
         std::array<bool, static_cast<size_t>(property_t::property_nr_items)> properties;

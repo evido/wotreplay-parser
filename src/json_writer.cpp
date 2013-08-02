@@ -95,6 +95,14 @@ void json_writer_t::update(const game_t &game) {
         if (packet.has_property(property_t::target)) {
             value["target"] = packet.target();
         }
+
+        if (packet.has_property(property_t::destroyed_track_id)) {
+            value["destroyed_track_id"] = packet.destroyed_track_id();
+        }
+
+        if (packet.has_property(property_t::alt_track_state)) {
+            value["alt_track_state"] = packet.alt_track_state();
+        }
         
         packets.append(value);
     }

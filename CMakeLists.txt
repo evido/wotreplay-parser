@@ -32,5 +32,3 @@ add_library(jsoncpp STATIC
 
 add_executable(wotreplay-parser src/main.cpp)
 target_link_libraries( wotreplay-parser png crypto z boost_filesystem boost_program_options boost_system boost_regex wotreplay jsoncpp)
-
-add_dependencies(wotreplay-parser wotreplay jsoncpp)

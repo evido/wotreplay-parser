@@ -8,7 +8,7 @@ all: minimaps
 clean:
 	@rm -rf maps
 
-%.pkg: 
+%.pkg:
 	@cp $(WOT_INSTALL_PATH)/res/packages/$@ ./
 
 spaces/%/mmap.dds: %.pkg

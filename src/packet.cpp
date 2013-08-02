@@ -126,20 +126,33 @@ void packet_t::set_data(const slice_t &data) {
             properties[static_cast<size_t>(property_t::type)] = true;
             properties[static_cast<size_t>(property_t::clock)] = true;
             properties[static_cast<size_t>(property_t::message)] = true;
+            break;
         }
         case 0x20: {
             properties[static_cast<size_t>(property_t::type)] = true;
             properties[static_cast<size_t>(property_t::clock)] = true;
             properties[static_cast<size_t>(property_t::player_id)] = true;
             // sub type for 0x20
-            properties[static_cast<size_t>(property_t::destroyed_track_id)] = get_field<uint8_t>(data.begin(), data.end(), 18) == 0xF0;
-        }
-        default:
-            if (data.size() >= 9) {
-                properties[static_cast<size_t>(property_t::clock)] = true;
+            uint8_t value = get_field<uint8_t>(data.begin(), data.end(), 18);
+            properties[static_cast<size_t>(property_t::destroyed_track_id)] =
+                (value == 0xF0 || value == 0xF6);
+            if (data.size() == 23) {
+                std::cout << "CHECK\n";
+                display_packet(*this);
+            } else {
+                std::cout << "NON CHECK\n";
+                display_packet(*this);
             }
+            // goes together with destroyed_track_id
+            properties[static_cast<size_t>(property_t::alt_track_state)] =
+                properties[static_cast<size_t>(property_t::destroyed_track_id)];
+            break;
+        }
+        default: {
+            properties[static_cast<size_t>(property_t::clock)] = data.size() >= 9;
             properties[static_cast<size_t>(property_t::type)] = true;
             break;
+        }
     }
 }
 
@@ -162,6 +175,11 @@ uint8_t packet_t::destroyed_track_id() const {
             break;
     }
     return destroyed_track_id;
+}
+
+uint8_t packet_t::alt_track_state() const {
+    assert(has_property(property_t::alt_track_state));
+    return get_field<uint8_t>(data.begin(), data.end(), 18);
 }
 
 uint32_t packet_t::source() const {
