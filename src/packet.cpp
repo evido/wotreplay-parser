@@ -76,9 +76,10 @@ void packet_t::set_data(const slice_t &data) {
             properties[static_cast<size_t>(property_t::type)] = true;
             properties[static_cast<size_t>(property_t::clock)] = true;
             properties[static_cast<size_t>(property_t::player_id)] = true;
-            properties[static_cast<size_t>(property_t::is_shot)] = true;
-            uint8_t sub_type = get_field<uint8_t>(data.begin(), data.end(), 13);
-            properties[static_cast<size_t>(property_t::health)] = sub_type == 0x04;
+            // properties[static_cast<size_t>(property_t::is_shot)] = true;
+            properties[static_cast<size_t>(property_t::sub_type)] = true;
+            properties[static_cast<size_t>(property_t::health)] = sub_type() == 0x03;
+            properties[static_cast<size_t>(property_t::destroyed_track_id)] = sub_type() == 0x07;
             break;
         }
         case 0x08: {
@@ -126,6 +127,13 @@ void packet_t::set_data(const slice_t &data) {
             properties[static_cast<size_t>(property_t::clock)] = true;
             properties[static_cast<size_t>(property_t::message)] = true;
         }
+        case 0x20: {
+            properties[static_cast<size_t>(property_t::type)] = true;
+            properties[static_cast<size_t>(property_t::clock)] = true;
+            properties[static_cast<size_t>(property_t::player_id)] = true;
+            // sub type for 0x20
+            properties[static_cast<size_t>(property_t::destroyed_track_id)] = get_field<uint8_t>(data.begin(), data.end(), 18) == 0xF0;
+        }
         default:
             if (data.size() >= 9) {
                 properties[static_cast<size_t>(property_t::clock)] = true;
@@ -138,6 +146,22 @@ void packet_t::set_data(const slice_t &data) {
 uint32_t packet_t::sub_type() const {
     assert(has_property(property_t::sub_type));
     return get_field<uint32_t>(data.begin(), data.end(), 13);
+}
+
+uint8_t packet_t::destroyed_track_id() const {
+    assert(has_property(property_t::destroyed_track_id));
+    uint8_t destroyed_track_id = 0;
+    switch(type()) {
+        case 0x07:
+            if (get_field<uint32_t>(data.begin(), data.end(), 17) == 5) {
+                destroyed_track_id = get_field<uint8_t>(data.begin(), data.end(), 25);
+            }
+            break;
+        case 0x20:
+            destroyed_track_id = get_field<uint8_t>(data.begin(), data.end(), 19);
+            break;
+    }
+    return destroyed_track_id;
 }
 
 uint32_t packet_t::source() const {

@@ -29,6 +29,7 @@ namespace wotreplay {
         turret_orientation,
         message,
         target,
+        destroyed_track_id,
         property_nr_items
     };
 
@@ -104,7 +105,7 @@ namespace wotreplay {
         uint32_t sub_type() const;
         /**
          * contains a message for the battle log formatted as a html element
-         * example: <font color='#DA0400'>SmurfingBird[RDDTX] (VK 36.01 H)&nbsp;:&nbsp;</font><font color='#FFFFFF'>so far so good</font>
+         * example: \verbatim <font color='#DA0400'>SmurfingBird[RDDTX] (VK 36.01 H)&nbsp;:&nbsp;</font><font color='#FFFFFF'>so far so good</font> \endverbatim
          * @return the message contained by this packet
          */
         std::string message() const;
@@ -113,6 +114,11 @@ namespace wotreplay {
          * @return get target player id
          */
         uint32_t target() const;
+        /**
+         * get the id of the destroyed track, 0x1D for left track, 0x1E for right track
+         * @return id of the destroyed track
+         */
+        uint8_t destroyed_track_id() const;
     private:
         /** An array containing the presence of each property. */
         std::array<bool, static_cast<size_t>(property_t::property_nr_items)> properties;

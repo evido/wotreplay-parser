@@ -68,7 +68,7 @@ void packet_reader_80_t::init(const version_t &version, buffer_t *buffer)
     auto start = std::search(buffer->begin(), buffer->end(),marker.begin(), marker.end());
     if (start != buffer->end()) {
         pos = static_cast<int>(std::distance(buffer->begin(), start) + marker.size());
-        wotreplay::log.write(log_level::debug, (boost::format("OFFSET: %1%\n") % pos).str());
+        wotreplay::log.write(log_level_t::debug, (boost::format("OFFSET: %1%\n") % pos).str());
     }
 }
 
@@ -93,7 +93,7 @@ packet_t packet_reader_80_t::next() {
         throw std::runtime_error("packet outside of bounds");
     }
 
-    wotreplay::log.write(wotreplay::log_level::debug,
+    wotreplay::log.write(wotreplay::log_level_t::debug,
         (boost::format("[%2%] type=0x%1$02X size=%3%\n") % (int) (*buffer)[pos + 1]
                                                          % pos
                                                          % total_packet_size).str());

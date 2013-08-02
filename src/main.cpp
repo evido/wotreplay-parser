@@ -74,7 +74,7 @@ int main(int argc, const char * argv[]) {
     bool debug = vm.count("debug") > 0;
 
     if (debug) {
-        wotreplay::log.set_log_level(log_level::debug);
+        wotreplay::log.set_log_level(log_level_t::debug);
     }
 
     parser.set_debug(debug);
