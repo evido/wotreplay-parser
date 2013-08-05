@@ -123,8 +123,12 @@ void image_writer_t::finish() {
                 for (const auto &offset : offsets) {
                     int x = j + offset[0];
                     int y = i + offset[1];
-                    result[y][x][3] = result[y][x][0] = result[y][x][1] = 0xFF;
-                    result[y][x][2] = 0x00;
+
+                    // draw only if within bounds
+                    if (x >= 0 && y < shape[0] && y >= 0  && y < shape[1]) {
+                        result[y][x][3] = result[y][x][0] = result[y][x][1] = 0xFF;
+                        result[y][x][2] = 0x00;
+                    }
                 }
             }
         }
