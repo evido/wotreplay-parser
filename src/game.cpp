@@ -1,4 +1,5 @@
 #include "game.h"
+#include "regex.h"
 
 #include <algorithm>
 #include <boost/format.hpp>
@@ -8,38 +9,21 @@
 
 using namespace wotreplay;
 
-#ifdef _LIBCPP_VERSION
-#include <regex>
-
-using std::regex;
-using std::smatch;
-using std::regex_search;
-
-#else
-
-// fallback to boost
-#include <boost/regex.hpp>
-using boost::regex;
-using boost::smatch;
-using boost::regex_search;
-
-#endif
-
 
 const std::vector<packet_t> &game_t::get_packets() const {
     return packets;
 }
 
 const std::string &game_t::get_map_name() const {
-    return map_name;
+    return arena.name;
 }
 
 const std::string &game_t::get_game_mode() const {
     return game_mode;
 }
 
-const std::array<int, 4> &game_t::get_map_boundaries() const {
-    return map_boundaries;
+const arena_t &game_t::get_arena() const {
+    return arena;
 }
 
 const std::set<int> &game_t::get_team(int team_id) const {
@@ -146,11 +130,10 @@ void wotreplay::write_parts_to_file(const game_t &game) {
 std::tuple<float, float> wotreplay::get_2d_coord(const std::tuple<float, float, float> &position, const game_t &game, int width, int height)
 {
     float x,y,z;
-    const std::array<int, 4> &map_boundaries = game.get_map_boundaries();
-    int min_x = map_boundaries[0],
-        max_x = map_boundaries[1],
-        min_y = map_boundaries[2],
-        max_y = map_boundaries[3];
+    const bounding_box_t &bounding_box = game.get_arena().bounding_box;
+    int min_x, max_x, min_y, max_y;
+    std::tie(min_x, min_y) = bounding_box.bottom_left;
+    std::tie(max_x, max_y) = bounding_box.upper_right;
     std::tie(x,z,y) = position;
     x = (x - min_x) * (static_cast<float>(width) / (max_x - min_x + 1));
     y = (max_y - y) * (static_cast<float>(height) / (max_y - min_y + 1));

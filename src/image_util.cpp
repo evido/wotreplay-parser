@@ -1,6 +1,7 @@
 #include "image_util.h"
 
 #include <boost/format.hpp>
+#include <cmath>
 #include <fstream>
 
 using namespace wotreplay;
@@ -56,11 +57,9 @@ void wotreplay::read_png(std::istream &is, boost::multi_array<uint8_t, 3> &image
     png_read_end(png_ptr, info_ptr);
 }
 
-
 bool wotreplay::write_png(std::ostream &os, boost::multi_array<uint8_t, 3> &image) {
     png_structp png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
     png_infop info_ptr = png_create_info_struct(png_ptr);
-
     if (setjmp(png_jmpbuf(png_ptr)))
     {
         png_destroy_write_struct(&png_ptr, &info_ptr);
@@ -71,7 +70,7 @@ bool wotreplay::write_png(std::ostream &os, boost::multi_array<uint8_t, 3> &imag
     png_set_filter(png_ptr, 0,PNG_FILTER_VALUE_NONE);
 
     const size_t *shape = image.shape();
-    size_t width = shape[0], height = shape[1], channels = shape[2];
+    size_t width = shape[1], height = shape[0], channels = shape[2];
     bool alpha = channels == 4;
 
     png_set_IHDR(png_ptr, info_ptr, static_cast<uint32_t>(width), static_cast<uint32_t>(height),
@@ -83,7 +82,7 @@ bool wotreplay::write_png(std::ostream &os, boost::multi_array<uint8_t, 3> &imag
     png_set_rows(png_ptr, info_ptr, &row_pointers[0]);
     png_write_png(png_ptr, info_ptr, PNG_TRANSFORM_IDENTITY, NULL);
     png_destroy_write_struct(&png_ptr, &info_ptr);
-
+    
     return true;
 }
 
@@ -103,4 +102,29 @@ void wotreplay::read_mini_map(const std::string &map_name, const std::string &ga
 
 int wotreplay::mix(int v0, int v1, float a1, int v2, float a2) {
     return (1-a2)*((1-a1)*v0 + a1*v1) + a2 * v2;
+}
+
+void wotreplay::resize(boost::multi_array<uint8_t, 3> &original, int width, int height, boost::multi_array<uint8_t, 3> &result) {
+    const size_t *shape = original.shape();
+    result.resize(boost::extents[height][width][shape[2]]);
+
+
+    float ty = ((float) shape[0] / height);
+    float tx = ((float) shape[1] / width);
+
+    for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+            int xx = (int) (tx * x);
+            int yy = (int) (ty * y);
+            float dx = (tx * x) - xx;
+            float dy = (ty * y) - yy;
+            
+            for (int c = 0; c < shape[2]; ++c) {
+                result[y][x][c] = original[yy][xx][c]*(1-dy)*(1-dx) +
+                                    original[std::min(yy + 1, (int) shape[0])][xx][c]*dy*(1-dx) +
+                                    original[std::min(yy + 1, (int) shape[0])][std::min(xx + 1, (int) shape[1])][c]*dy*dx +
+                                    original[yy][std::min(xx + 1, (int) shape[1])][c]*(1-dy)*dx;
+            }
+        }
+    }
 }

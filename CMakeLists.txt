@@ -26,10 +26,10 @@ add_library(wotreplay STATIC
 			src/game.cpp src/image_util.cpp 
 			src/logger.cpp 
 			src/json_writer.cpp
-			src/arena_def.cpp)
+			src/arena.cpp)
 
 add_library(jsoncpp STATIC 
 			ext/jsoncpp/src/jsoncpp.cpp)
 
 add_executable(wotreplay-parser src/main.cpp)
-target_link_libraries( wotreplay-parser png crypto z boost_filesystem boost_program_options boost_system boost_regex wotreplay jsoncpp)
+target_link_libraries( wotreplay-parser xml2 png crypto z boost_filesystem boost_program_options boost_system boost_regex wotreplay jsoncpp)

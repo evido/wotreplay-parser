@@ -51,6 +51,15 @@ namespace wotreplay {
      * @param image The image.
      */
     bool write_png(std::ostream &os, boost::multi_array<uint8_t, 3> &image);
+
+    /**
+     * Implementation of bilinear interpolation to resize an image
+     * @param orignal original image
+     * @param width the width of the new image
+     * @param height the height of the new image
+     * @param result the new image
+     */
+    void resize(boost::multi_array<uint8_t, 3> &original, int width, int height, boost::multi_array<uint8_t, 3> &result);
 }
 
 #endif /* defined(wotreplay__image_util) */

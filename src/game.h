@@ -1,6 +1,7 @@
 #ifndef wotreplay_game_h
 #define wotreplay_game_h
 
+#include "arena.h"
 #include "packet.h"
 #include "types.h"
 
@@ -67,11 +68,10 @@ namespace wotreplay {
          */
         const std::set<int> &get_team(int team_id) const;
         /**
-         * Describes the boundaries of the current map in the following order:
-         * { x_min, x_max, y_min, y_max }
+         * Get the arena definition
          * @return The map boundaries
          */
-        const std::array<int, 4> &get_map_boundaries() const;
+        const arena_t &get_arena() const;
          /** 
           * The player id recording this game.
           * @return the player id of the recorder of this game
@@ -111,10 +111,9 @@ namespace wotreplay {
         const buffer_t &get_game_end() const;
     private:
         std::vector<packet_t> packets;
-        std::array<int, 4> map_boundaries;
         std::array<std::set<int>, 2> teams;
         std::string game_mode;
-        std::string map_name;
+        arena_t arena;
         buffer_t game_begin;
         buffer_t game_end;
         buffer_t replay;

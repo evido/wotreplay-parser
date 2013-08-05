@@ -53,7 +53,8 @@ namespace wotreplay {
          * @param game Game
          */
         void draw_position(const packet_t &packet, const game_t &game, boost::multi_array<float, 3> &image);
-        
+        boost::multi_array<uint8_t, 3> get_element(const std::string &name);
+        void draw_elements(const game_t &game);
         /** Background image */
         boost::multi_array<uint8_t, 3> base;
         /** Image containing the frequency a player is located on a coordinate */
@@ -65,6 +66,7 @@ namespace wotreplay {
         
         bool initialized = false;
         bool show_self = false;
+        int recorder_team = -1;
     };
 }
 

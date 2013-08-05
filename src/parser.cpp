@@ -1,9 +1,10 @@
 #include "json/json.h"
 
-#include "arena_def.h"
+#include "arena.h"
 #include "packet_reader.h"
 #include "packet_reader_80.h"
 #include "parser.h"
+#include "regex.h"
 
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
@@ -12,29 +13,11 @@
 #include <memory>
 #include <openssl/blowfish.h>
 #include <ostream>
-#include <regex>
 #include <sstream>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
 #include <zlib.h>
-
-// use libcpp regex implementation if possible
-#ifdef _LIBCPP_VERSION
-
-using std::regex;
-using std::smatch;
-using std::regex_search;
-
-#else
-
-// fallback to boost
-#include <boost/regex.hpp>
-using boost::regex;
-using boost::smatch;
-using boost::regex_search;
-
-#endif
 
 using namespace wotreplay;
 using namespace boost::filesystem;
@@ -305,7 +288,7 @@ void parser_t::read_game_info(game_t& game) {
         game.teams[team_id - 1].insert(player_id);
     }
 
-    game.map_name = root["mapName"].asString();
+    std::string map_name = root["mapName"].asString();
 
     if (root.isMember("gameplayType")) {
         game.game_mode = root["gameplayType"].asString();
@@ -317,23 +300,9 @@ void parser_t::read_game_info(game_t& game) {
     game.game_mode.resize(3);
 
     // explicit check for game version should be better
-    if (map_boundaries.find(game.map_name) == map_boundaries.end()) {
-
-        if (game.map_name == "north_america") {
-            game.map_name = "44_north_america";
-        } else {
-            for (auto entry : map_boundaries) {
-                std::string map_name = entry.first;
-                std::string short_map_name(map_name.begin() + 3, map_name.end());
-                if (short_map_name == game.map_name) {
-                    // rewrite map name
-                    game.map_name = map_name;
-                }
-            }
-        }
+    if (!get_arena(map_name, game.arena)) {
+        throw std::runtime_error("Could not find appropriate arena definition");
     }
-
-    game.map_boundaries = map_boundaries[game.map_name];
 }
 
 void wotreplay::show_packet_summary(const std::vector<packet_t>& packets) {

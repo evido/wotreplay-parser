@@ -24,6 +24,16 @@ bool has_required_options(po::variables_map &vm) {
     return vm.count("type") > 0 && vm.count("input") > 0;
 }
 
+float distance(const std::tuple<float, float, float> &left, const std::tuple<float, float, float> &right) {
+    float delta_x = std::get<0>(left) - std::get<0>(right);
+    float delta_y = std::get<1>(left) - std::get<1>(right);
+    float delta_z = std::get<2>(left) - std::get<2>(right);
+    // distance in xy plane
+    float dist1 = std::sqrt(delta_x*delta_x + delta_y*delta_y);
+    return std::sqrt(dist1*dist1 + delta_z*delta_z);
+}
+
+
 int main(int argc, const char * argv[]) {
     po::options_description desc("Allowed options");
 
