@@ -12,12 +12,12 @@ uint8_t packet_t::type() const {
 }
 
 uint32_t packet_t::player_id() const {
-    // assert(has_property(property_t::player_id));
+    assert(has_property(property_t::player_id));
     return get_field<uint32_t>(data.begin(), data.end(), 9);
 }
 
 float packet_t::clock() const {
-    // assert(has_property(property_t::clock));
+    assert(has_property(property_t::clock));
     return get_field<float>(data.begin(), data.end(), 5);
 }
 

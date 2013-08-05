@@ -10,7 +10,8 @@ void json_writer_t::init(const std::string &map, const std::string &mode) {
     root["map"] = mapValue;
     root["mode"] = modeValue;
     root["packets"] = Json::Value(Json::arrayValue);
-
+    root["map_boundaries"] = Json::Value(Json::arrayValue);
+    
     this->initialized = true;
 }
 
@@ -21,6 +22,12 @@ void json_writer_t::write(std::ostream &os) {
 void json_writer_t::update(const game_t &game) {
     auto &packets = root["packets"];
 
+    // copy boundary values
+    root["map_boundaries"].append(Json::Value(game.get_map_boundaries()[0]));
+    root["map_boundaries"].append(Json::Value(game.get_map_boundaries()[1]));
+    root["map_boundaries"].append(Json::Value(game.get_map_boundaries()[2]));
+    root["map_boundaries"].append(Json::Value(game.get_map_boundaries()[3]));
+    
     root["recorder_id"] = game.get_recorder_id();
 
     Json::Value summary;

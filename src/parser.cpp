@@ -1,4 +1,6 @@
 #include "json/json.h"
+
+#include "arena_def.h"
 #include "packet_reader.h"
 #include "packet_reader_80.h"
 #include "parser.h"
@@ -281,46 +283,6 @@ void parser_t::read_packets(game_t &game) {
         game.packets.push_back(packet_reader->next());
     }
 }
-
-static std::map<std::string, std::array<int, 4>> map_boundaries =
-{
-    { "01_karelia",         {{ -500, 500, -500, 500 }} },
-    { "02_malinovka",       {{ -500, 500, -500, 500 }} },
-    { "03_campania",        {{ -300, 300, -300, 300 }} },
-    { "04_himmelsdorf",     {{ -300, 400, -300, 400 }} },
-    { "05_prohorovka",      {{ -500, 500, -500, 500 }} },
-    { "06_ensk",            {{ -300, 300, -300, 300 }} },
-    { "07_lakeville",       {{ -400, 400, -400, 400 }} },
-    { "08_ruinberg",        {{ -400, 400, -400, 400 }} },
-    { "10_hills",           {{ -400, 400, -400, 400 }} },
-    { "11_murovanka",       {{ -400, 400, -400, 400 }} },
-    { "13_erlenberg",       {{ -500, 500, -500, 500 }} },
-    { "14_siegfried_line",  {{ -500, 500, -500, 500 }} },
-    { "15_komarin",         {{ -400, 400, -400, 400 }} },
-    { "17_munchen",         {{ -300, 300, -300, 300 }} },
-    { "18_cliff",           {{ -500, 500, -500, 500 }} },
-    { "19_monastery",       {{ -500, 500, -500, 500 }} },
-    { "22_slough",          {{ -500, 500, -500, 500 }} },
-    { "23_westfeld",        {{ -500, 500, -500, 500 }} },
-    { "28_desert",          {{ -500, 500, -500, 500 }} },
-    { "29_el_hallouf",      {{ -500, 500, -500, 500 }} },
-    { "31_airfield",        {{ -500, 500, -500, 500 }} },
-    { "33_fjord",           {{ -500, 500, -500, 500 }} },
-    { "34_redshire",        {{ -500, 500, -500, 500 }} },
-    { "35_steppes",         {{ -500, 500, -500, 500 }} },
-    { "36_fishing_bay",     {{ -500, 500, -500, 500 }} },
-    { "37_caucasus",        {{ -500, 500, -500, 500 }} },
-    { "38_mannerheim_line", {{ -500, 500, -500, 500 }} },
-    { "39_crimea",          {{ -500, 500, -500, 500 }} },
-    { "42_north_america",   {{ -400, 400, -400, 400 }} },
-    { "44_north_america",   {{ -500, 500, -500, 500 }} },
-    { "45_north_america",   {{ -500, 500, -500, 500 }} },
-    { "47_canada_a",        {{ -500, 500, -500, 500 }} },
-    { "51_asia",            {{ -500, 500, -500, 500 }} },
-    { "60_asia_miao",       {{ -500, 500, -500, 500 }} },
-    { "73_asia_korea",      {{ -500, 500, -500, 500 }} },
-    { "85_winter",          {{ -500, 500, -500, 500 }} }
-};
 
 void parser_t::read_game_info(game_t& game) {
     // get game details

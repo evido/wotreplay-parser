@@ -115,9 +115,5 @@ int main(int argc, const char * argv[]) {
         delete out;
     }
 
-    // find values
-    const auto &packets = game.get_packets();
-    show_packet_summary(packets);
-
     return EXIT_SUCCESS;
 }

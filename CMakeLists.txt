@@ -25,7 +25,8 @@ add_library(wotreplay STATIC
 			src/image_writer.cpp 
 			src/game.cpp src/image_util.cpp 
 			src/logger.cpp 
-			src/json_writer.cpp)
+			src/json_writer.cpp
+			src/arena_def.cpp)
 
 add_library(jsoncpp STATIC 
 			ext/jsoncpp/src/jsoncpp.cpp)
