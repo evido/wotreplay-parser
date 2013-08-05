@@ -1,8 +1,0 @@
-To build this software the following libraries are required:
-   - OpenSSL
-   - Boost (Complete)
-   - LibPNG
-
-The following compilers are supported
-   - GCC (>= 4.7)
-   - CLANG
