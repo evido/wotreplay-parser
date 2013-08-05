@@ -6,12 +6,18 @@
 
 using namespace wotreplay;
 
+const int element_size = 48;
+
 static void draw_element(boost::multi_array<uint8_t, 3> &base, boost::multi_array<uint8_t, 3> &element, int x, int y, int mask = 0xFFFFFFFF)
 {
     const size_t *shape = element.shape();
+    const size_t *image_size = base.shape();
     for (int i = 0; i < shape[0]; ++i) {
         for (int j = 0; j < shape[1]; ++j) {
             for (int k = 0; k < 3; ++k) {
+                if (((i + y) >= image_size[0]) || ((j + x) >= image_size[1])) {
+                    continue;
+                }
                 base[i + y][j + x][k] = mix(base[i + y][j + x][k], base[i + y][j + x][k],(255 - element[i][j][3]) / 255.f,
                                     element[i][j][k] & ((mask >> ((4- (k + 1))*8)) & 0xFF), element[i][j][3] / 255.f);
             }
@@ -23,7 +29,7 @@ boost::multi_array<uint8_t, 3> image_writer_t::get_element(const std::string &na
     boost::multi_array<uint8_t, 3> element, resized_element;
     std::ifstream is("elements/" + name + ".png", std::ios::binary);
     read_png(is, element);
-    resize(element, 48, 48, resized_element);
+    resize(element, element_size, element_size, resized_element);
     return resized_element;
 }
 
@@ -41,7 +47,7 @@ void image_writer_t::draw_elements(const game_t &game) {
         float x,y;
         auto pos3d = std::make_tuple(std::get<0>(position), 0.f, std::get<1>(position));
         std::tie(x,y) = get_2d_coord(pos3d, game, width, height);
-        draw_element(base, neutral_base, x, y);
+        draw_element(base, neutral_base, x- element_size/2, y - element_size/2);
     }
 
     recorder_team = game.get_team_id(game.get_recorder_id());
@@ -52,7 +58,7 @@ void image_writer_t::draw_elements(const game_t &game) {
             float x,y;
             auto pos3d = std::make_tuple(std::get<0>(position), 0.f, std::get<1>(position));
             std::tie(x,y) = get_2d_coord(pos3d, game, width, height);
-            draw_element(base, (entry.first - 1) == recorder_team ? friendly_base : enemy_base, x - 24, y- 24);
+            draw_element(base, (entry.first - 1) == recorder_team ? friendly_base : enemy_base, x - element_size/2, y- element_size/2);
         }
     }
 
@@ -68,7 +74,8 @@ void image_writer_t::draw_elements(const game_t &game) {
             float x,y;
             auto pos3d = std::make_tuple(std::get<0>(entry.second[i]), 0.f, std::get<1>(entry.second[i]));
             std::tie(x,y) = get_2d_coord(pos3d, game, width, height);
-            draw_element(base, spawns[i], x - 24, y - 24, ((entry.first - 1) == recorder_team) ?0x00FF00FF : 0xFF0000FF);
+            draw_element(base, spawns[i], x - element_size/2, y - element_size/2,
+                         ((entry.first - 1) == recorder_team) ?0x00FF00FF : 0xFF0000FF);
         }
     }
 
