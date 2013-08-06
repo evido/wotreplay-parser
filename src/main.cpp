@@ -15,13 +15,7 @@ namespace po = boost::program_options;
 
 void show_help(int argc, const char *argv[], po::options_description &desc) {
     std::string program_name(argv[0]);
-    std::cout
-        << boost::format("Usage: %1% --root <working directory> --type <output type> --input <input file> --output <output file>\n\n") % program_name
-        << desc << "\n";
-}
-
-bool has_required_options(po::variables_map &vm) {
-    return vm.count("type") > 0 && vm.count("input") > 0;
+    std::cout << desc << "\n";
 }
 
 float distance(const std::tuple<float, float, float> &left, const std::tuple<float, float, float> &right) {
@@ -33,43 +27,41 @@ float distance(const std::tuple<float, float, float> &left, const std::tuple<flo
     return std::sqrt(dist1*dist1 + delta_z*delta_z);
 }
 
-
-int main(int argc, const char * argv[]) {
-    po::options_description desc("Allowed options");
-
-    std::string type, output, input, root;
-    
-    desc.add_options()
-        ("type,t"  , po::value(&type), "select output type")
-        ("output,o", po::value(&output), "target file")
-        ("input,i" , po::value(&input), "input file")
-        ("root,r"  , po::value(&root), "set root directory")
-        ("help,h"  , "produce help message")
-        ("debug"   , "enable parser debugging");
-
-    po::variables_map vm;
-    
-    try {
-        po::store(po::parse_command_line(argc, argv, desc), vm);
-        po::notify(vm);
-    } catch (std::exception &e) {
-        show_help(argc, argv, desc);
-        std::exit(-1);
-    } catch (...) {
-        std::cerr << "Unknown error." << std::endl;
-        std::exit(-1);
+int create_minimaps(const po::variables_map &vm, const std::string &output) {
+    if ( vm.count("output") == 0 ) {
+        wotreplay::log.write(wotreplay::log_level_t::error, "parameter output is required to use this mode");
+        return -EXIT_FAILURE;
     }
 
-    if (vm.count("help")
-            || !has_required_options(vm)) {
-        show_help(argc, argv, desc);
-        std::exit(0);
-    }
+    boost::format file_name_format("%1%/%2%_%3%_%4%.png");
 
-    if (vm.count("root") >  0
-            && chdir(root.c_str()) != 0) {
-        std::cerr << boost::format("Cannot change working directory to: %1%\n") % root;
-        std::exit(0);
+    image_writer_t writer;
+    for (const auto &arena_entry : get_arenas()) {
+        const arena_t &arena = arena_entry.second;
+        if (arena.name[0] == '0') {
+            continue;
+        }
+        for (const auto &configuration_entry : arena.configurations) {
+            for (int team_id : { 0, 1 }) {
+                const std::string game_mode = configuration_entry.first;
+                writer.init(arena, game_mode);
+                writer.draw_elements(team_id);
+                std::string file_name = (file_name_format % output % arena.name % game_mode % team_id).str();
+                std::ofstream os(file_name, std::ios::binary);
+                writer.finish();
+                writer.write(os);
+                writer.reset();
+            }
+        }
+    }
+    
+    return EXIT_SUCCESS;
+}
+
+int parse_replay(const po::variables_map &vm, const std::string &input, const std::string &output, const std::string &type) {
+    if ( !(vm.count("type") > 0 && vm.count("input") > 0) ) {
+        wotreplay::log.write(wotreplay::log_level_t::error, "parameters type and input are required to use this mode");
+        return -EXIT_FAILURE;
     }
     
     std::ifstream in(input, std::ios::binary);
@@ -77,21 +69,15 @@ int main(int argc, const char * argv[]) {
         std::cerr << boost::format("Something went wrong with opening file: %1%\n") % input;
         std::exit(0);
     }
-
+    
     parser_t parser;
     game_t game;
-
-    bool debug = vm.count("debug") > 0;
-
-    if (debug) {
-        wotreplay::log.set_log_level(log_level_t::debug);
-    }
 
     parser.set_debug(debug);
     parser.parse(in, game);
 
     std::unique_ptr<writer_t> writer;
-    
+
     if (type == "png") {
         writer = std::unique_ptr<writer_t>(new image_writer_t());
         auto &image_writer = dynamic_cast<image_writer_t&>(*writer);
@@ -126,4 +112,70 @@ int main(int argc, const char * argv[]) {
     }
 
     return EXIT_SUCCESS;
+}
+
+int main(int argc, const char * argv[]) {
+    po::options_description desc("Allowed options");
+
+    std::string type, output, input, root;
+    
+    desc.add_options()
+        ("type,t"  , po::value(&type), "select output type")
+        ("output,o", po::value(&output), "target file")
+        ("input,i" , po::value(&input), "input file")
+        ("root,r"  , po::value(&root), "set root directory")
+        ("help,h"  , "produce help message")
+        ("debug"   , "enable parser debugging")
+        ("create-minimaps", "create all empty minimaps in output directory")
+        ("parse", "parse a replay file");
+
+    po::variables_map vm;
+
+    try {
+        po::store(po::parse_command_line(argc, argv, desc), vm);
+        po::notify(vm);
+    } catch (std::exception &e) {
+        show_help(argc, argv, desc);
+        std::exit(-1);
+    } catch (...) {
+        std::cerr << "Unknown error." << std::endl;
+        std::exit(-1);
+    }
+
+    if (vm.count("help") > 0) {
+        show_help(argc, argv, desc);
+        std::exit(0);
+    }
+
+    if (vm.count("root") >  0
+            && chdir(root.c_str()) != 0) {
+        std::cerr << boost::format("Cannot change working directory to: %1%\n") % root;
+        std::exit(0);
+    }
+
+    bool debug = vm.count("debug") > 0;
+
+    if (debug) {
+        wotreplay::log.set_log_level(log_level_t::debug);
+    }
+
+    int exit_code;
+    
+    if (vm.count("parse") > 0) {
+        // parse
+        exit_code = parse_replay(vm, input, output, type);
+    } else if (vm.count("create-minimaps") > 0) {
+        // create all minimaps
+        exit_code =  create_minimaps(vm, output);
+    } else {
+        wotreplay::log.write(wotreplay::log_level_t::error, "no mode specified");
+        exit_code = -EXIT_FAILURE;
+    }
+
+
+    if (exit_code < 0) {
+        show_help(argc, argv, desc);
+    }
+
+    return exit_code;
 }

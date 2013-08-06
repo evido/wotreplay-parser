@@ -63,6 +63,12 @@ namespace wotreplay {
      * @return \c true if the arena was found \c false if not
      */
     bool get_arena(const std::string &name, arena_t &arena);
+
+    /**
+     * Get the complete list of available arena definitions
+     * @return arena definition map
+     */
+    const std::map<std::string, arena_t> &get_arenas();
 }
 
 #endif /* defined(wotreplay_arena_def_h) */

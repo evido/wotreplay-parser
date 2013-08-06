@@ -45,14 +45,25 @@ To use this software you need some data extracted from World of Tanks, this data
 
 # Run
 
+# Decode Replays
+
 The program can be used to convert wotreplay files to images or json files.
 
-    wotreplay --root <working directory> --type <output type> --input <input file> --output <output file>
+    wotreplay-parser --parse --root <working directory> --type <output type> --input <input file> --output <output file>
 
 * ```output type``` can be png or json
 * ```output``` is optional, the program will then write to stdout
 * ```input``` and  ```output``` are relative to root
-* ```root ```should contain a folder maps with the images to maps
+* ```root ``` should contain a folder maps with the images to maps and the arena definitions
+
+# Create Minimaps
+
+The program can also be used to create all the minimaps for usage in [wotreplay-viewer](http://github.com/evido/wotreplay-viewer).
+
+    wotreplay-parser --create-minimaps --root <working directory> --output <output directory>
+
+*```root``` the working directory containing the necessary data
+*```output``` the output directory relative to the root directory
 
 # License
 

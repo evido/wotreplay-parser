@@ -118,7 +118,6 @@ static arena_t get_arena_definition(const boost::filesystem::path &path) {
     xmlDocPtr doc = get_arena_xml_content(path);
     xmlNodePtr root = xmlDocGetRootElement(doc);
 
-
     arena_t arena;
     for (xmlNodePtr node = root->children; node; node = node->next) {
         if (node->type == XML_ELEMENT_NODE) {
@@ -167,8 +166,23 @@ static std::map<std::string, arena_t> get_arena_definitions() {
 }
 
 
+std::map<std::string, arena_t> arenas;
+static bool is_arenas_initalized = false;
+
+const std::map<std::string, arena_t> &wotreplay::get_arenas() {
+    if (!is_arenas_initalized) {
+        arenas = get_arena_definitions();
+        is_arenas_initalized = true;
+    }
+    return arenas;
+}
+
 bool wotreplay::get_arena(const std::string &name, arena_t& arena) {
-    static std::map<std::string, arena_t> arenas = get_arena_definitions();
+    if (!is_arenas_initalized) {
+        arenas = get_arena_definitions();
+        is_arenas_initalized = true;
+    }
+    
     auto it = arenas.find(name);
     if (it == arenas.end()) {
         if (name == "north_america") {
@@ -186,5 +200,6 @@ bool wotreplay::get_arena(const std::string &name, arena_t& arena) {
     } else {
         arena = arenas[name];
     }
+    
     return true;
 }

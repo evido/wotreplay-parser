@@ -34,6 +34,11 @@ namespace wotreplay {
          * @return Show the recording player ?
          */
         virtual bool get_show_self() const;
+        /**
+         * Draw game elements on the map
+         * @param recorder_team the team of the recorder
+         */
+        void draw_elements(int recorder_team);
     private:
         /**
          * Load a background image from the combination map name and game mode.
@@ -53,7 +58,6 @@ namespace wotreplay {
          */
         void draw_position(const packet_t &packet, const game_t &game, boost::multi_array<float, 3> &image);
         boost::multi_array<uint8_t, 3> get_element(const std::string &name);
-        void draw_elements(const game_t &game);
         void draw_grid(boost::multi_array<uint8_t, 3> &image);
         void draw_element(const boost::multi_array<uint8_t, 3> &element, std::tuple<float, float> position, int mask = 0xFFFFFFFF);
         void draw_element(const boost::multi_array<uint8_t, 3> &element, int x, int y, int mask);
@@ -68,6 +72,7 @@ namespace wotreplay {
         
         bool initialized = false;
         bool show_self = false;
+        std::string mode;
         arena_t arena;
         int recorder_team = -1;
     };

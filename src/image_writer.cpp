@@ -68,18 +68,14 @@ void image_writer_t::draw_grid(boost::multi_array<uint8_t, 3> &image) {
     }
 }
 
-void image_writer_t::draw_elements(const game_t &game) {
-    const arena_t &arena = game.get_arena();
-    const arena_configuration_t &configuration = arena.configurations.at(game.get_game_mode());
+void image_writer_t::draw_elements(int recorder_team) {
+    const arena_configuration_t &configuration = arena.configurations[mode];
 
-    draw_grid(base);
-
-    if (game.get_game_mode() == "dom") {
+    if (mode == "dom") {
         auto neutral_base = get_element("neutral_base");
         draw_element(neutral_base, configuration.control_point);
     }
 
-    recorder_team = game.get_team_id(game.get_recorder_id());
     auto friendly_base = get_element("friendly_base");
     auto enemy_base = get_element("enemy_base");
     for(const auto &entry : configuration.team_base_positions) {
@@ -101,6 +97,7 @@ void image_writer_t::draw_elements(const game_t &game) {
         }
     }
 
+    draw_grid(base);
 }
 
 void image_writer_t::draw_death(const packet_t &packet, const game_t &game) {
@@ -137,7 +134,8 @@ void image_writer_t::draw_position(const packet_t &packet, const game_t &game, b
 }
 
 void image_writer_t::update(const game_t &game) {
-    draw_elements(game);
+    draw_elements(game.get_team_id(game.get_recorder_id()));
+    
     std::set<int> dead_players;
     for (const packet_t &packet : game.get_packets()) {
         if (packet.has_property(property_t::position)
@@ -151,6 +149,7 @@ void image_writer_t::update(const game_t &game) {
         }
     }
 }
+
 void image_writer_t::load_base_map(const std::string &path) {
     std::ifstream is(path, std::ios::binary);
     read_png(is, this->base);
@@ -162,6 +161,7 @@ void image_writer_t::write(std::ostream &os) {
 
 void image_writer_t::init(const arena_t &arena, const std::string &mode) {
     this->arena = arena;
+    this->mode = mode;
     load_base_map(arena.mini_map);
     const size_t *shape = base.shape();
     size_t height = shape[0], width = shape[1];
@@ -243,7 +243,7 @@ void image_writer_t::finish() {
 
 void image_writer_t::reset() {
     // initialize with empty image arrays
-    result = deaths = positions = base =  boost::multi_array<uint8_t, 3>();
+    // result = deaths = positions = base =  boost::multi_array<uint8_t, 3>();
     initialized = false;
 }
 
