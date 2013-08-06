@@ -3,7 +3,16 @@ World of Tanks Replay Parser
 
 # What?
 
-This program aims to decode replay files and convert them into more accessible formats such as an image or json files. Which may be uses in other programs. The alternative project [wotreplay-viewer](http://github.com/evido/wotreplay-viewer) implements a small HTML5 viewer for the JSON data.
+This program aims to decode replay files and convert them into more accessible formats such as an image or json files. Which may be uses in other programs. The alternative project [wotreplay-viewer](http://github.com/evido/wotreplay-viewer) implements a small HTML5 viewer for the JSON data. 
+
+When using the json output option, the replay is decoded into a list of packets, in the same way it is described in the replay file. The following information can be extracted from from the replay.
+
+* Position
+* Health
+* Tanks being tracked
+* Tanks getting shot or killed
+* Hull Orientation
+* Messages
 
 # Build
 
