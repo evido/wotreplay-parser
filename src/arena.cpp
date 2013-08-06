@@ -136,9 +136,6 @@ static arena_t get_arena_definition(const boost::filesystem::path &path) {
             }
 
             if (!std::strcmp((const char*) node->name, "gameplayTypes")) {
-                if (arena.name == "35_steppes") {
-                    std::cout << "hello";
-                }
                 arena.configurations = getArenaConfigurations(node);
             }
         }

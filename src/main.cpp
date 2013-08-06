@@ -27,7 +27,7 @@ float distance(const std::tuple<float, float, float> &left, const std::tuple<flo
     return std::sqrt(dist1*dist1 + delta_z*delta_z);
 }
 
-int create_minimaps(const po::variables_map &vm, const std::string &output) {
+int create_minimaps(const po::variables_map &vm, const std::string &output, bool debug) {
     if ( vm.count("output") == 0 ) {
         wotreplay::log.write(wotreplay::log_level_t::error, "parameter output is required to use this mode");
         return -EXIT_FAILURE;
@@ -38,9 +38,6 @@ int create_minimaps(const po::variables_map &vm, const std::string &output) {
     image_writer_t writer;
     for (const auto &arena_entry : get_arenas()) {
         const arena_t &arena = arena_entry.second;
-        if (arena.name[0] == '0') {
-            continue;
-        }
         for (const auto &configuration_entry : arena.configurations) {
             for (int team_id : { 0, 1 }) {
                 const std::string game_mode = configuration_entry.first;
@@ -58,7 +55,7 @@ int create_minimaps(const po::variables_map &vm, const std::string &output) {
     return EXIT_SUCCESS;
 }
 
-int parse_replay(const po::variables_map &vm, const std::string &input, const std::string &output, const std::string &type) {
+int parse_replay(const po::variables_map &vm, const std::string &input, const std::string &output, const std::string &type, bool debug) {
     if ( !(vm.count("type") > 0 && vm.count("input") > 0) ) {
         wotreplay::log.write(wotreplay::log_level_t::error, "parameters type and input are required to use this mode");
         return -EXIT_FAILURE;
@@ -120,11 +117,11 @@ int main(int argc, const char * argv[]) {
     std::string type, output, input, root;
     
     desc.add_options()
-        ("type,t"  , po::value(&type), "select output type")
-        ("output,o", po::value(&output), "target file")
-        ("input,i" , po::value(&input), "input file")
-        ("root,r"  , po::value(&root), "set root directory")
-        ("help,h"  , "produce help message")
+        ("type"  , po::value(&type), "select output type")
+        ("output", po::value(&output), "target file")
+        ("input" , po::value(&input), "input file")
+        ("root"  , po::value(&root), "set root directory")
+        ("help"  , "produce help message")
         ("debug"   , "enable parser debugging")
         ("create-minimaps", "create all empty minimaps in output directory")
         ("parse", "parse a replay file");
@@ -163,10 +160,10 @@ int main(int argc, const char * argv[]) {
     
     if (vm.count("parse") > 0) {
         // parse
-        exit_code = parse_replay(vm, input, output, type);
+        exit_code = parse_replay(vm, input, output, type, debug);
     } else if (vm.count("create-minimaps") > 0) {
         // create all minimaps
-        exit_code =  create_minimaps(vm, output);
+        exit_code =  create_minimaps(vm, output, debug);
     } else {
         wotreplay::log.write(wotreplay::log_level_t::error, "no mode specified");
         exit_code = -EXIT_FAILURE;
