@@ -39,7 +39,7 @@ void image_writer_t::draw_element(const boost::multi_array<uint8_t, 3> &element,
     float x,y;
     auto position3d = std::make_tuple(std::get<0>(position), 0.f, std::get<1>(position));
     std::tie(x,y) = get_2d_coord(position3d, arena.bounding_box, (int) shape[1], (int) shape[0]);
-    draw_element(element, x - element_shape[1]/2, y - element_shape[0], mask);
+    draw_element(element, x - element_shape[1]/2, y - element_shape[0]/2, mask);
 }
 
 void image_writer_t::draw_grid(boost::multi_array<uint8_t, 3> &image) {
