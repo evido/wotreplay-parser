@@ -24,10 +24,15 @@ void json_writer_t::update(const game_t &game) {
 
     bounding_box_t bounding_box = game.get_arena().bounding_box;
     // copy boundary values
-    root["map_boundaries"].append(Json::Value(std::get<0>(bounding_box.bottom_left)));
-    root["map_boundaries"].append(Json::Value(std::get<1>(bounding_box.bottom_left)));
-    root["map_boundaries"].append(Json::Value(std::get<0>(bounding_box.upper_right)));
-    root["map_boundaries"].append(Json::Value(std::get<1>(bounding_box.upper_right)));
+    
+    Json::Value coordinate(Json::arrayValue);
+    coordinate.append(std::get<0>(bounding_box.bottom_left));
+    coordinate.append(std::get<1>(bounding_box.bottom_left));
+    root["map_boundaries"].append(coordinate);
+    coordinate.clear();
+    coordinate.append(std::get<0>(bounding_box.upper_right));
+    coordinate.append(std::get<1>(bounding_box.upper_right));
+    root["map_boundaries"].append(coordinate);
     
     root["recorder_id"] = game.get_recorder_id();
 
