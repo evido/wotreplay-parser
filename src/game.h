@@ -129,15 +129,15 @@ namespace wotreplay {
     void write_parts_to_file(const game_t &game);
 
     /**
-     * @fn std::tuple<float, float> get_2d_coord(const std::tuple<float, float, float> &position, const game_t &game, int width, int height)
+     * @fn std::tuple<float, float> get_2d_coord(const std::tuple<float, float, float> &position, const bounding_box_t &bounding_box, int width, int height)
      * @brief Get 2D Coordinates from a WOT position scaled to given width and height.
      * @param position The position to convert to a 2d coordinate
-     * @param game_info game_info object containing the boundaries of the map
+     * @param bounding_box the boundaries of the map of the map
      * @param width target map width to scale the coordinates too
      * @param height target map height to scale the coordinates too
      * @return The scaled 2d coordinates
      */
-    std::tuple<float, float> get_2d_coord(const std::tuple<float, float, float> &position, const game_t &game_info, int width, int height);
+    std::tuple<float, float> get_2d_coord(const std::tuple<float, float, float> &position, const bounding_box_t &bounding_box, int width, int height);
 
     /**
      * @fn void wotreplay::show_map_boundaries(const game_t &game, const std::vector<packet_t> &packets)

@@ -1,6 +1,7 @@
 #ifndef wotreplay_writer_h
 #define wotreplay_writer_h
 
+#include "arena.h"
 #include "game.h"
 
 #include <iosfwd>
@@ -14,10 +15,10 @@ namespace wotreplay {
     public:
         /**
          * Initializes the object.
-         * @param map The name of the map.
+         * @param arena the arena definition.
          * @param mode The game mode.
          */
-        virtual void init(const std::string &map, const std::string &mode) = 0;
+        virtual void init(const arena_t &arena, const std::string &mode) = 0;
         /**
          * The last step in creating an image. It is called after all packets have
          * been processed. It is illegal to call void update(const packet_t &packet)

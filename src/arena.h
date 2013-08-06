@@ -9,7 +9,6 @@
 #ifndef wotreplay_arena_def_h
 #define wotreplay_arena_def_h
 
-#include <array>
 #include <map>
 #include <string>
 #include <tuple>

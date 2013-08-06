@@ -8,7 +8,7 @@ using namespace wotreplay;
 
 const int element_size = 48;
 
-static void draw_element(boost::multi_array<uint8_t, 3> &base, boost::multi_array<uint8_t, 3> &element, int x, int y, int mask = 0xFFFFFFFF)
+void image_writer_t::draw_element(const boost::multi_array<uint8_t, 3> &element, int x, int y, int mask)
 {
     const size_t *shape = element.shape();
     const size_t *image_size = base.shape();
@@ -33,21 +33,50 @@ boost::multi_array<uint8_t, 3> image_writer_t::get_element(const std::string &na
     return resized_element;
 }
 
-void image_writer_t::draw_elements(const game_t &game) {
+void image_writer_t::draw_element(const boost::multi_array<uint8_t, 3> &element, std::tuple<float, float> position, int mask) {
     auto shape = base.shape();
-    int width = static_cast<int>(shape[1]);
-    int height = static_cast<int>(shape[0]);
-    
+    auto element_shape = element.shape();
+    float x,y;
+    auto position3d = std::make_tuple(std::get<0>(position), 0.f, std::get<1>(position));
+    std::tie(x,y) = get_2d_coord(position3d, arena.bounding_box, (int) shape[1], (int) shape[0]);
+    draw_element(element, x - element_shape[1]/2, y - element_shape[0], mask);
+}
+
+void image_writer_t::draw_grid(boost::multi_array<uint8_t, 3> &image) {
+    const int grid_line_width = 2;
+    const int grid_cells = 10;
+    auto shape = image.shape();
+    int grid_width = ((int) shape[1] - (grid_cells + 1) * grid_line_width) / grid_cells;
+    int grid_height = ((int) shape[0] - (grid_cells + 1) * grid_line_width) / grid_cells;
+    for (int y = 0; y < shape[0]; y += (grid_height + grid_line_width)) {
+        for (int i = 0; i < grid_line_width; ++i) {
+            for (int x = 0; x < shape[1]; ++x) {
+                for (int c = 0; c < 3; ++ c) {
+                    image[y + i][x][c] = std::min(image[y][x][c] + 20, 255);
+                }
+            }
+        }
+    }
+    for (int x = 0; x < shape[1]; x += (grid_width + grid_line_width)) {
+        for (int i = 0; i < grid_line_width; ++i) {
+            for (int y = 0; y < shape[0]; ++y) {
+                for (int c = 0; c < 3; ++ c) {
+                    image[y][x + i][c] = std::min(image[y][x][c] + 20, 255);
+                }
+            }
+        }
+    }
+}
+
+void image_writer_t::draw_elements(const game_t &game) {
     const arena_t &arena = game.get_arena();
     const arena_configuration_t &configuration = arena.configurations.at(game.get_game_mode());
-   
+
+    draw_grid(base);
+
     if (game.get_game_mode() == "dom") {
         auto neutral_base = get_element("neutral_base");
-        auto position = configuration.control_point;
-        float x,y;
-        auto pos3d = std::make_tuple(std::get<0>(position), 0.f, std::get<1>(position));
-        std::tie(x,y) = get_2d_coord(pos3d, game, width, height);
-        draw_element(base, neutral_base, x- element_size/2, y - element_size/2);
+        draw_element(neutral_base, configuration.control_point);
     }
 
     recorder_team = game.get_team_id(game.get_recorder_id());
@@ -55,10 +84,7 @@ void image_writer_t::draw_elements(const game_t &game) {
     auto enemy_base = get_element("enemy_base");
     for(const auto &entry : configuration.team_base_positions) {
         for (const auto &position : entry.second) {
-            float x,y;
-            auto pos3d = std::make_tuple(std::get<0>(position), 0.f, std::get<1>(position));
-            std::tie(x,y) = get_2d_coord(pos3d, game, width, height);
-            draw_element(base, (entry.first - 1) == recorder_team ? friendly_base : enemy_base, x - element_size/2, y- element_size/2);
+            draw_element((entry.first - 1) == recorder_team ? friendly_base : enemy_base, position);
         }
     }
 
@@ -71,11 +97,7 @@ void image_writer_t::draw_elements(const game_t &game) {
     
     for(const auto &entry : configuration.team_spawn_points) {
         for (int i = 0; i < entry.second.size(); ++i) {
-            float x,y;
-            auto pos3d = std::make_tuple(std::get<0>(entry.second[i]), 0.f, std::get<1>(entry.second[i]));
-            std::tie(x,y) = get_2d_coord(pos3d, game, width, height);
-            draw_element(base, spawns[i], x - element_size/2, y - element_size/2,
-                         ((entry.first - 1) == recorder_team) ?0x00FF00FF : 0xFF0000FF);
+            draw_element(spawns[i], entry.second[i], ((entry.first - 1) == recorder_team) ?0x00FF00FF : 0xFF0000FF);
         }
     }
 
@@ -102,7 +124,8 @@ void image_writer_t::draw_position(const packet_t &packet, const game_t &game, b
     int height = static_cast<int>(shape[1]);
 
     float x,y;
-    std::tie(x,y) = get_2d_coord( packet.position(), game, width, height);
+    const bounding_box_t &bounding_box = game.get_arena().bounding_box;
+    std::tie(x,y) = get_2d_coord( packet.position(), bounding_box, width, height);
 
     if (x >= 0 && y >= 0 && x <= (width - 1) && y <= (height - 1)) {
         image[team_id][y][x] = 1;
@@ -128,14 +151,8 @@ void image_writer_t::update(const game_t &game) {
         }
     }
 }
-
-static std::string get_map_path(const std::string &map, const std::string &mode) {
-    return "maps/images/" + map + ".png";
-}
-
-void image_writer_t::load_base_map(const std::string &map_name, const std::string &game_mode) {
-    std::string mini_map = get_map_path(map_name, game_mode);
-    std::ifstream is(mini_map, std::ios::binary);
+void image_writer_t::load_base_map(const std::string &path) {
+    std::ifstream is(path, std::ios::binary);
     read_png(is, this->base);
 }
 
@@ -143,8 +160,9 @@ void image_writer_t::write(std::ostream &os) {
     write_png(os, result);
 }
 
-void image_writer_t::init(const std::string &map, const std::string &mode) {
-    load_base_map(map, mode);
+void image_writer_t::init(const arena_t &arena, const std::string &mode) {
+    this->arena = arena;
+    load_base_map(arena.mini_map);
     const size_t *shape = base.shape();
     size_t height = shape[0], width = shape[1];
     positions.resize(boost::extents[3][height][width]);

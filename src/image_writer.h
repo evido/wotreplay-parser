@@ -22,7 +22,7 @@ namespace wotreplay {
         virtual void reset() override;
         virtual void write(std::ostream &os) override;
         virtual bool is_initialized() const override;
-        virtual void init(const std::string &map, const std::string &mode) override;
+        virtual void init(const arena_t &arena, const std::string &mode) override;
         virtual void clear() override;
         /**
          * Set if the recording player should be drawn on the map in a seperate color.
@@ -37,10 +37,9 @@ namespace wotreplay {
     private:
         /**
          * Load a background image from the combination map name and game mode.
-         * @param map_name The map name of the background image.
-         * @param game_mode The game mode of the background image.
+         * @param path the path to the minimap image
          */
-        void load_base_map(const std::string &map_name, const std::string &game_mode);
+        void load_base_map(const std::string &path);
         /**
          * Implementation of drawing a 'death' packet on the image.
          * @param packet The packet containing the information to draw.
@@ -55,6 +54,9 @@ namespace wotreplay {
         void draw_position(const packet_t &packet, const game_t &game, boost::multi_array<float, 3> &image);
         boost::multi_array<uint8_t, 3> get_element(const std::string &name);
         void draw_elements(const game_t &game);
+        void draw_grid(boost::multi_array<uint8_t, 3> &image);
+        void draw_element(const boost::multi_array<uint8_t, 3> &element, std::tuple<float, float> position, int mask = 0xFFFFFFFF);
+        void draw_element(const boost::multi_array<uint8_t, 3> &element, int x, int y, int mask);
         /** Background image */
         boost::multi_array<uint8_t, 3> base;
         /** Image containing the frequency a player is located on a coordinate */
@@ -66,6 +68,7 @@ namespace wotreplay {
         
         bool initialized = false;
         bool show_self = false;
+        arena_t arena;
         int recorder_team = -1;
     };
 }

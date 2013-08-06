@@ -127,10 +127,9 @@ void wotreplay::write_parts_to_file(const game_t &game) {
               std::ostream_iterator<char>(replay_content));
 }
 
-std::tuple<float, float> wotreplay::get_2d_coord(const std::tuple<float, float, float> &position, const game_t &game, int width, int height)
+std::tuple<float, float> wotreplay::get_2d_coord(const std::tuple<float, float, float> &position, const bounding_box_t &bounding_box, int width, int height)
 {
     float x,y,z;
-    const bounding_box_t &bounding_box = game.get_arena().bounding_box;
     int min_x, max_x, min_y, max_y;
     std::tie(min_x, min_y) = bounding_box.bottom_left;
     std::tie(max_x, max_y) = bounding_box.upper_right;

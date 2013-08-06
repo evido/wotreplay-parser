@@ -102,7 +102,7 @@ int main(int argc, const char * argv[]) {
         std::cout << boost::format("Invalid output type (%1%), supported types: png and json.\n") % type;
     }
 
-    writer->init(game.get_map_name(), game.get_game_mode());
+    writer->init(game.get_arena(), game.get_game_mode());
     writer->update(game);
     writer->finish();
 

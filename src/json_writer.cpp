@@ -2,9 +2,9 @@
 
 using namespace wotreplay;
 
-void json_writer_t::init(const std::string &map, const std::string &mode) {
+void json_writer_t::init(const arena_t &arena, const std::string &mode) {
     root = (Json::Value(Json::objectValue));
-    Json::Value mapValue(map.c_str());
+    Json::Value mapValue(arena.name.c_str());
     Json::Value modeValue(mode.c_str());
 
     root["map"] = mapValue;

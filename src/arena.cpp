@@ -12,7 +12,6 @@
 
 using namespace wotreplay;
 
-
 static xmlDocPtr get_arena_xml_content(const boost::filesystem::path &path) {
     std::ifstream is(path.string());
     std::string content((std::istreambuf_iterator<char>(is)), std::istreambuf_iterator<char>());
