@@ -35,10 +35,26 @@ namespace wotreplay {
          */
         virtual bool get_show_self() const;
         /**
-         * Draw game elements on the map
-         * @param recorder_team the team of the recorder
+         * When true, colors of positions will not follow the color of the recorder. Team 1 will
+         * be colored green, team 2 will be colored red.
+         * @param use_fixed_teamcolors new value for use_fixed_teamcolors
          */
-        void draw_elements(int recorder_team);
+        virtual void set_use_fixed_teamcolors(bool use_fixed_teamcolors);
+        /**
+         * get the current value of use_fixed_teamcolors
+         * @return current value of use_fixed_teamcolors
+         */
+        virtual bool get_use_fixed_teamcolors() const;
+        /**
+         * set the recorder team, this controls the colors of the elements on the map
+         * @param recorder_team the new recorder team
+         */
+        void set_recorder_team(int recorder_team);
+        /**
+         * get the recorder team
+         * @return recorder_team
+         */
+        int get_recorder_team() const;
     private:
         /**
          * Load a background image from the combination map name and game mode.
@@ -57,10 +73,37 @@ namespace wotreplay {
          * @param game Game
          */
         void draw_position(const packet_t &packet, const game_t &game, boost::multi_array<float, 3> &image);
+        /**
+         * read map element by name
+         * @param name element name
+         * @return bitmap of the element
+         */
         boost::multi_array<uint8_t, 3> get_element(const std::string &name);
+        /**
+         * draw a grid on the given image
+         * @param image the target image
+         */
         void draw_grid(boost::multi_array<uint8_t, 3> &image);
+        /**
+         * draw an element with coordinates in 'image' space
+         * @param element element the element to draw
+         * @param position the coordinate in 'game' space
+         * @param mask the mask to apply to the rgba value
+         */
         void draw_element(const boost::multi_array<uint8_t, 3> &element, std::tuple<float, float> position, int mask = 0xFFFFFFFF);
+        /**
+         * draw an element with coordinates in 'image' space
+         * @param element element the element to draw
+         * @param x the x position of the upper left corner
+         * @param y the y position of the upper left corner
+         * @param mask the mask to apply to the rgba value
+         */
         void draw_element(const boost::multi_array<uint8_t, 3> &element, int x, int y, int mask);
+        /**
+         * Draw game elements on the map
+         * @param recorder_team the team of the recorder
+         */
+        void draw_elements();
         /** Background image */
         boost::multi_array<uint8_t, 3> base;
         /** Image containing the frequency a player is located on a coordinate */
@@ -69,9 +112,9 @@ namespace wotreplay {
         boost::multi_array<float, 3> deaths;
         /** Contains the resulting image. */
         boost::multi_array<uint8_t, 3> result;
-        
         bool initialized = false;
         bool show_self = false;
+        bool use_fixed_teamcolors = true;
         std::string mode;
         arena_t arena;
         int recorder_team = -1;

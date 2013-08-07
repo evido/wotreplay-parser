@@ -42,12 +42,12 @@ int create_minimaps(const po::variables_map &vm, const std::string &output, bool
             for (int team_id : { 0, 1 }) {
                 const std::string game_mode = configuration_entry.first;
                 writer.init(arena, game_mode);
-                writer.draw_elements(team_id);
+                writer.set_recorder_team(team_id);
+                writer.set_use_fixed_teamcolors(false);
                 std::string file_name = (file_name_format % output % arena.name % game_mode % team_id).str();
                 std::ofstream os(file_name, std::ios::binary);
                 writer.finish();
                 writer.write(os);
-                writer.reset();
             }
         }
     }
@@ -79,6 +79,7 @@ int parse_replay(const po::variables_map &vm, const std::string &input, const st
         writer = std::unique_ptr<writer_t>(new image_writer_t());
         auto &image_writer = dynamic_cast<image_writer_t&>(*writer);
         image_writer.set_show_self(true);
+        image_writer.set_use_fixed_teamcolors(false);
     } else if (type == "json") {
         writer = std::unique_ptr<writer_t>(new json_writer_t());
     } else {
@@ -165,10 +166,9 @@ int main(int argc, const char * argv[]) {
         // create all minimaps
         exit_code =  create_minimaps(vm, output, debug);
     } else {
-        wotreplay::log.write(wotreplay::log_level_t::error, "no mode specified");
+        wotreplay::log.write(wotreplay::log_level_t::error, "Error: no mode specified");
         exit_code = -EXIT_FAILURE;
     }
-
 
     if (exit_code < 0) {
         show_help(argc, argv, desc);

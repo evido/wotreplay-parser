@@ -23,8 +23,8 @@ void json_writer_t::update(const game_t &game) {
     auto &packets = root["packets"];
 
     bounding_box_t bounding_box = game.get_arena().bounding_box;
+
     // copy boundary values
-    
     Json::Value coordinate(Json::arrayValue);
     coordinate.append(std::get<0>(bounding_box.bottom_left));
     coordinate.append(std::get<1>(bounding_box.bottom_left));
@@ -116,7 +116,7 @@ void json_writer_t::update(const game_t &game) {
         if (packet.has_property(property_t::alt_track_state)) {
             value["alt_track_state"] = packet.alt_track_state();
         }
-        
+
         packets.append(value);
     }
 }

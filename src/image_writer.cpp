@@ -8,8 +8,7 @@ using namespace wotreplay;
 
 const int element_size = 48;
 
-void image_writer_t::draw_element(const boost::multi_array<uint8_t, 3> &element, int x, int y, int mask)
-{
+void image_writer_t::draw_element(const boost::multi_array<uint8_t, 3> &element, int x, int y, int mask) {
     const size_t *shape = element.shape();
     const size_t *image_size = base.shape();
     for (int i = 0; i < shape[0]; ++i) {
@@ -68,9 +67,11 @@ void image_writer_t::draw_grid(boost::multi_array<uint8_t, 3> &image) {
     }
 }
 
-void image_writer_t::draw_elements(int recorder_team) {
+void image_writer_t::draw_elements() {
     const arena_configuration_t &configuration = arena.configurations[mode];
 
+    int reference_team_id = use_fixed_teamcolors ? 0 : recorder_team;
+    
     if (mode == "dom") {
         auto neutral_base = get_element("neutral_base");
         draw_element(neutral_base, configuration.control_point);
@@ -80,7 +81,7 @@ void image_writer_t::draw_elements(int recorder_team) {
     auto enemy_base = get_element("enemy_base");
     for(const auto &entry : configuration.team_base_positions) {
         for (const auto &position : entry.second) {
-            draw_element((entry.first - 1) == recorder_team ? friendly_base : enemy_base, position);
+            draw_element((entry.first - 1) == reference_team_id ? friendly_base : enemy_base, position);
         }
     }
 
@@ -93,7 +94,8 @@ void image_writer_t::draw_elements(int recorder_team) {
     
     for(const auto &entry : configuration.team_spawn_points) {
         for (int i = 0; i < entry.second.size(); ++i) {
-            draw_element(spawns[i], entry.second[i], ((entry.first - 1) == recorder_team) ?0x00FF00FF : 0xFF0000FF);
+            int mask = (reference_team_id == (entry.first - 1)) ? 0x00FF00FF : 0xFF0000FF;
+            draw_element(spawns[i], entry.second[i], mask);
         }
     }
 
@@ -134,7 +136,7 @@ void image_writer_t::draw_position(const packet_t &packet, const game_t &game, b
 }
 
 void image_writer_t::update(const game_t &game) {
-    draw_elements(game.get_team_id(game.get_recorder_id()));
+    recorder_team = game.get_team_id(game.get_recorder_id());
     
     std::set<int> dead_players;
     for (const packet_t &packet : game.get_packets()) {
@@ -167,11 +169,12 @@ void image_writer_t::init(const arena_t &arena, const std::string &mode) {
     size_t height = shape[0], width = shape[1];
     positions.resize(boost::extents[3][height][width]);
     deaths.resize(boost::extents[3][height][width]);
+    clear();
     initialized = true;
 }
 
 void image_writer_t::clear() {
-    std::fill(base.origin(), base.origin() + base.num_elements(), 0.f);
+    std::fill(result.origin(), result.origin() + result.num_elements(), 0.f);
     std::fill(deaths.origin(), deaths.origin() + deaths.num_elements(), 0.f);
     std::fill(positions.origin(), positions.origin() + positions.num_elements(), 0.f);
 }
@@ -180,13 +183,14 @@ void image_writer_t::finish() {
     // copy background to result
     const size_t *shape = base.shape();
     result.resize(boost::extents[shape[0]][shape[1]][shape[2]]);
+    draw_elements();
     result = base;
-    
+    int reference_team_id = use_fixed_teamcolors ? 0 : recorder_team;
     for (int i = 0; i < shape[0]; ++i) {
         for (int j = 0; j < shape[1]; ++j) {
             if (positions[0][i][j] > positions[1][i][j]) {
                 // position claimed by first team
-                if (recorder_team == 0) {
+                if (reference_team_id == 0) {
                     result[i][j][0] = result[i][j][2] = 0x00;
                     result[i][j][1] = result[i][j][3] = 0xFF;
                 } else {
@@ -196,12 +200,12 @@ void image_writer_t::finish() {
                 
             } else if (positions[0][i][j] < positions[1][i][j]) {
                 // position claimed by second team
-                if (recorder_team == 1) {
-                    result[i][j][0] = result[i][j][2] = 0x00;
-                    result[i][j][1] = result[i][j][3] = 0xFF;
-                } else {
+                if (reference_team_id == 0) {
                     result[i][j][1] = result[i][j][2] = 0x00;
                     result[i][j][0] = result[i][j][3] = 0xFF;
+                } else {
+                    result[i][j][0] = result[i][j][2] = 0x00;
+                    result[i][j][1] = result[i][j][3] = 0xFF;
                 }
             } else {
                 // no change
@@ -243,7 +247,6 @@ void image_writer_t::finish() {
 
 void image_writer_t::reset() {
     // initialize with empty image arrays
-    // result = deaths = positions = base =  boost::multi_array<uint8_t, 3>();
     initialized = false;
 }
 
@@ -257,4 +260,20 @@ void image_writer_t::set_show_self(bool show_self) {
 
 bool image_writer_t::get_show_self() const {
     return show_self;
+}
+
+void image_writer_t::set_use_fixed_teamcolors(bool use_fixed_teamcolors) {
+    this->use_fixed_teamcolors = use_fixed_teamcolors;
+}
+
+bool image_writer_t::get_use_fixed_teamcolors() const {
+    return use_fixed_teamcolors;
+}
+
+void image_writer_t::set_recorder_team(int recorder_team) {
+    this->recorder_team = recorder_team;
+}
+
+int image_writer_t::get_recorder_team() const {
+    return recorder_team;
 }
