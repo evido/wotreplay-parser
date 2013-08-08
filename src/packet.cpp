@@ -138,7 +138,7 @@ void packet_t::set_data(const slice_t &data) {
                 (value == 0xF0 || value == 0xF6);
             // goes together with destroyed_track_id
             properties[static_cast<size_t>(property_t::alt_track_state)] =
-                properties[static_cast<size_t>(property_t::destroyed_track_id)];
+                    properties[static_cast<size_t>(property_t::destroyed_track_id)];
             break;
         }
         default: {
