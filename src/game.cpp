@@ -129,13 +129,14 @@ void wotreplay::write_parts_to_file(const game_t &game) {
 
 std::tuple<float, float> wotreplay::get_2d_coord(const std::tuple<float, float, float> &position, const bounding_box_t &bounding_box, int width, int height)
 {
-    float x,y,z;
-    int min_x, max_x, min_y, max_y;
+    float min_x, max_x, min_y, max_y;
     std::tie(min_x, min_y) = bounding_box.bottom_left;
     std::tie(max_x, max_y) = bounding_box.upper_right;
-    std::tie(x,z,y) = position;
-    x = (x - min_x) * (static_cast<float>(width) / (max_x - min_x + 1));
-    y = (max_y - y) * (static_cast<float>(height) / (max_y - min_y + 1));
+    // std::tie(x,z,y) = position;
+    float x = std::get<0>(position);
+    float y = std::get<2>(position);
+    x = (x - min_x) * (width - 1) / (max_x - min_x + 1)  ;
+    y = (max_y - y) * (height - 1) / (max_y - min_y + 1) ;
     return std::make_tuple(x,y);
 }
 

@@ -119,18 +119,17 @@ void image_writer_t::draw_position(const packet_t &packet, const game_t &game, b
     if (team_id < 0) return;
 
     auto shape = image.shape();
-    int width = static_cast<int>(shape[2]);
     int height = static_cast<int>(shape[1]);
+    int width = static_cast<int>(shape[2]);
 
-    float x,y;
     const bounding_box_t &bounding_box = game.get_arena().bounding_box;
-    std::tie(x,y) = get_2d_coord( packet.position(), bounding_box, width, height);
-
-    if (x >= 0 && y >= 0 && x <= (width - 1) && y <= (height - 1)) {
-        image[team_id][y][x] = 1;
-
+    std::tuple<float, float> position = get_2d_coord( packet.position(), bounding_box, width, height);
+    long x = std::lround(std::get<0>(position));
+    long y = std::lround(std::get<1>(position));
+    if (x >= 0 && y >= 0 && x < width && y < height) {
+        image[team_id][y][x]++;
         if (player_id == game.get_recorder_id()) {
-            image[2][y][x] = 1;
+            image[2][y][x]++;
         }
     }
 }

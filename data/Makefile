@@ -1,5 +1,5 @@
 WOT_INSTALL_PATH ?= /media/windows/Games/World_of_Tanks
-MAPS = maps/00_tank_tutorial.png maps/85_winter.png maps/60_asia_miao.png maps/73_asia_korea.png maps/01_karelia.png maps/02_malinovka.png maps/03_campania.png maps/04_himmelsdorf.png maps/05_prohorovka.png maps/06_ensk.png maps/07_lakeville.png maps/08_ruinberg.png maps/10_hills.png maps/11_murovanka.png maps/13_erlenberg.png maps/14_siegfried_line.png maps/15_komarin.png maps/17_munchen.png maps/18_cliff.png maps/19_monastery.png maps/22_slough.png maps/23_westfeld.png maps/28_desert.png maps/29_el_hallouf.png maps/31_airfield.png maps/33_fjord.png maps/34_redshire.png maps/35_steppes.png maps/36_fishing_bay.png maps/37_caucasus.png maps/38_mannerheim_line.png maps/39_crimea.png maps/42_north_america.png maps/44_north_america.png maps/45_north_america.png maps/47_canada_a.png maps/51_asia.png
+MAPS = maps/images/00_tank_tutorial.png maps/images/85_winter.png maps/images/60_asia_miao.png maps/images/73_asia_korea.png maps/images/01_karelia.png maps/images/02_malinovka.png maps/images/03_campania.png maps/images/04_himmelsdorf.png maps/images/05_prohorovka.png maps/images/06_ensk.png maps/images/07_lakeville.png maps/images/08_ruinberg.png maps/images/10_hills.png maps/images/11_murovanka.png maps/images/13_erlenberg.png maps/images/14_siegfried_line.png maps/images/15_komarin.png maps/images/17_munchen.png maps/images/18_cliff.png maps/images/19_monastery.png maps/images/22_slough.png maps/images/23_westfeld.png maps/images/28_desert.png maps/images/29_el_hallouf.png maps/images/31_airfield.png maps/images/33_fjord.png maps/images/34_redshire.png maps/images/35_steppes.png maps/images/36_fishing_bay.png maps/images/37_caucasus.png maps/images/38_mannerheim_line.png maps/images/39_crimea.png maps/images/42_north_america.png maps/images/44_north_america.png maps/images/45_north_america.png maps/images/47_canada_a.png maps/images/51_asia.png
 
 default: minimaps
 
@@ -16,7 +16,7 @@ spaces/%/mmap.dds: %.pkg
 	@unzip -o $< spaces/$(basename $<)/mmap.dds > /dev/null
 	@rm -f $<
 
-maps/%.png: spaces/%/mmap.dds
+maps/images/%.png: spaces/%/mmap.dds
 	@convert -size 512x512 $< -alpha on -resize 512x512 $@
 	@echo Generated $@
 	@rm -f $<
