@@ -13,11 +13,12 @@ void image_writer_t::draw_element(const boost::multi_array<uint8_t, 3> &element,
     const size_t *image_size = base.shape();
     for (int i = 0; i < shape[0]; ++i) {
         for (int j = 0; j < shape[1]; ++j) {
+            // don't touch alpha channel, use from original
             for (int k = 0; k < 3; ++k) {
                 if (((i + y) >= image_size[0]) || ((j + x) >= image_size[1])) {
                     continue;
                 }
-                base[i + y][j + x][k] = mix(base[i + y][j + x][k], base[i + y][j + x][k],(255 - element[i][j][3]) / 255.f,
+                base[i + y][j + x][k] = mix(base[i + y][j + x][k], base[i + y][j + x][k], (255 - element[i][j][3]) / 255.f,
                                     element[i][j][k] & ((mask >> ((4- (k + 1))*8)) & 0xFF), element[i][j][3] / 255.f);
             }
         }
