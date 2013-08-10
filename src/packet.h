@@ -3,9 +3,10 @@
 
 #include "types.h"
 
-#include <tuple>
+#include <algorithm>
 #include <array>
 #include <stdint.h>
+#include <tuple>
 
 /** @file packet.h */
 
@@ -23,6 +24,13 @@ namespace wotreplay {
         sub_type,
         type,
         tank_destroyed,
+        source,
+        hull_orientation,
+        turret_orientation,
+        message,
+        target,
+        destroyed_track_id,
+        alt_track_state,
         property_nr_items
     };
 
@@ -51,8 +59,14 @@ namespace wotreplay {
         uint32_t player_id() const;
         /** @return The position value of this packet. */
         std::tuple<float, float, float> position() const;
+        /** @return The hull orentation value of this packet. */
+        std::tuple<float, float, float> hull_orientation() const;
+        /** @return The turret orentation value of this packet. */
+        float turret_orientation() const;
         /** @return The remaining health of a player. */
         uint16_t health() const;
+        /** @return The remaining health update source of a player. */
+        uint32_t source() const;
         /** @return Indicates the player_id was hit. */
         bool is_shot() const;
         /** @return A tuple of with the player_id's of the target and the killer. */
@@ -76,6 +90,41 @@ namespace wotreplay {
          * @return The data of this packet.
          */
         const slice_t &get_data() const;
+        /**
+         * Find a binary value in this packet.
+         * @param value The value to be found in this packet.
+         * @return \c true if the packet contains the value, \c false if not
+         */
+        template <typename T>
+        bool find(const T &value) const {
+            const uint8_t *arr = reinterpret_cast<const uint8_t*>(&value);
+            return std::search(data.begin(), data.end(), arr, arr + sizeof(value)) != data.end();
+        }
+        /**
+         * Get packet sub type, relevant for packet type 0x08 and 0x07
+         */
+        uint32_t sub_type() const;
+        /**
+         * contains a message for the battle log formatted as a html element
+         * example: \verbatim <font color='#DA0400'>SmurfingBird[RDDTX] (VK 36.01 H)&nbsp;:&nbsp;</font><font color='#FFFFFF'>so far so good</font> \endverbatim
+         * @return the message contained by this packet
+         */
+        std::string message() const;
+        /**
+         * Target information, object of the actin in 0x08 / 0x1B packets
+         * @return get target player id
+         */
+        uint32_t target() const;
+        /**
+         * get the id of the destroyed track, 0x1D for left track, 0x1E for right track
+         * @return id of the destroyed track
+         */
+        uint8_t destroyed_track_id() const;
+        /**
+         * get status of alternative track, 0xFO indicates the track works, 0xF6 indicates the track is broken
+         * @return alt track state
+         */
+        uint8_t alt_track_state() const;
     private:
         /** An array containing the presence of each property. */
         std::array<bool, static_cast<size_t>(property_t::property_nr_items)> properties;

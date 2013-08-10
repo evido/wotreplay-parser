@@ -1,7 +1,14 @@
 /wotreplay-parser.xcodeproj
-/data
+
+data/*
+!data/Makefile
 /doc
 .DS_Store
 /obj
 /maps
 /replays
+CMakeFiles
+CMakeCache.txt
+cmake_install.cmake
+build
+test

@@ -1,6 +1,7 @@
 #ifndef wotreplay_game_h
 #define wotreplay_game_h
 
+#include "arena.h"
 #include "packet.h"
 #include "types.h"
 
@@ -10,6 +11,29 @@
 /** @file */
 
 namespace wotreplay {
+    /**
+     * The game version of a replay file
+     */
+    struct version_t {
+        version_t() = default;
+        /**
+         * @param version_string the string representation of the game version
+         */
+        version_t(const std::string &version_string);
+        /** 
+         * The major version number
+         */
+        int major;
+        /**
+         * The minor version number
+         */
+        int minor;
+        /**
+         * The string representation of the version
+         */
+        std::string text;
+    };
+
     /**
      * An object wrapping the properties of the game with the actions
      * by the players in the game represented by a list of packets.
@@ -44,11 +68,10 @@ namespace wotreplay {
          */
         const std::set<int> &get_team(int team_id) const;
         /**
-         * Describes the boundaries of the current map in the following order:
-         * { x_min, x_max, y_min, y_max }
+         * Get the arena definition
          * @return The map boundaries
          */
-        const std::array<int, 4> &get_map_boundaries() const;
+        const arena_t &get_arena() const;
          /** 
           * The player id recording this game.
           * @return the player id of the recorder of this game
@@ -74,7 +97,7 @@ namespace wotreplay {
          * Returns the version string as stored in the replay file.
          * @return The version string as stored in the replay file.
          */
-        const std::string& get_version() const;
+        const version_t& get_version() const;
         /**
          * Returns the data block 'game begin' containing a JSON string describing the start of the game.
          * @return Data block 'game begin'
@@ -88,15 +111,14 @@ namespace wotreplay {
         const buffer_t &get_game_end() const;
     private:
         std::vector<packet_t> packets;
-        std::array<int, 4> map_boundaries;
         std::array<std::set<int>, 2> teams;
         std::string game_mode;
-        std::string map_name;
-        std::string version;
+        arena_t arena;
         buffer_t game_begin;
         buffer_t game_end;
         buffer_t replay;
         uint32_t recorder_id;
+        version_t version;
     };
 
     /**
@@ -107,15 +129,15 @@ namespace wotreplay {
     void write_parts_to_file(const game_t &game);
 
     /**
-     * @fn std::tuple<float, float> get_2d_coord(const std::tuple<float, float, float> &position, const game_t &game, int width, int height)
+     * @fn std::tuple<float, float> get_2d_coord(const std::tuple<float, float, float> &position, const bounding_box_t &bounding_box, int width, int height)
      * @brief Get 2D Coordinates from a WOT position scaled to given width and height.
      * @param position The position to convert to a 2d coordinate
-     * @param game_info game_info object containing the boundaries of the map
+     * @param bounding_box the boundaries of the map of the map
      * @param width target map width to scale the coordinates too
      * @param height target map height to scale the coordinates too
      * @return The scaled 2d coordinates
      */
-    std::tuple<float, float> get_2d_coord(const std::tuple<float, float, float> &position, const game_t &game_info, int width, int height);
+    std::tuple<float, float> get_2d_coord(const std::tuple<float, float, float> &position, const bounding_box_t &bounding_box, int width, int height);
 
     /**
      * @fn void wotreplay::show_map_boundaries(const game_t &game, const std::vector<packet_t> &packets)

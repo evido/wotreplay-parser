@@ -1,5 +1,10 @@
 #include "json/json.h"
+
+#include "arena.h"
+#include "packet_reader.h"
+#include "packet_reader_80.h"
 #include "parser.h"
+#include "regex.h"
 
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
@@ -8,7 +13,6 @@
 #include <memory>
 #include <openssl/blowfish.h>
 #include <ostream>
-#include <regex>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -16,14 +20,13 @@
 #include <zlib.h>
 
 using namespace wotreplay;
-using namespace std;
 using namespace boost::filesystem;
 
 #if DEBUG_REPLAY_FILE
 
 template <typename T>
-static void debug_stream_content(const string &file_name, T begin, T end) {
-    ofstream os(file_name, ios::binary | ios::ate);
+static void debug_stream_content(const std::string &file_name, T begin, T end) {
+    std::ofstream os(file_name, std::ios::binary | std::ios::ate);
     std::copy(begin, end, std::ostream_iterator<typename std::iterator_traits<T>::value_type>(os));
     os.close();
 }
@@ -41,22 +44,8 @@ parser_t::parser_t(bool debug)
     // empty
 }
 
-static size_t get_size(istream& is) {
-    is.seekg(0, ios::end);
-    ios::pos_type size = is.tellg();
-    is.seekg(0, ios::beg);
-    return static_cast<size_t>(size);
-}
-
-static void read(istream& is, buffer_t &buffer) {
-    ios::pos_type size = get_size(is);
-    buffer.resize(size);
-    is.read(reinterpret_cast<char*>(&buffer[0]), size);
-}
-
 void parser_t::parse(std::istream &is, wotreplay::game_t &game) {
-    buffer_t buffer;
-    read(is, buffer);
+    buffer_t buffer((std::istreambuf_iterator<char>(is)), std::istreambuf_iterator<char>());
     parse(buffer, game);
 }
 
@@ -81,7 +70,7 @@ void parser_t::parse(buffer_t &buffer, wotreplay::game_t &game) {
                                     data_blocks[i].begin(), data_blocks[i].end());
             }
         }
-
+        
         if (data_blocks.size() < 2) {
             std::string message((boost::format("Unexpected number of data blocks (%1%).") % data_blocks.size()).str());
             throw std::runtime_error(message);
@@ -111,7 +100,7 @@ void parser_t::parse(buffer_t &buffer, wotreplay::game_t &game) {
             0xDE, 0xFE, 0xBE, 0xEF,
             0xDE, 0xAD, 0xBE, 0xEF
         };
-
+        
         decrypt_replay(raw_replay, key);
         read_game_info(game);
     }
@@ -120,12 +109,17 @@ void parser_t::parse(buffer_t &buffer, wotreplay::game_t &game) {
     
     // read version string
     uint32_t version_string_sz = get_field<uint32_t>(game.replay.begin(), game.replay.end(), 12);
-    game.version.assign(game.replay.begin() + 16, game.replay.begin() + 16 + version_string_sz);
-
-    if (!this->is_compatible(game)) {
-        std::cerr << boost::format("Warning: Replay version (%1%) not marked as compatible.\n") % game.version;
-    }
+    std::string version(game.replay.begin() + 16, game.replay.begin() + 16 + version_string_sz);
+    game.version = version_t(version);
     
+    if (!this->setup(game.version)) {
+        std::cerr << boost::format("Warning: Replay version (%1%) not marked as compatible.\n") % game.version.text;
+    }
+
+    if (debug) {
+        debug_stream_content("out/replay.dat", game.replay.begin(), game.replay.end());
+    }
+
     read_packets(game);
 
     if (debug) {
@@ -133,21 +127,9 @@ void parser_t::parse(buffer_t &buffer, wotreplay::game_t &game) {
     }
 }
 
-bool parser_t::is_compatible(const game_t &game) const {
-    std::string version;
-    std::regex re(R"(v\.(\d+\.\d+\.\d+))");
-    std::smatch match;
-
-    if (std::regex_search(game.version, match, re)) {
-        version = match[1];
-    }
-
-    std::vector<std::string> compatible_versions{
-        "0.8.2"
-    };
-
-    return std::find(compatible_versions.begin(), compatible_versions.end(), version)
-                != compatible_versions.end();
+bool parser_t::setup(const version_t &version) {
+    this->packet_reader = std::unique_ptr<packet_reader_t>(new packet_reader_80_t());
+    return packet_reader->is_compatible(version);
 }
 
 void parser_t::set_debug(bool debug) {
@@ -252,7 +234,7 @@ void parser_t::extract_replay(buffer_t &compressed_replay, buffer_t &replay) {
     }
 }
 
-void parser_t::get_data_blocks(buffer_t &buffer, vector<slice_t> &data_blocks) const {
+void parser_t::get_data_blocks(buffer_t &buffer, std::vector<slice_t> &data_blocks) const {
     // determine number of data blocks
     uint32_t nr_data_blocks = get_data_block_count(buffer);
     
@@ -278,183 +260,12 @@ void parser_t::get_data_blocks(buffer_t &buffer, vector<slice_t> &data_blocks) c
     data_blocks.emplace_back(last_data_block.end() + 8, buffer.end());
 }
 
-static std::map<uint8_t, int> packet_lengths = {
-    {0x03, 24},
-    {0x04, 16},
-    {0x05, 54},
-    {0x07, 24},
-    {0x08, 24},
-    {0x0A, 61},
-    {0x0B, 30},
-    {0x0E, 25}, // changed {0x0E, 4}
-    {0x0C,  3},
-    {0x11, 12},
-    {0x12, 16},
-    {0x13, 16},
-    {0x14,  4},
-    {0x15, 44},
-    {0x16, 52},
-    {0x17, 16},
-    {0x18, 16},
-    {0x19, 16},
-    {0x1B, 16},
-    {0x1C, 20},
-    {0x1D, 21},
-    {0x1A, 16},
-    {0x1E, 16},  // modified for 0.7.2 {0x1e, 160},
-    {0x1F, 17},
-    {0x20, 21},  // modified for 0.8.0 {0x20, 4}
-    {0x31,  4},  // indication of restart of the replay, probably not a part of the replay but necessary because of wrong detection of the start of the replay
-    {0x0D, 22},
-    {0x00, 22}
-};
-
-size_t parser_t::read_packets(game_t &game) {
-    buffer_t &buffer = game.replay;
-
-    if (is_legacy()) {
-        packet_lengths[0x16] = 44;
+void parser_t::read_packets(game_t &game) {
+    packet_reader->init(game.version, &game.replay);
+    while (packet_reader->has_next()) {
+        game.packets.push_back(packet_reader->next());
     }
-
-    size_t offset = 0;
-
-    std::array<uint8_t, 6> marker = {{0x2C, 0x01, 0x01, 0x00, 0x00, 0x00}};
-
-    auto pos = std::search(buffer.begin(), buffer.end(),marker.begin(), marker.end());
-    if (pos != buffer.end()) {
-        offset = (pos - buffer.begin()) + marker.size();
-        if (debug) {
-            std::cerr << "OFFSET: " << offset << "\n";
-        }
-    }
-
-    size_t ix = offset;
-    while (ix < buffer.size()) {
-    
-        if (packet_lengths.count(buffer[ix + 1]) < 1) {
-            size_t count = game.packets.size();
-            if (count < 500) {
-                ix = static_cast<int>(++offset);
-                if (debug) {
-                    std::cerr << ix << "\n";
-                    std::cerr << "WARNING INCORRECT OFFSET!\n";
-                }
-                continue;
-            } else {
-                int unread = (int) buffer.size() - (int) ix;
-                if (unread > 25) {
-                    std::cerr <<
-                        boost::format("Warning: Unexpected end of replay, %1d bytes left.\n") % unread;
-                }
-                if (debug) {
-                    const packet_t &last_packet = game.packets.back();
-                    const slice_t &packet_data = last_packet.get_data();
-                    size_t packet_size = packet_data.size();
-                    size_t prev_ix = ix - packet_size;
-                    std::cerr << "Bytes read: " << ix << std::endl
-                        << "Packets read: " << count << std::endl
-                        << "Last packets start: " << prev_ix << std::endl
-                        << "Bytes unread: " << unread << std::endl
-                        << "Bytes skipped: " << offset << std::endl;
-                    if (unread > 25) {
-                        std::cerr << "Unexpected end of the replay.\n";
-                    }
-                }
-                break;
-            }
-        }
-
-        size_t packet_length = packet_lengths[buffer[ix + 1]];
-        
-        switch(buffer[ix + 1]) {
-            case 0x07:
-            case 0x08: {
-                packet_length += get_field<uint16_t>(buffer.begin(), buffer.end(), ix + 17);
-                break;
-            }
-            case 0x1F:
-            case 0x17: {
-                packet_length += get_field<uint8_t>(buffer.begin(), buffer.end(), ix + 9);
-                break;
-            }
-            case 0x05: {
-                packet_length += get_field<uint8_t>(buffer.begin(), buffer.end(), ix + 47);
-                break;
-            }
-            case 0x20: {
-                packet_length += get_field<uint8_t>(buffer.begin(), buffer.end(), ix + 14);
-                break;
-            }
-            case 0x0B: {
-                packet_length += get_field<uint8_t>(buffer.begin(), buffer.end(), ix + 23);
-                break;
-            }
-            case 0x0e: {
-                packet_length += get_field<uint32_t>(buffer.begin(), buffer.end(), ix + 10);
-                break;
-            }
-            case 0x0D:
-            case 0x00: {
-                packet_length += get_field<uint32_t>(buffer.begin(), buffer.end(), ix + 15);
-                break;
-            }
-        }
-        
-        auto packet_begin = buffer.begin() + ix;
-
-        if (ix + packet_length < buffer.size()) {
-            auto packet_end = packet_begin + packet_length;
-            game.packets.emplace_back(parser_t::read_packet(packet_begin, packet_end));
-        } else if (debug) {
-            std::cerr << "Packet went out of replay file bounds.\n";
-        }
-
-        if (debug) {
-            std::cerr << boost::format("[%2%] type=0x%1$02X size=%3%\n") % (int) buffer[ix + 1] % ix % packet_length;
-        }
-        
-        ix += packet_length;
-    }
-
-    return ix;
 }
-
-static std::map<std::string, std::array<int, 4>> map_boundaries =
-{
-    { "01_karelia",         {{ -500, 500, -500, 500 }} },
-    { "02_malinovka",       {{ -500, 500, -500, 500 }} },
-    { "03_campania",        {{ -300, 300, -300, 300 }} },
-    { "04_himmelsdorf",     {{ -300, 400, -300, 400 }} },
-    { "05_prohorovka", 	    {{ -500, 500, -500, 500 }} },
-    { "06_ensk",            {{ -300, 300, -300, 300 }} },
-    { "07_lakeville",       {{ -400, 400, -400, 400 }} },
-    { "08_ruinberg",        {{ -400, 400, -400, 400 }} },
-    { "10_hills",           {{ -400, 400, -400, 400 }} },
-    { "11_murovanka",       {{ -400, 400, -400, 400 }} },
-    { "13_erlenberg",       {{ -500, 500, -500, 500 }} },
-    { "14_siegfried_line",  {{ -500, 500, -500, 500 }} },
-    { "15_komarin",         {{ -400, 400, -400, 400 }} },
-    { "17_munchen",         {{ -300, 300, -300, 300 }} },
-    { "18_cliff",           {{ -500, 500, -500, 500 }} },
-    { "19_monastery",       {{ -500, 500, -500, 500 }} },
-    { "22_slough",          {{ -500, 500, -500, 500 }} },
-    { "23_westfeld",        {{ -500, 500, -500, 500 }} },
-    { "28_desert",          {{ -500, 500, -500, 500 }} },
-    { "29_el_hallouf",      {{ -500, 500, -500, 500 }} },
-    { "31_airfield",        {{ -500, 500, -500, 500 }} },
-    { "33_fjord",           {{ -500, 500, -500, 500 }} },
-    { "34_redshire",        {{ -500, 500, -500, 500 }} },
-    { "35_steppes",         {{ -500, 500, -500, 500 }} },
-    { "36_fishing_bay",     {{ -500, 500, -500, 500 }} },
-    { "37_caucasus",        {{ -500, 500, -500, 500 }} },
-    { "38_mannerheim_line", {{ -500, 500, -500, 500 }} },
-    { "39_crimea",          {{ -500, 500, -500, 500 }} },
-    { "42_north_america",   {{ -400, 400, -400, 400 }} },
-    { "44_north_america",   {{ -500, 500, -500, 500 }} },
-    { "45_north_america",   {{ -500, 500, -500, 500 }} },
-    { "47_canada_a",        {{ -500, 500, -500, 500 }} },
-    { "51_asia",            {{ -500, 500, -500, 500 }} }
-};
 
 void parser_t::read_game_info(game_t& game) {
     // get game details
@@ -477,7 +288,7 @@ void parser_t::read_game_info(game_t& game) {
         game.teams[team_id - 1].insert(player_id);
     }
 
-    game.map_name = root["mapName"].asString();
+    std::string map_name = root["mapName"].asString();
 
     if (root.isMember("gameplayType")) {
         game.game_mode = root["gameplayType"].asString();
@@ -489,23 +300,9 @@ void parser_t::read_game_info(game_t& game) {
     game.game_mode.resize(3);
 
     // explicit check for game version should be better
-    if (map_boundaries.find(game.map_name) == map_boundaries.end()) {
-
-        if (game.map_name == "north_america") {
-            game.map_name = "44_north_america";
-        } else {
-            for (auto entry : map_boundaries) {
-                string map_name = entry.first;
-                string short_map_name(map_name.begin() + 3, map_name.end());
-                if (short_map_name == game.map_name) {
-                    // rewrite map name
-                    game.map_name = map_name;
-                }
-            }
-        }
+    if (!get_arena(map_name, game.arena)) {
+        throw std::runtime_error("Could not find appropriate arena definition");
     }
-
-    game.map_boundaries = map_boundaries[game.map_name];
 }
 
 void wotreplay::show_packet_summary(const std::vector<packet_t>& packets) {
@@ -563,7 +360,7 @@ void wotreplay::validate_parser(const std::string &path) {
         ss << "file:" << it->path().string();
         
         // parse the path as a replay file, using methods internal to parser
-        ifstream is(it->path().string(), std::ios::binary);
+        std::ifstream is(it->path().string(), std::ios::binary);
         parser_t parser(false);
         game_t game;
         parser.parse(is, game);

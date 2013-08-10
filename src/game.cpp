@@ -1,27 +1,29 @@
 #include "game.h"
-
+#include "regex.h"
 
 #include <algorithm>
+#include <boost/format.hpp>
+#include <boost/lexical_cast.hpp>
 #include <fstream>
 #include <iostream>
 
-using namespace std;
 using namespace wotreplay;
+
 
 const std::vector<packet_t> &game_t::get_packets() const {
     return packets;
 }
 
 const std::string &game_t::get_map_name() const {
-    return map_name;
+    return arena.name;
 }
 
 const std::string &game_t::get_game_mode() const {
     return game_mode;
 }
 
-const std::array<int, 4> &game_t::get_map_boundaries() const {
-    return map_boundaries;
+const arena_t &game_t::get_arena() const {
+    return arena;
 }
 
 const std::set<int> &game_t::get_team(int team_id) const {
@@ -32,30 +34,24 @@ uint32_t game_t::get_recorder_id() const {
     return recorder_id;
 }
 
-bool game_t::find_property(uint32_t clock, uint32_t player_id, property_t property, packet_t &out) const
-{
+bool game_t::find_property(uint32_t clock, uint32_t player_id, property_t property, packet_t &out) const {
     // inline function function for using with stl to finding the range with the same clock
     auto has_same_clock = [&](const packet_t &target) -> bool  {
         // packets without clock are included
         return target.has_property(property_t::clock)
-        && target.clock() == clock;
+            && target.clock() == clock;
     };
-
 
     // find first packet with same clock
     auto it_clock_begin = std::find_if(packets.cbegin(), packets.cend(), has_same_clock);
     // find last packet with same clock
-    auto it_clock_end = std::find_if_not(it_clock_begin, packets.cend(), [&](const packet_t &target) -> bool  {
-        // packets without clock are included
-        return !target.has_property(property_t::clock)
-        || target.clock() == clock;
-    });
+    auto it_clock_end = std::find_if_not(it_clock_begin, packets.cend(), has_same_clock);
 
     auto is_related_with_property = [&](const packet_t &target) -> bool {
         return target.has_property(property_t::clock) &&
-        target.has_property(property_t::player_id) &&
-        target.has_property(property) &&
-        target.player_id() == player_id;
+            target.has_property(property_t::player_id) &&
+            target.has_property(property) &&
+            target.player_id() == player_id;
     };
 
     auto it = std::find_if(it_clock_begin, it_clock_end, is_related_with_property);
@@ -96,7 +92,7 @@ int game_t::get_team_id(int player_id) const {
     return it == teams.end() ? -1 : (static_cast<int>(it - teams.begin()));
 }
 
-const std::string &game_t::get_version() const {
+const version_t &game_t::get_version() const {
     return version;
 }
 
@@ -113,38 +109,42 @@ const buffer_t &game_t::get_raw_replay() const {
 }
 
 void wotreplay::write_parts_to_file(const game_t &game) {
-    ofstream game_begin("out/game_begin.json", ios::binary | ios::ate);
+    std::ofstream game_begin("out/game_begin.json", std::ios::binary | std::ios::ate);
     std::copy(game.get_game_begin().begin(),
               game.get_game_begin().end(),
-              ostream_iterator<char>(game_begin));
+              std::ostream_iterator<char>(game_begin));
     game_begin.close();
 
-    ofstream game_end("out/game_end.json", ios::binary | ios::ate);
+    std::ofstream game_end("out/game_end.json", std::ios::binary | std::ios::ate);
     std::copy(game.get_game_end().begin(),
               game.get_game_end().end(),
-              ostream_iterator<char>(game_end));
+              std::ostream_iterator<char>(game_end));
     game_end.close();
 
-    ofstream replay_content("out/replay.dat", ios::binary | ios::ate);
+    std::ofstream replay_content("out/replay.dat", std::ios::binary | std::ios::ate);
     std::copy(game.get_raw_replay().begin(),
               game.get_raw_replay().end(),
-              ostream_iterator<char>(replay_content));
+              std::ostream_iterator<char>(replay_content));
 }
 
-std::tuple<float, float> wotreplay::get_2d_coord(const std::tuple<float, float, float> &position, const game_t &game, int width, int height) {
-    float x,y,z;
-    const std::array<int, 4> &map_boundaries = game.get_map_boundaries();
-    int min_x = map_boundaries[0], max_x = map_boundaries[1], min_y = map_boundaries[2], max_y = map_boundaries[3];
-    // std::tie(min_x, max_x, min_y, max_y) = game.get_map_boundaries();
-    std::tie(x,z,y) = position;
-    x = (x - min_x) * (static_cast<float>(width) / (max_x - min_x + 1));
-    y = (max_y - y) * (static_cast<float>(height) / (max_y - min_y + 1));
+std::tuple<float, float> wotreplay::get_2d_coord(const std::tuple<float, float, float> &position, const bounding_box_t &bounding_box, int width, int height)
+{
+    float min_x, max_x, min_y, max_y;
+    std::tie(min_x, min_y) = bounding_box.bottom_left;
+    std::tie(max_x, max_y) = bounding_box.upper_right;
+    // std::tie(x,z,y) = position;
+    float x = std::get<0>(position);
+    float y = std::get<2>(position);
+    x = (x - min_x) * (width - 1) / (max_x - min_x + 1)  ;
+    y = (max_y - y) * (height - 1) / (max_y - min_y + 1) ;
     return std::make_tuple(x,y);
 }
 
 void wotreplay::show_map_boundaries(const game_t &game, const std::vector<packet_t> &packets) {
-
-    float min_x = 0.f, min_y = 0.f, max_x = 0.f, max_y = 0.f;
+    float min_x = 0.f,
+        min_y = 0.f,
+        max_x = 0.f,
+        max_y = 0.f;
 
     for (const packet_t &packet : packets) {
         if (packet.type() != 0xa) {
@@ -165,4 +165,24 @@ void wotreplay::show_map_boundaries(const game_t &game, const std::vector<packet
     }
 
     printf("The boundaries of used positions in this replay are: min_x = %f max_x = %f min_y = %f max_y = %f\n", min_x, max_x, min_y, max_y);
+}
+
+version_t::version_t(const std::string & text)
+    : text(text)
+{
+    regex re(R"(v\.(\d+)\.(\d+)\.(\d+))");
+    smatch match;
+    if (regex_search(text, match, re)) {
+        major = boost::lexical_cast<int>(match[2]);
+        minor = boost::lexical_cast<int>(match[3]);
+    } else {
+        regex re(R"( *(\d+), *(\d+), *(\d+), *(\d+))");
+        if (regex_search(text, match, re)) {
+            major = boost::lexical_cast<int>(match[2]);
+            minor = boost::lexical_cast<int>(match[3]);
+        } else {
+            throw std::runtime_error((boost::format("could not read version %1%") % text).str());
+        }
+    }
+
 }
