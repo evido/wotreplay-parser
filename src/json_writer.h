@@ -12,6 +12,8 @@ namespace wotreplay {
      */
     class json_writer_t : public writer_t {
     public:
+        /** default constructor */
+        json_writer_t();
         virtual void update(const game_t &game) override;
         virtual void finish() override;
         virtual void reset() override;
@@ -19,9 +21,11 @@ namespace wotreplay {
         virtual bool is_initialized() const override;
         virtual void init(const arena_t &arena, const std::string &mode) override;
         virtual void clear() override;
+        virtual void set_filter(filter_t filter);
     private:
         Json::Value root;
         bool initialized;
+        filter_t filter;
     };
 }
 

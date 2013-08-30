@@ -8,6 +8,10 @@ using namespace wotreplay;
 
 const int element_size = 48;
 
+image_writer_t::image_writer_t()
+    : filter([](const packet_t &){ return true; })
+{}
+
 void image_writer_t::draw_element(const boost::multi_array<uint8_t, 3> &element, int x, int y, int mask) {
     const size_t *shape = element.shape();
     const size_t *image_size = base.shape();
@@ -140,6 +144,7 @@ void image_writer_t::update(const game_t &game) {
     
     std::set<int> dead_players;
     for (const packet_t &packet : game.get_packets()) {
+        if (!filter(packet)) continue;
         if (packet.has_property(property_t::position)
             && dead_players.find(packet.player_id()) == dead_players.end()) {
             draw_position(packet, game, this->positions);
@@ -276,4 +281,8 @@ void image_writer_t::set_recorder_team(int recorder_team) {
 
 int image_writer_t::get_recorder_team() const {
     return recorder_team;
+}
+
+void image_writer_t::set_filter(filter_t filter) {
+    this->filter = filter;
 }

@@ -27,6 +27,21 @@ float distance(const std::tuple<float, float, float> &left, const std::tuple<flo
     return std::sqrt(dist1*dist1 + delta_z*delta_z);
 }
 
+static bool is_not_empty(const packet_t &packet) {
+    // list of default properties with no special meaning
+    std::set<property_t> standard_properties = { property_t::clock, property_t::player_id, property_t::type, property_t::sub_type };
+    auto properties = packet.get_properties();
+    for (int i = 0; i < properties.size(); ++i) {
+        property_t property = static_cast<property_t>(i);
+        // packet has property, but can not be found in default properties
+        if (properties[i] &&
+            standard_properties.find(property) == standard_properties.end()) {
+            return true;
+        }
+    }
+    return false;
+}
+
 int create_minimaps(const po::variables_map &vm, const std::string &output, bool debug) {
     if ( vm.count("output") == 0 ) {
         wotreplay::log.write(wotreplay::log_level_t::error, "parameter output is required to use this mode");
@@ -82,6 +97,9 @@ int parse_replay(const po::variables_map &vm, const std::string &input, const st
         image_writer.set_use_fixed_teamcolors(false);
     } else if (type == "json") {
         writer = std::unique_ptr<writer_t>(new json_writer_t());
+        if (vm.count("supress-empty")) {
+            writer->set_filter(&is_not_empty);
+        }
     } else {
         std::cout << boost::format("Invalid output type (%1%), supported types: png and json.\n") % type;
     }
@@ -124,6 +142,7 @@ int main(int argc, const char * argv[]) {
         ("root"  , po::value(&root), "set root directory")
         ("help"  , "produce help message")
         ("debug"   , "enable parser debugging")
+        ("supress-empty", "supress empty packets from json output")
         ("create-minimaps", "create all empty minimaps in output directory")
         ("parse", "parse a replay file");
 
