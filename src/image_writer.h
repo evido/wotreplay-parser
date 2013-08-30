@@ -121,7 +121,7 @@ namespace wotreplay {
         std::string mode;
         arena_t arena;
         int recorder_team = -1;
-        filter_t filter = [](const packet_t&) { return true; };
+        filter_t filter;
     };
 }
 
