@@ -18,8 +18,8 @@ void logger_t::set_log_level(log_level_t level) {
 }
 
 void logger_t::write(log_level_t level, const std::string& message) {
-    if (level < this->level) {
-        os << message << std::endl;
+    if (level <= this->level) {
+        os << message;
     }
 }
 

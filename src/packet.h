@@ -52,7 +52,7 @@ namespace wotreplay {
         packet_t(const slice_t &data);
 
         /** @return The packet type */
-        uint8_t type() const;
+        uint32_t type() const;
         /** @return The clock value of this packet. */
         float clock() const;
         /** @return The player_id value of this packet. */
@@ -142,7 +142,7 @@ namespace wotreplay {
      */
     template <typename U, typename T>
     const U &get_field(T begin, T end, size_t offset) {
-        assert((offset + sizeof(U)) < std::distance(begin, end));
+        assert((offset + sizeof(U)) <= std::distance(begin, end));
         return *reinterpret_cast<const U*>(&*(begin + offset));
     }
 
