@@ -14,8 +14,9 @@ using namespace wotreplay;
 namespace po = boost::program_options;
 
 void show_help(int argc, const char *argv[], po::options_description &desc) {
-    std::string program_name(argv[0]);
-    std::cout << desc << "\n";
+    std::stringstream help_message;
+    help_message << desc << "\n";
+    logger.write(help_message.str());
 }
 
 float distance(const std::tuple<float, float, float> &left, const std::tuple<float, float, float> &right) {
@@ -101,7 +102,7 @@ int parse_replay(const po::variables_map &vm, const std::string &input, const st
             writer->set_filter(&is_not_empty);
         }
     } else {
-        std::cout << boost::format("Invalid output type (%1%), supported types: png and json.\n") % type;
+        logger.write(log_level_t::error, (boost::format("Invalid output type (%1%), supported types: png and json.\n") % type).str());
     }
 
     writer->init(game.get_arena(), game.get_game_mode());
@@ -144,7 +145,8 @@ int main(int argc, const char * argv[]) {
         ("debug"   , "enable parser debugging")
         ("supress-empty", "supress empty packets from json output")
         ("create-minimaps", "create all empty minimaps in output directory")
-        ("parse", "parse a replay file");
+        ("parse", "parse a replay file")
+        ("quiet", "supress diagnostic messages");
 
     po::variables_map vm;
 
@@ -169,15 +171,20 @@ int main(int argc, const char * argv[]) {
         std::cerr << boost::format("Cannot change working directory to: %1%\n") % root;
         std::exit(0);
     }
-
+    
     bool debug = vm.count("debug") > 0;
-
     if (debug) {
         logger.set_log_level(log_level_t::debug);
+    } else if (vm.count("quiet") > 0) {
+        logger.set_log_level(log_level_t::none);
+    } else {
+        logger.set_log_level(log_level_t::warning);
     }
 
+    logger.write(log_level_t::error, "error\n");
+    logger.write(log_level_t::error, "warning\n");
+
     int exit_code;
-    
     if (vm.count("parse") > 0) {
         // parse
         exit_code = parse_replay(vm, input, output, type, debug);

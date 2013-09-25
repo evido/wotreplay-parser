@@ -28,6 +28,10 @@ packet_t packet_reader_80_t::next() {
         (boost::format("[%2%] type=0x%1$02X size=%3%\n") % packet.type()
                                                          % pos
                                                          % packet_size).str());
+
+    if (log_level_t::debug <= logger.get_log_level()) {
+        logger.write(log_level_t::debug, to_string(packet));
+    }
     
     prev = pos;
     pos += packet_size;

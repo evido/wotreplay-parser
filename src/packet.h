@@ -149,13 +149,11 @@ namespace wotreplay {
     }
 
     /**
-     * @fn void display_packet(const packet_t &packet)
-     * @brief Prints the bytes of a packet.
-     * @param packet The packet to print out.
+     * @fn std::string to_string(const packet_t &packet)
+     * @brief string representation of the packet
+     * @param packet target packet
      */
-    void display_packet(const packet_t &packet);
-
-
+    std::string to_string(const packet_t &packet);
 
     /**
      * @fn bool find_property(const std::vector<packet_t> &packets, uint32_t clock, uint32_t player_id, property_t property, packet_t &out)

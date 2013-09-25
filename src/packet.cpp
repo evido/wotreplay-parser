@@ -1,5 +1,8 @@
 #include "packet.h"
 
+#include <boost/format.hpp>
+#include <sstream>
+
 using namespace wotreplay;
 
 packet_t::packet_t(const slice_t &data) {
@@ -215,11 +218,12 @@ std::string packet_t::message() const {
     return std::string(data.begin() + 16, data.begin() + 16 + field_size);
 }
 
-void wotreplay::display_packet(const packet_t &packet) {
+std::string wotreplay::to_string(const packet_t &packet) {
+    std::stringstream result;
     for (auto val : packet.get_data()) {
-        printf("%02X ", static_cast<unsigned>(val));
+        result << (boost::format("0x%1$02X ") % (uint32_t) val).str();
     }
-    printf("\n");
+    return result.str();
 }
 
 uint32_t packet_t::length() const {

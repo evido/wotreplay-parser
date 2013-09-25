@@ -4,9 +4,9 @@
 #include <iosfwd>
 #include <string>
 
-
 namespace wotreplay {
     enum log_level_t {
+        none,
         error,
         warning,
         info,
@@ -39,6 +39,11 @@ namespace wotreplay {
          * @param message the message to log
          */
         void write(log_level_t level, const std::string& message);
+        /**
+         * Write a message to the log file
+         * @param message the message to log
+         */
+        void write(const std::string& message);
     private:
         std::ostream &os;
         log_level_t level = log_level_t::warning;
