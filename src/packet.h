@@ -31,6 +31,7 @@ namespace wotreplay {
         target,
         destroyed_track_id,
         alt_track_state,
+        length,
         property_nr_items
     };
 
@@ -50,7 +51,8 @@ namespace wotreplay {
          * @param data The content of this packet.
          */
         packet_t(const slice_t &data);
-
+        /** total packet payload length */
+        uint32_t length() const;
         /** @return The packet type */
         uint32_t type() const;
         /** @return The clock value of this packet. */
