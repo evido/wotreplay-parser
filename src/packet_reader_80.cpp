@@ -24,13 +24,14 @@ packet_t packet_reader_80_t::next() {
     auto packet_end = packet_begin + packet_size;
 
     packet_t packet( boost::make_iterator_range(packet_begin, packet_end) );
-    logger.write(wotreplay::log_level_t::debug,
-        (boost::format("[%2%] type=0x%1$02X size=%3%\n") % packet.type()
-                                                         % pos
-                                                         % packet_size).str());
 
     if (log_level_t::debug <= logger.get_log_level()) {
+        logger.write(wotreplay::log_level_t::debug,
+                     (boost::format("[%2%] type=0x%1$02X size=%3%\n") % packet.type()
+                      % pos
+                      % packet_size).str());
         logger.write(log_level_t::debug, to_string(packet));
+        logger.write(log_level_t::debug, "\n");
     }
     
     prev = pos;
