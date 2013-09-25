@@ -218,15 +218,20 @@ std::string packet_t::message() const {
     return std::string(data.begin() + 16, data.begin() + 16 + field_size);
 }
 
+uint32_t packet_t::length() const {
+    assert(has_property(property_t::length));
+    return get_field<uint32_t>(data.begin(), data.end(), 0);
+}
+
+std::ostream& wotreplay::operator<<(std::ostream& os, const packet_t &packet) {
+    os << to_string(packet);
+    return os;
+}
+
 std::string wotreplay::to_string(const packet_t &packet) {
     std::stringstream result;
     for (auto val : packet.get_data()) {
         result << (boost::format("0x%1$02X ") % (uint32_t) val).str();
     }
     return result.str();
-}
-
-uint32_t packet_t::length() const {
-    assert(has_property(property_t::length));
-    return get_field<uint32_t>(data.begin(), data.end(), 0);
 }

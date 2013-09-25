@@ -102,7 +102,7 @@ int parse_replay(const po::variables_map &vm, const std::string &input, const st
             writer->set_filter(&is_not_empty);
         }
     } else {
-        logger.write(log_level_t::error, (boost::format("Invalid output type (%1%), supported types: png and json.\n") % type).str());
+        logger.writef(log_level_t::error, "Invalid output type (%1%), supported types: png and json.\n", type);
     }
 
     writer->init(game.get_arena(), game.get_game_mode());
@@ -129,6 +129,10 @@ int parse_replay(const po::variables_map &vm, const std::string &input, const st
     }
 
     return EXIT_SUCCESS;
+}
+
+namespace _ {
+
 }
 
 int main(int argc, const char * argv[]) {
@@ -181,9 +185,6 @@ int main(int argc, const char * argv[]) {
         logger.set_log_level(log_level_t::warning);
     }
 
-    logger.write(log_level_t::error, "error\n");
-    logger.write(log_level_t::error, "warning\n");
-
     int exit_code;
     if (vm.count("parse") > 0) {
         // parse
@@ -199,6 +200,8 @@ int main(int argc, const char * argv[]) {
     if (exit_code < 0) {
         show_help(argc, argv, desc);
     }
+
+    
 
     return exit_code;
 }

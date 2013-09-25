@@ -1,6 +1,7 @@
 #ifndef wotreplay_logger_h
 #define wotreplay_logger_h
 
+#include <boost/format.hpp>
 #include <iosfwd>
 #include <string>
 
@@ -33,18 +34,53 @@ namespace wotreplay {
          * @return the current log level
          */
         log_level_t get_log_level() const;
+
         /**
-         * Write a message to the log file
-         * @param level define a level for the message
-         * @param message the message to log
+         * Write formatted string to log
+         * @param level log level
+         * @param format formatting string
+         * @param args formatting string paramaters
          */
-        void write(log_level_t level, const std::string& message);
+        template<typename... Args>
+        void writef(log_level_t level, const std::string &format, const Args&... args) {
+            if (this->level > log_level_t::none && level <= this->level) {
+                writef(format, args...);
+            }
+        }
+
         /**
-         * Write a message to the log file
-         * @param message the message to log
+         * Write formatted string to log
+         * @param _format formatting string
+         * @param args formatting string paramaters
          */
-        void write(const std::string& message);
+        template<typename... Args>
+        void writef(const std::string &_format, const Args&... args) {
+            if (this->level > log_level_t::none) {
+                boost::format format(_format);
+                writef(format, args...);
+            }
+        }
+
+        /**
+         * Write formatted string to log
+         * @param level log level
+         * @param value formatting string
+         */
+        void write(log_level_t level, const std::string &value);
+
+        /**
+         * Write formatted string to log
+         * @param value formatting string
+         */
+        void write(const std::string &value);
     private:
+        void writef(boost::format &format);
+
+        template<typename T, typename... Args>
+        void writef(boost::format &format, const T &val, const Args&... args) {
+            writef(format % val, args...);
+        }
+        
         std::ostream &os;
         log_level_t level = log_level_t::warning;
     };

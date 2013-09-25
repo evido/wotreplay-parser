@@ -11,6 +11,7 @@ void packet_reader_80_t::init(const version_t &version, buffer_t *buffer) {
     this->pos = 0;
 }
 
+
 packet_t packet_reader_80_t::next() {
     const int base_packet_size = 12;
     int payload_size = *reinterpret_cast<int*>(&((*buffer)[pos]));
@@ -24,15 +25,9 @@ packet_t packet_reader_80_t::next() {
     auto packet_end = packet_begin + packet_size;
 
     packet_t packet( boost::make_iterator_range(packet_begin, packet_end) );
-
-    if (log_level_t::debug <= logger.get_log_level()) {
-        logger.write(wotreplay::log_level_t::debug,
-                     (boost::format("[%2%] type=0x%1$02X size=%3%\n") % packet.type()
-                      % pos
-                      % packet_size).str());
-        logger.write(log_level_t::debug, to_string(packet));
-        logger.write(log_level_t::debug, "\n");
-    }
+    logger.writef(wotreplay::log_level_t::debug,
+                    "[%2%] type=0x%1$02X size=%3%\n%4%\n",
+                    packet.type(), pos, packet_size, packet);
     
     prev = pos;
     pos += packet_size;

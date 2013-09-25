@@ -11,6 +11,7 @@
 /** @file packet.h */
 
 namespace wotreplay {
+    
     /**
      * @enum wot::property_t
      * @brief A list of detectable properties in packets of a wot:replay_file.
@@ -166,6 +167,13 @@ namespace wotreplay {
      * @return \c true if a packet was found, \c false if no packet with the required properties was found
      */
     bool find_property(const std::vector<packet_t> &packets, uint32_t clock, uint32_t player_id, property_t property, packet_t &out);
+
+    /**
+     * serialize packet to given stream
+     * @param os target stream
+     * @param packet packet to write to the stream
+     */
+    std::ostream& operator<<(std::ostream& os, const packet_t &packet);
 }
 
 #endif /* defined(wotreplay_packet_h) */
