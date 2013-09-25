@@ -5,9 +5,8 @@
 
 using namespace wotreplay;
 
-void packet_reader_80_t::init(const version_t &version, buffer_t *buffer)
-{
-    this->buffer= buffer;
+void packet_reader_80_t::init(const version_t &version, buffer_t *buffer) {
+    this->buffer = buffer;
     this->version = version;
     this->pos = 0;
 }
@@ -25,11 +24,11 @@ packet_t packet_reader_80_t::next() {
     auto packet_end = packet_begin + packet_size;
 
     packet_t packet( boost::make_iterator_range(packet_begin, packet_end) );
-    wotreplay::log.write(wotreplay::log_level_t::debug,
+    logger.write(wotreplay::log_level_t::debug,
         (boost::format("[%2%] type=0x%1$02X size=%3%\n") % packet.type()
                                                          % pos
                                                          % packet_size).str());
-
+    
     prev = pos;
     pos += packet_size;
     
@@ -43,7 +42,7 @@ bool packet_reader_80_t::has_next() {
         const int end_marker = 0xFFFFFFFF;
         int type = *(reinterpret_cast<int*>(&((*buffer)[prev])) + 1);
         if (type != end_marker) {
-            wotreplay::log.write(log_level_t::warning, "packet stream did not end with end marker type block\n");
+            logger.write(log_level_t::warning, "packet stream did not end with end marker type block\n");
         }
     
     }

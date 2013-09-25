@@ -44,7 +44,7 @@ static bool is_not_empty(const packet_t &packet) {
 
 int create_minimaps(const po::variables_map &vm, const std::string &output, bool debug) {
     if ( vm.count("output") == 0 ) {
-        wotreplay::log.write(wotreplay::log_level_t::error, "parameter output is required to use this mode");
+        logger.write(wotreplay::log_level_t::error, "parameter output is required to use this mode");
         return -EXIT_FAILURE;
     }
 
@@ -72,7 +72,7 @@ int create_minimaps(const po::variables_map &vm, const std::string &output, bool
 
 int parse_replay(const po::variables_map &vm, const std::string &input, const std::string &output, const std::string &type, bool debug) {
     if ( !(vm.count("type") > 0 && vm.count("input") > 0) ) {
-        wotreplay::log.write(wotreplay::log_level_t::error, "parameters type and input are required to use this mode");
+        logger.write(wotreplay::log_level_t::error, "parameters type and input are required to use this mode");
         return -EXIT_FAILURE;
     }
     
@@ -173,7 +173,7 @@ int main(int argc, const char * argv[]) {
     bool debug = vm.count("debug") > 0;
 
     if (debug) {
-        wotreplay::log.set_log_level(log_level_t::debug);
+        logger.set_log_level(log_level_t::debug);
     }
 
     int exit_code;
@@ -185,7 +185,7 @@ int main(int argc, const char * argv[]) {
         // create all minimaps
         exit_code =  create_minimaps(vm, output, debug);
     } else {
-        wotreplay::log.write(wotreplay::log_level_t::error, "Error: no mode specified");
+        logger.write(wotreplay::log_level_t::error, "Error: no mode specified");
         exit_code = -EXIT_FAILURE;
     }
 

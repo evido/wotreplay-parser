@@ -57,23 +57,27 @@ bool packet_t::has_property(property_t p) const {
 
 void packet_t::set_data(const slice_t &data) {
     this->data = data;
+
+    // reset all properties
     std::fill(properties.begin(), properties.end(), false);
+
+    // enable default properties
+    properties[static_cast<size_t>(property_t::type)] = true;
+    properties[static_cast<size_t>(property_t::length)] = true;
+    
     switch(get_field<uint32_t>(data.begin(), data.end(), 4)) {
         case 0x03:
         case 0x05:
             properties[static_cast<size_t>(property_t::clock)] = true;
-            properties[static_cast<size_t>(property_t::type)] = true;
             properties[static_cast<size_t>(property_t::player_id)] = true;
             break;
         case 0x0a:
             properties[static_cast<size_t>(property_t::position)] = true;
             properties[static_cast<size_t>(property_t::hull_orientation)] = true;
-            properties[static_cast<size_t>(property_t::type)] = true;
             properties[static_cast<size_t>(property_t::clock)] = true;
             properties[static_cast<size_t>(property_t::player_id)] = true;
             break;
         case 0x07: {
-            properties[static_cast<size_t>(property_t::type)] = true;
             properties[static_cast<size_t>(property_t::clock)] = true;
             properties[static_cast<size_t>(property_t::player_id)] = true;
             // properties[static_cast<size_t>(property_t::is_shot)] = true;
@@ -89,7 +93,6 @@ void packet_t::set_data(const slice_t &data) {
             }
             properties[static_cast<size_t>(property_t::clock)] = true;
             properties[static_cast<size_t>(property_t::player_id)] = true;
-            properties[static_cast<size_t>(property_t::type)] = true;
             properties[static_cast<size_t>(property_t::sub_type)] = true;
             switch (this->sub_type()) {
                 case 0x01:
@@ -123,13 +126,11 @@ void packet_t::set_data(const slice_t &data) {
             break;
         }
         case 0x1F: {
-            properties[static_cast<size_t>(property_t::type)] = true;
             properties[static_cast<size_t>(property_t::clock)] = true;
             properties[static_cast<size_t>(property_t::message)] = true;
             break;
         }
         case 0x20: {
-            properties[static_cast<size_t>(property_t::type)] = true;
             properties[static_cast<size_t>(property_t::clock)] = true;
             properties[static_cast<size_t>(property_t::player_id)] = true;
             // sub type for 0x20
@@ -143,7 +144,6 @@ void packet_t::set_data(const slice_t &data) {
         }
         default: {
             properties[static_cast<size_t>(property_t::clock)] = data.size() >= 13;
-            properties[static_cast<size_t>(property_t::type)] = true;
             break;
         }
     }
