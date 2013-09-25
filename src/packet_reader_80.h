@@ -30,10 +30,9 @@ namespace wotreplay {
         virtual bool has_next();
         virtual bool is_compatible(const version_t &version);
     private:
-        std::map<uint8_t, packet_config_t> packet_configs;
         buffer_t *buffer;
         version_t version;
-        int pos;
+        int pos, prev;
     };
 }
 
