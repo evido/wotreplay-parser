@@ -19,6 +19,20 @@ endif()
 
 
 add_library(wotreplay STATIC 
+			src/packet.h
+			src/arena.h
+			src/game.h
+			src/image_util.h
+			src/image_writer.h
+			src/logger.h
+			src/packet.h
+			src/parser.h
+			src/regex.h
+			src/types.h
+			src/writer.h
+			src/packet_reader.h
+			src/packet_reader_80.h
+			src/json_writer.h
 			src/packet.cpp 
 			src/packet_reader_80.cpp 
 			src/parser.cpp 
