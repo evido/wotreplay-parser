@@ -176,7 +176,7 @@ version_t::version_t(const std::string & text)
         major = boost::lexical_cast<int>(match[2]);
         minor = boost::lexical_cast<int>(match[3]);
     } else {
-        regex re(R"( *(\d+), *(\d+), *(\d+), *(\d+))");
+        regex re(R"( *(\d+), *(\d+), *(\d+),? *(\d+))");
         if (regex_search(text, match, re)) {
             major = boost::lexical_cast<int>(match[2]);
             minor = boost::lexical_cast<int>(match[3]);
