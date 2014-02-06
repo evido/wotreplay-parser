@@ -73,13 +73,13 @@ int create_minimaps(const po::variables_map &vm, const std::string &output, bool
 
 int parse_replay(const po::variables_map &vm, const std::string &input, const std::string &output, const std::string &type, bool debug) {
     if ( !(vm.count("type") > 0 && vm.count("input") > 0) ) {
-        logger.write(wotreplay::log_level_t::error, "parameters type and input are required to use this mode");
+        logger.write(wotreplay::log_level_t::error, "parameters type and input are required to use this mode\n");
         return -EXIT_FAILURE;
     }
     
     std::ifstream in(input, std::ios::binary);
     if (!in) {
-        std::cerr << boost::format("Something went wrong with opening file: %1%\n") % input;
+        logger.writef(log_level_t::error, "Something went wrong with opening file: %1%\n", input);
         std::exit(0);
     }
     
@@ -114,7 +114,7 @@ int parse_replay(const po::variables_map &vm, const std::string &input, const st
     if (vm.count("output") > 0) {
         out = new std::ofstream(output, std::ios::binary);
         if (!out) {
-            std::cerr << boost::format("Something went wrong with opening file: %1%\n") % input;
+            logger.writef(log_level_t::error, "Something went wrong with opening file: %1%\n", input);
             std::exit(0);
         }
     } else {
@@ -157,7 +157,7 @@ int main(int argc, const char * argv[]) {
         show_help(argc, argv, desc);
         std::exit(-1);
     } catch (...) {
-        std::cerr << "Unknown error." << std::endl;
+        logger.write(log_level_t::error, "Unknown error.\n");
         std::exit(-1);
     }
 
@@ -168,7 +168,7 @@ int main(int argc, const char * argv[]) {
 
     if (vm.count("root") >  0
             && chdir(root.c_str()) != 0) {
-        std::cerr << boost::format("Cannot change working directory to: %1%\n") % root;
+        logger.writef(log_level_t::error, "Cannot change working directory to: %1%\n", root);
         std::exit(0);
     }
     

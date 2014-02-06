@@ -1,6 +1,7 @@
 #include "json/json.h"
 
 #include "arena.h"
+#include "logger.h"
 #include "packet_reader.h"
 #include "packet_reader_80.h"
 #include "parser.h"
@@ -113,7 +114,7 @@ void parser_t::parse(buffer_t &buffer, wotreplay::game_t &game) {
     game.version = version_t(version);
     
     if (!this->setup(game.version)) {
-        std::cerr << boost::format("Warning: Replay version (%1%) not marked as compatible.\n") % game.version.text;
+        logger.writef(log_level_t::warning, "Warning: Replay version (%1%) not marked as compatible.\n", game.version.text);
     }
 
     if (debug) {
