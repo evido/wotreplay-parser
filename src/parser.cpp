@@ -313,7 +313,7 @@ void wotreplay::show_packet_summary(const std::vector<packet_t>& packets) {
     }
 
     for (auto it : packet_type_count) {
-        printf("packet_type [%02x] = %d\n", it.first, it.second);
+        printf("packet_type [0x%08x] = %d\n", it.first, it.second);
     }
 
     printf("Total packets = %lu\n", packets.size());

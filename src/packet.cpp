@@ -125,6 +125,8 @@ void packet_t::set_data(const slice_t &data) {
                 case 0x19:
                     // related to tank destroyed
                     break;
+                case 0x1d:
+                    break;
             }
             break;
         }

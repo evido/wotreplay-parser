@@ -131,10 +131,6 @@ int parse_replay(const po::variables_map &vm, const std::string &input, const st
     return EXIT_SUCCESS;
 }
 
-namespace _ {
-
-}
-
 int main(int argc, const char * argv[]) {
     po::options_description desc("Allowed options");
 

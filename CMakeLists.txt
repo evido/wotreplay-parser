@@ -46,4 +46,9 @@ add_library(jsoncpp STATIC
 			ext/jsoncpp/src/jsoncpp.cpp)
 
 add_executable(wotreplay-parser src/main.cpp)
-target_link_libraries( wotreplay-parser xml2 png crypto z boost_filesystem boost_program_options boost_system boost_regex wotreplay jsoncpp)
+
+target_link_libraries( wotreplay-parser xml2 png crypto z boost_filesystem-mt boost_program_options-mt boost_system-mt boost_regex-mt wotreplay jsoncpp)
+
+add_executable(wotreplay-parser-experiments src/experiments.cpp)
+
+target_link_libraries( wotreplay-parser-experiments xml2 png crypto z boost_filesystem-mt boost_program_options-mt boost_system-mt boost_regex-mt wotreplay jsoncpp)
