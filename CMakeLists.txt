@@ -19,6 +19,20 @@ endif()
 
 
 add_library(wotreplay STATIC 
+			src/packet.h
+			src/arena.h
+			src/game.h
+			src/image_util.h
+			src/image_writer.h
+			src/logger.h
+			src/packet.h
+			src/parser.h
+			src/regex.h
+			src/types.h
+			src/writer.h
+			src/packet_reader.h
+			src/packet_reader_80.h
+			src/json_writer.h
 			src/packet.cpp 
 			src/packet_reader_80.cpp 
 			src/parser.cpp 
@@ -32,4 +46,5 @@ add_library(jsoncpp STATIC
 			ext/jsoncpp/src/jsoncpp.cpp)
 
 add_executable(wotreplay-parser src/main.cpp)
-target_link_libraries( wotreplay-parser xml2 png crypto z boost_filesystem boost_program_options boost_system boost_regex wotreplay jsoncpp)
+
+target_link_libraries( wotreplay-parser xml2 png crypto z boost_filesystem-mt boost_program_options-mt boost_system-mt boost_regex-mt wotreplay jsoncpp)

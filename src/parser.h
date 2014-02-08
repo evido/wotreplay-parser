@@ -137,13 +137,6 @@ namespace wotreplay {
     void show_packet_summary(const std::vector<packet_t>& packets);
 
     /**
-     * @fn void validate_parser(const std::string &path)
-     * @brief Validate the parser to multiple replay files stored in the directory
-     * @param path The path of the directory containing replay files
-     */
-    void validate_parser(const std::string &path);
-
-    /**
      * @fn bool is_replayfile(const boost::filesystem::path &p);
      * @brief Basic function to check if a path might be a replay file.
      * @param p The path of the file to inspect for being a replay file.

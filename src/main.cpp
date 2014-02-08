@@ -14,8 +14,9 @@ using namespace wotreplay;
 namespace po = boost::program_options;
 
 void show_help(int argc, const char *argv[], po::options_description &desc) {
-    std::string program_name(argv[0]);
-    std::cout << desc << "\n";
+    std::stringstream help_message;
+    help_message << desc << "\n";
+    logger.write(help_message.str());
 }
 
 float distance(const std::tuple<float, float, float> &left, const std::tuple<float, float, float> &right) {
@@ -27,9 +28,24 @@ float distance(const std::tuple<float, float, float> &left, const std::tuple<flo
     return std::sqrt(dist1*dist1 + delta_z*delta_z);
 }
 
+static bool is_not_empty(const packet_t &packet) {
+    // list of default properties with no special meaning
+    std::set<property_t> standard_properties = { property_t::clock, property_t::player_id, property_t::type, property_t::sub_type };
+    auto properties = packet.get_properties();
+    for (int i = 0; i < properties.size(); ++i) {
+        property_t property = static_cast<property_t>(i);
+        // packet has property, but can not be found in default properties
+        if (properties[i] &&
+            standard_properties.find(property) == standard_properties.end()) {
+            return true;
+        }
+    }
+    return false;
+}
+
 int create_minimaps(const po::variables_map &vm, const std::string &output, bool debug) {
     if ( vm.count("output") == 0 ) {
-        wotreplay::log.write(wotreplay::log_level_t::error, "parameter output is required to use this mode");
+        logger.write(wotreplay::log_level_t::error, "parameter output is required to use this mode");
         return -EXIT_FAILURE;
     }
 
@@ -57,13 +73,13 @@ int create_minimaps(const po::variables_map &vm, const std::string &output, bool
 
 int parse_replay(const po::variables_map &vm, const std::string &input, const std::string &output, const std::string &type, bool debug) {
     if ( !(vm.count("type") > 0 && vm.count("input") > 0) ) {
-        wotreplay::log.write(wotreplay::log_level_t::error, "parameters type and input are required to use this mode");
+        logger.write(wotreplay::log_level_t::error, "parameters type and input are required to use this mode\n");
         return -EXIT_FAILURE;
     }
     
     std::ifstream in(input, std::ios::binary);
     if (!in) {
-        std::cerr << boost::format("Something went wrong with opening file: %1%\n") % input;
+        logger.writef(log_level_t::error, "Something went wrong with opening file: %1%\n", input);
         std::exit(0);
     }
     
@@ -82,8 +98,11 @@ int parse_replay(const po::variables_map &vm, const std::string &input, const st
         image_writer.set_use_fixed_teamcolors(false);
     } else if (type == "json") {
         writer = std::unique_ptr<writer_t>(new json_writer_t());
+        if (vm.count("supress-empty")) {
+            writer->set_filter(&is_not_empty);
+        }
     } else {
-        std::cout << boost::format("Invalid output type (%1%), supported types: png and json.\n") % type;
+        logger.writef(log_level_t::error, "Invalid output type (%1%), supported types: png and json.\n", type);
     }
 
     writer->init(game.get_arena(), game.get_game_mode());
@@ -95,7 +114,7 @@ int parse_replay(const po::variables_map &vm, const std::string &input, const st
     if (vm.count("output") > 0) {
         out = new std::ofstream(output, std::ios::binary);
         if (!out) {
-            std::cerr << boost::format("Something went wrong with opening file: %1%\n") % input;
+            logger.writef(log_level_t::error, "Something went wrong with opening file: %1%\n", input);
             std::exit(0);
         }
     } else {
@@ -124,8 +143,10 @@ int main(int argc, const char * argv[]) {
         ("root"  , po::value(&root), "set root directory")
         ("help"  , "produce help message")
         ("debug"   , "enable parser debugging")
+        ("supress-empty", "supress empty packets from json output")
         ("create-minimaps", "create all empty minimaps in output directory")
-        ("parse", "parse a replay file");
+        ("parse", "parse a replay file")
+        ("quiet", "supress diagnostic messages");
 
     po::variables_map vm;
 
@@ -136,7 +157,7 @@ int main(int argc, const char * argv[]) {
         show_help(argc, argv, desc);
         std::exit(-1);
     } catch (...) {
-        std::cerr << "Unknown error." << std::endl;
+        logger.write(log_level_t::error, "Unknown error.\n");
         std::exit(-1);
     }
 
@@ -147,18 +168,20 @@ int main(int argc, const char * argv[]) {
 
     if (vm.count("root") >  0
             && chdir(root.c_str()) != 0) {
-        std::cerr << boost::format("Cannot change working directory to: %1%\n") % root;
+        logger.writef(log_level_t::error, "Cannot change working directory to: %1%\n", root);
         std::exit(0);
     }
-
+    
     bool debug = vm.count("debug") > 0;
-
     if (debug) {
-        wotreplay::log.set_log_level(log_level_t::debug);
+        logger.set_log_level(log_level_t::debug);
+    } else if (vm.count("quiet") > 0) {
+        logger.set_log_level(log_level_t::none);
+    } else {
+        logger.set_log_level(log_level_t::warning);
     }
 
     int exit_code;
-    
     if (vm.count("parse") > 0) {
         // parse
         exit_code = parse_replay(vm, input, output, type, debug);
@@ -166,13 +189,15 @@ int main(int argc, const char * argv[]) {
         // create all minimaps
         exit_code =  create_minimaps(vm, output, debug);
     } else {
-        wotreplay::log.write(wotreplay::log_level_t::error, "Error: no mode specified");
+        logger.write(wotreplay::log_level_t::error, "Error: no mode specified");
         exit_code = -EXIT_FAILURE;
     }
 
     if (exit_code < 0) {
         show_help(argc, argv, desc);
     }
+
+    
 
     return exit_code;
 }

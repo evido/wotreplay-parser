@@ -7,6 +7,8 @@
 #include <iosfwd>
 
 namespace wotreplay {
+    typedef std::function<bool(const packet_t&)> filter_t;
+
     /**
      * writer_t describes the interfaces for all classes with the ability to create an
      * output from game_t objects.
@@ -49,7 +51,11 @@ namespace wotreplay {
          * @return Returns if the object is initialized.
          */
         virtual bool is_initialized() const = 0;
-
+        /**
+         * Set the filter used to ignore packets from games
+         * @param filter the filter used
+         */
+        virtual void set_filter(filter_t filter) = 0;
         virtual ~writer_t() {};
     };
 }

@@ -1,6 +1,7 @@
 #include "json/json.h"
 
 #include "arena.h"
+#include "logger.h"
 #include "packet_reader.h"
 #include "packet_reader_80.h"
 #include "parser.h"
@@ -113,7 +114,7 @@ void parser_t::parse(buffer_t &buffer, wotreplay::game_t &game) {
     game.version = version_t(version);
     
     if (!this->setup(game.version)) {
-        std::cerr << boost::format("Warning: Replay version (%1%) not marked as compatible.\n") % game.version.text;
+        logger.writef(log_level_t::warning, "Warning: Replay version (%1%) not marked as compatible.\n", game.version.text);
     }
 
     if (debug) {
@@ -296,8 +297,6 @@ void parser_t::read_game_info(game_t& game) {
         // from 8.0 this is renamed
         game.game_mode = root["gameplayID"].asString();
     }
-    
-    game.game_mode.resize(3);
 
     // explicit check for game version should be better
     if (!get_arena(map_name, game.arena)) {
@@ -313,7 +312,7 @@ void wotreplay::show_packet_summary(const std::vector<packet_t>& packets) {
     }
 
     for (auto it : packet_type_count) {
-        printf("packet_type [%02x] = %d\n", it.first, it.second);
+        printf("packet_type [0x%08x] = %d\n", it.first, it.second);
     }
 
     printf("Total packets = %lu\n", packets.size());
@@ -321,70 +320,4 @@ void wotreplay::show_packet_summary(const std::vector<packet_t>& packets) {
 
 bool wotreplay::is_replayfile(const boost::filesystem::path &p) {
     return is_regular_file(p) && p.extension() == ".wotreplay" ;
-}
-
-static size_t get_unread_bytes(const game_t &game) {
-    const std::vector<packet_t> &packets = game.get_packets();
-    const packet_t &last_packet = packets.back();
-    const slice_t &data = last_packet.get_data();
-    const buffer_t &replay = game.get_raw_replay();
-    size_t bytes_unread = &replay.back() - &data.back();
-    return bytes_unread;
-}
-
-static size_t get_dead_player_count(const buffer_t &game_end) {
-    // parse game_end formatted as a JSON object
-    Json::Value root;
-    Json::Reader reader;
-    std::string doc(game_end.begin(), game_end.end());
-    reader.parse(doc, root);
-    // TODO: validate this node
-    Json::Value players = root[1];
-    size_t dead_players = 0;
-    for (auto it = players.begin(); it != players.end(); ++it) {
-        bool isAlive = (*it)["isAlive"].asBool();
-        if (!isAlive) ++dead_players;
-    }
-    
-    return dead_players;
-}
-
-void wotreplay::validate_parser(const std::string &path) {
-    // loop over each file in the path
-    for (directory_iterator it(path); it != directory_iterator(); ++it) {
-        // skip non-replay files
-        if (!is_replayfile(it->path())) continue;
-
-        std::stringstream ss;
-
-        ss << "file:" << it->path().string();
-        
-        // parse the path as a replay file, using methods internal to parser
-        std::ifstream is(it->path().string(), std::ios::binary);
-        parser_t parser(false);
-        game_t game;
-        parser.parse(is, game);
-        is.close();
-
-        size_t bytes_unread = get_unread_bytes(game);
-
-        ss << " end:" << (bytes_unread <= 25) << " ";
-
-        const buffer_t &game_end = game.get_game_end();
-
-        // game_end can be unavailable when the replay is incomplete
-        if (game_end.size() > 0)  {
-            const std::vector<packet_t> &packets = game.get_packets();
-            size_t tank_destroyed_count = std::count_if(packets.begin(), packets.end(), [](const packet_t &packet) {
-                return packet.has_property(property_t::tank_destroyed);
-            });
-
-            size_t dead_players = get_dead_player_count(game_end);
-            ss << boost::format("kills: %d") % (tank_destroyed_count == dead_players);
-        } else {
-            ss << "n/a";
-        }
-
-        std::cout << ss.str() << "\n";
-    }
 }

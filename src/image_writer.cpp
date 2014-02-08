@@ -1,12 +1,17 @@
 #include "arena.h"
 #include "image_util.h"
 #include "image_writer.h"
+#include "logger.h"
 
 #include <fstream>
 
 using namespace wotreplay;
 
 const int element_size = 48;
+
+image_writer_t::image_writer_t()
+    : filter([](const packet_t &){ return true; })
+{}
 
 void image_writer_t::draw_element(const boost::multi_array<uint8_t, 3> &element, int x, int y, int mask) {
     const size_t *shape = element.shape();
@@ -69,11 +74,16 @@ void image_writer_t::draw_grid(boost::multi_array<uint8_t, 3> &image) {
 }
 
 void image_writer_t::draw_elements() {
-    const arena_configuration_t &configuration = arena.configurations[mode];
+    auto it = arena.configurations.find(mode);
+    if (it == arena.configurations.end()) {
+        wotreplay::logger.writef(log_level_t::warning, "Could not find configuration for game mode '%1%'\n", mode);
+        return;
+    }
 
+    const arena_configuration_t &configuration = arena.configurations[mode];
     int reference_team_id = use_fixed_teamcolors ? 0 : recorder_team;
     
-    if (mode == "dom") {
+    if (mode == "domination") {
         auto neutral_base = get_element("neutral_base");
         draw_element(neutral_base, configuration.control_point);
     }
@@ -140,6 +150,7 @@ void image_writer_t::update(const game_t &game) {
     
     std::set<int> dead_players;
     for (const packet_t &packet : game.get_packets()) {
+        if (!filter(packet)) continue;
         if (packet.has_property(property_t::position)
             && dead_players.find(packet.player_id()) == dead_players.end()) {
             draw_position(packet, game, this->positions);
@@ -235,7 +246,7 @@ void image_writer_t::finish() {
                     int y = i + offset[1];
 
                     // draw only if within bounds
-                    if (x >= 0 && y < shape[0] && y >= 0  && y < shape[1]) {
+                    if (x >= 0 && x < shape[0] && y >= 0  && y < shape[1]) {
                         result[y][x][3] = result[y][x][0] = result[y][x][1] = 0xFF;
                         result[y][x][2] = 0x00;
                     }
@@ -276,4 +287,8 @@ void image_writer_t::set_recorder_team(int recorder_team) {
 
 int image_writer_t::get_recorder_team() const {
     return recorder_team;
+}
+
+void image_writer_t::set_filter(filter_t filter) {
+    this->filter = filter;
 }

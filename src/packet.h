@@ -11,6 +11,7 @@
 /** @file packet.h */
 
 namespace wotreplay {
+    
     /**
      * @enum wot::property_t
      * @brief A list of detectable properties in packets of a wot:replay_file.
@@ -31,6 +32,7 @@ namespace wotreplay {
         target,
         destroyed_track_id,
         alt_track_state,
+        length,
         property_nr_items
     };
 
@@ -50,9 +52,10 @@ namespace wotreplay {
          * @param data The content of this packet.
          */
         packet_t(const slice_t &data);
-
+        /** total packet payload length */
+        uint32_t length() const;
         /** @return The packet type */
-        uint8_t type() const;
+        uint32_t type() const;
         /** @return The clock value of this packet. */
         float clock() const;
         /** @return The player_id value of this packet. */
@@ -142,18 +145,16 @@ namespace wotreplay {
      */
     template <typename U, typename T>
     const U &get_field(T begin, T end, size_t offset) {
-        assert((offset + sizeof(U)) < std::distance(begin, end));
+        assert((offset + sizeof(U)) <= std::distance(begin, end));
         return *reinterpret_cast<const U*>(&*(begin + offset));
     }
 
     /**
-     * @fn void display_packet(const packet_t &packet)
-     * @brief Prints the bytes of a packet.
-     * @param packet The packet to print out.
+     * @fn std::string to_string(const packet_t &packet)
+     * @brief string representation of the packet
+     * @param packet target packet
      */
-    void display_packet(const packet_t &packet);
-
-
+    std::string to_string(const packet_t &packet);
 
     /**
      * @fn bool find_property(const std::vector<packet_t> &packets, uint32_t clock, uint32_t player_id, property_t property, packet_t &out)
@@ -166,6 +167,13 @@ namespace wotreplay {
      * @return \c true if a packet was found, \c false if no packet with the required properties was found
      */
     bool find_property(const std::vector<packet_t> &packets, uint32_t clock, uint32_t player_id, property_t property, packet_t &out);
+
+    /**
+     * serialize packet to given stream
+     * @param os target stream
+     * @param packet packet to write to the stream
+     */
+    std::ostream& operator<<(std::ostream& os, const packet_t &packet);
 }
 
 #endif /* defined(wotreplay_packet_h) */

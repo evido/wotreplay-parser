@@ -19,6 +19,10 @@ void json_writer_t::write(std::ostream &os) {
     os << root;
 }
 
+json_writer_t::json_writer_t()
+    : filter([](const packet_t &){ return true; })
+{}
+
 void json_writer_t::update(const game_t &game) {
     auto &packets = root["packets"];
 
@@ -45,7 +49,10 @@ void json_writer_t::update(const game_t &game) {
 
     root["summary"] = summary;
 
-    for (auto &packet : game.get_packets()) {
+    for (const auto &packet : game.get_packets()) {
+        // skip empty packet
+        if (!filter(packet)) continue;
+        
         Json::Value value(Json::objectValue);
 
         if (packet.has_property(property_t::type)) {
@@ -136,4 +143,8 @@ bool json_writer_t::is_initialized() const {
 
 void json_writer_t::clear() {
     root["packets"].clear();
+}
+
+void json_writer_t::set_filter(filter_t filter) {
+    this->filter = filter;
 }
