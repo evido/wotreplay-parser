@@ -83,7 +83,7 @@ void image_writer_t::draw_elements() {
     const arena_configuration_t &configuration = arena.configurations[mode];
     int reference_team_id = use_fixed_teamcolors ? 0 : recorder_team;
     
-    if (mode == "dom") {
+    if (mode == "domination") {
         auto neutral_base = get_element("neutral_base");
         draw_element(neutral_base, configuration.control_point);
     }

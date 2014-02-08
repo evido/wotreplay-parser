@@ -297,8 +297,6 @@ void parser_t::read_game_info(game_t& game) {
         // from 8.0 this is renamed
         game.game_mode = root["gameplayID"].asString();
     }
-    
-    game.game_mode.resize(3);
 
     // explicit check for game version should be better
     if (!get_arena(map_name, game.arena)) {
