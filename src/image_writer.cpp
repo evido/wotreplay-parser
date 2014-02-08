@@ -1,6 +1,7 @@
 #include "arena.h"
 #include "image_util.h"
 #include "image_writer.h"
+#include "logger.h"
 
 #include <fstream>
 
@@ -73,8 +74,13 @@ void image_writer_t::draw_grid(boost::multi_array<uint8_t, 3> &image) {
 }
 
 void image_writer_t::draw_elements() {
-    const arena_configuration_t &configuration = arena.configurations[mode];
+    auto it = arena.configurations.find(mode);
+    if (it == arena.configurations.end()) {
+        wotreplay::logger.writef(log_level_t::warning, "Could not find configuration for game mode '%1%'\n", mode);
+        return;
+    }
 
+    const arena_configuration_t &configuration = arena.configurations[mode];
     int reference_team_id = use_fixed_teamcolors ? 0 : recorder_team;
     
     if (mode == "dom") {

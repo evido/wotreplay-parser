@@ -97,15 +97,17 @@ static std::map<std::string, arena_configuration_t> getArenaConfigurations(xmlNo
     std::map<std::string, arena_configuration_t> configurations;
     for (xmlNodePtr node = gameplayTypesNode->children; node; node = node->next) {
         if (node->type == XML_ELEMENT_NODE) {
-            std::string nodeName((const char*) node->name), mode;
-            if (nodeName == "domination") {
-                mode = "dom";
-            } else if (nodeName == "assault"){
-                mode = "ass";
-            } else if (nodeName == "ctf") {
-                mode = "ctf";
+            std::string nodeName((const char*) node->name);
+            const std::map<std::string, std::string> modeMap = {
+                {"domination", "dom"},
+                {"assault",    "ass"},
+                {"ctf",        "ctf"},
+                {"nations",    "nat"}
+            };
+            auto it = modeMap.find(nodeName);
+            if (modeMap.find(nodeName) != modeMap.end()) {
+                configurations[it->second] = getArenaConfiguration(node);
             }
-            configurations[mode] = getArenaConfiguration(node);
         }
     }
     return configurations;
