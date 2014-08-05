@@ -5,9 +5,9 @@ set(Boost_USE_MULTITHREADED		ON)
 set(Boost_USE_STATIC_RUNTIME   OFF)
 
 find_package(Boost 1.50.0 COMPONENTS filesystem program_options system regex REQUIRED)
-find_package(LibXML2 REQUIRED)
-find_package(png REQUIRED)
-find_package(zlib REQUIRED)
+find_package(LibXml2 REQUIRED)
+find_package(PNG REQUIRED)
+find_package(ZLIB REQUIRED)
 find_package(OpenSSL REQUIRED)
 
 include_directories(AFTER ${Boost_INCLUDE_DIRS} ${LIBXML2_INCLUDE_DIR} ${ZLIB_INCLUDE_DIR} ${PNG_INCLUDE_DIR} ${OPENSSL_INCLUDE_DIR})
