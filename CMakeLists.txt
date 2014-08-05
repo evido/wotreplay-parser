@@ -4,8 +4,13 @@ project (wotreplay-parser)
 set(Boost_USE_MULTITHREADED		ON)
 set(Boost_USE_STATIC_RUNTIME   OFF)
 
-find_package(Boost 1.50.0 COMPONENTS filesystem program_options system regex)
-include_directories(AFTER ${Boost_INCLUDE_DIRS})
+find_package(Boost 1.50.0 COMPONENTS filesystem program_options system regex REQUIRED)
+find_package(LibXML2 REQUIRED)
+find_package(png REQUIRED)
+find_package(zlib REQUIRED)
+find_package(OpenSSL REQUIRED)
+
+include_directories(AFTER ${Boost_INCLUDE_DIRS} ${LIBXML2_INCLUDE_DIR} ${ZLIB_INCLUDE_DIR} ${PNG_INCLUDE_DIR} ${OPENSSL_INCLUDE_DIR})
 
 include_directories(AFTER ext/jsoncpp/include ${INCLUDE_DIRECTORIES})
 link_directories(${LINK_DIRECTORIES})
@@ -22,7 +27,6 @@ set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++")
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
   set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
 endif()
-
 
 add_library(wotreplay STATIC 
 			src/packet.h
@@ -53,4 +57,4 @@ add_library(jsoncpp STATIC
 
 add_executable(wotreplay-parser src/main.cpp)
 
-target_link_libraries( wotreplay-parser xml2 png crypto z ${Boost_LIBRARIES} wotreplay jsoncpp)
+target_link_libraries( wotreplay-parser ${OPENSSL_LIBRARIES} ${Boost_LIBRARIES} ${LIBXML2_LIBRARIES} ${PNG_LIBRARIES} ${ZLIB_LIBRARIES} wotreplay jsoncpp)
