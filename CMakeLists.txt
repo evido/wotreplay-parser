@@ -1,6 +1,12 @@
 cmake_minimum_required (VERSION 2.6)
 project (wotreplay-parser)
 
+set(Boost_USE_MULTITHREADED		ON)
+set(Boost_USE_STATIC_RUNTIME   OFF)
+
+find_package(Boost 1.50.0 COMPONENTS filesystem program_options system regex)
+include_directories(AFTER ${Boost_INCLUDE_DIRS})
+
 include_directories(AFTER ext/jsoncpp/include ${INCLUDE_DIRECTORIES})
 link_directories(${LINK_DIRECTORIES})
 
@@ -47,4 +53,4 @@ add_library(jsoncpp STATIC
 
 add_executable(wotreplay-parser src/main.cpp)
 
-target_link_libraries( wotreplay-parser xml2 png crypto z boost_filesystem-mt boost_program_options-mt boost_system-mt boost_regex-mt wotreplay jsoncpp)
+target_link_libraries( wotreplay-parser xml2 png crypto z ${Boost_LIBRARIES} wotreplay jsoncpp)

@@ -5,6 +5,7 @@
 #include "game.h"
 
 #include <iosfwd>
+#include <functional>
 
 namespace wotreplay {
     typedef std::function<bool(const packet_t&)> filter_t;
