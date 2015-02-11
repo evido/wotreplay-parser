@@ -189,7 +189,7 @@ int main(int argc, const char * argv[]) {
         // create all minimaps
         exit_code =  create_minimaps(vm, output, debug);
     } else {
-        logger.write(wotreplay::log_level_t::error, "Error: no mode specified");
+        logger.write(wotreplay::log_level_t::error, "Error: no mode specified\n");
         exit_code = -EXIT_FAILURE;
     }
 

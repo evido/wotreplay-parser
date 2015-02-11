@@ -10,9 +10,8 @@ find_package(PNG REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(OpenSSL REQUIRED)
 
-include_directories(AFTER ${Boost_INCLUDE_DIRS} ${LIBXML2_INCLUDE_DIR} ${ZLIB_INCLUDE_DIR} ${PNG_INCLUDE_DIR} ${OPENSSL_INCLUDE_DIR})
+include_directories(AFTER ext/jsoncpp/include ${Boost_INCLUDE_DIRS} ${LIBXML2_INCLUDE_DIR} ${ZLIB_INCLUDE_DIR} ${PNG_INCLUDE_DIR} ${OPENSSL_INCLUDE_DIR} ${INCLUDE_DIRECTORIES})
 
-include_directories(AFTER ext/jsoncpp/include ${INCLUDE_DIRECTORIES})
 link_directories(${LINK_DIRECTORIES})
 
 set (CMAKE_CXX_FLAGS "-Os -std=c++11")
