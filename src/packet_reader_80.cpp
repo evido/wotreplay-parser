@@ -50,5 +50,5 @@ bool packet_reader_80_t::has_next() {
 }
 
 bool packet_reader_80_t::is_compatible(const version_t &version) {
-    return version.major == 8 && (version.minor >= 0 && version.minor <= 11);
+    return version.major >= 8;
 }
