@@ -14,6 +14,20 @@ When using the json output option, the replay is decoded into a list of packets,
 * Hull Orientation
 * Messages
 
+# Examples
+
+## Output type PNG
+
+Displays a summary of the battle on a map, green lines are your own team, red lines the enemy team, and blue is the recording player.
+
+![Output example of type 'png'](examples/example_png.png)
+
+## Output type HEATMAP
+
+Displays a heatmap of the positions of the tanks in the battle (for both teams combined)
+
+![Output example of type 'heatmap'](examples/example_heatmap.png)
+
 # Build
 
 ## Dependencies
@@ -41,7 +55,7 @@ You may need to specify the include directory for LibXML2 using the CMAKE variab
 
 # Data
 
-To use this software you need some data extracted from World of Tanks, this data contains some elements to draw the mini map, the actual minimaps and the arena definitions. I have prepared an archive which is available [here](https://docs.google.com/file/d/0B3nvac-cSAKRdjV1d2JtQkJJZkE/edit?usp=sharing). This should be available in the `root` folder (see next paragraph).
+To use this software you need some data extracted from World of Tanks, this data contains some elements to draw the mini map, the actual minimaps and the arena definitions. I have prepared an archive which is available [here](https://drive.google.com/file/d/0B3nvac-cSAKRT3NFZnVkRU1JdVU/view?usp=sharing). This should be available in the `root` folder (see next paragraph).
 
 # Run
 
@@ -51,10 +65,20 @@ The program can be used to convert wotreplay files to images or json files.
 
     wotreplay-parser --parse --root <working directory> --type <output type> --input <input file> --output <output file>
 
-* `output type` can be png or json
+* `output type` can be png, json and heatmap
 * `output` is optional, the program will then write to stdout
 * `input` and  `output` are relative to root
-* `root ` should contain a folder maps with the images to maps and the arena definitions
+* `root` should contain a folder maps with the images to maps and the arena definitions
+
+## Create Heatmaps
+
+The program can be used to create heatmaps for a directory of replays
+
+	wotreplay-parser --parse --root <working directory> --type heatmap --input <input directory> --output <output directory>
+
+* `input directory` is the directory containing all the replays (relative to root, only first level will be scanned)
+* `output directory` images will be written to this directory, for each map / game mode an output file will be generated (relative to root)
+* `root` should contain a folder maps with the images to maps and the arena definitions
 
 ## Create Minimaps
 

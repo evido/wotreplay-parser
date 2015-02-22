@@ -69,6 +69,11 @@ namespace wotreplay {
      * @return arena definition map
      */
     const std::map<std::string, arena_t> &get_arenas();
+
+    /**
+     * Init arena defintion.
+     */
+    void init_arena_definition();
 }
 
 #endif /* defined(wotreplay_arena_def_h) */

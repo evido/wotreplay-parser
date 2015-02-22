@@ -163,9 +163,9 @@ void parser_t::decrypt_replay(buffer_t &replay_data, const unsigned char *key_da
         replay_data.resize(required_size, 0);
     }
     
-    unsigned char previous[block_size] = {0};
+    unsigned char previous[block_size] = {0},
+                  decrypted[block_size] = {0};
     for (auto it = replay_data.begin(); it != replay_data.end(); it += block_size) {
-        unsigned char decrypted[block_size] = { 0 };
         BF_ecb_encrypt(reinterpret_cast<unsigned char*>(&(*it)), decrypted, &key, BF_DECRYPT);
         std::transform(previous, previous + block_size, decrypted, decrypted, std::bit_xor<unsigned char>());
         std::copy_n(decrypted, block_size, previous);
@@ -236,6 +236,10 @@ void parser_t::extract_replay(buffer_t &compressed_replay, buffer_t &replay) {
 }
 
 void parser_t::get_data_blocks(buffer_t &buffer, std::vector<slice_t> &data_blocks) const {
+    if (buffer.size() == 0) {
+        throw std::runtime_error("No data");
+    }
+
     // determine number of data blocks
     uint32_t nr_data_blocks = get_data_block_count(buffer);
     
@@ -249,6 +253,11 @@ void parser_t::get_data_blocks(buffer_t &buffer, std::vector<slice_t> &data_bloc
         const uint32_t *block_size = reinterpret_cast<const uint32_t*>(&buffer[data_block_sz_offset]);
         size_t data_block_offset = data_block_sz_offset + sizeof(uint32_t);
         auto data_block_beg = buffer.begin() + data_block_offset;
+
+        if (data_block_offset + *block_size > buffer.size()) {
+            throw std::runtime_error("Invalid block size.");
+        }
+
         auto data_block_end = data_block_beg + *block_size;
         data_blocks.emplace_back(data_block_beg, data_block_end);
         
@@ -278,7 +287,6 @@ void parser_t::read_game_info(game_t& game) {
 
     auto player_name = root["playerName"].asString();
 
-
     for (auto it = vehicles.begin(); it != vehicles.end(); ++it) {
         unsigned player_id = boost::lexical_cast<int>(it.key().asString());
         std::string name = (*it)["name"].asString();
@@ -299,9 +307,7 @@ void parser_t::read_game_info(game_t& game) {
     }
 
     // explicit check for game version should be better
-    if (!get_arena(map_name, game.arena)) {
-        throw std::runtime_error("Could not find appropriate arena definition");
-    }
+    get_arena(map_name, game.arena);
 }
 
 void wotreplay::show_packet_summary(const std::vector<packet_t>& packets) {
@@ -320,4 +326,8 @@ void wotreplay::show_packet_summary(const std::vector<packet_t>& packets) {
 
 bool wotreplay::is_replayfile(const boost::filesystem::path &p) {
     return is_regular_file(p) && p.extension() == ".wotreplay" ;
+}
+
+void parser_t::load_data() {
+    init_arena_definition();
 }
