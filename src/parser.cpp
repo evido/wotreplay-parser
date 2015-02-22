@@ -237,7 +237,7 @@ void parser_t::extract_replay(buffer_t &compressed_replay, buffer_t &replay) {
 
 void parser_t::get_data_blocks(buffer_t &buffer, std::vector<slice_t> &data_blocks) const {
     if (buffer.size() == 0) {
-        throw std::runtime_error("Error: no data");
+        throw std::runtime_error("No data");
     }
 
     // determine number of data blocks
@@ -255,7 +255,7 @@ void parser_t::get_data_blocks(buffer_t &buffer, std::vector<slice_t> &data_bloc
         auto data_block_beg = buffer.begin() + data_block_offset;
 
         if (data_block_offset + *block_size > buffer.size()) {
-            throw std::runtime_error("Error: Invalid block size.");
+            throw std::runtime_error("Invalid block size.");
         }
 
         auto data_block_end = data_block_beg + *block_size;

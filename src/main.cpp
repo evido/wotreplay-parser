@@ -109,10 +109,7 @@ int process_replay_directory(const po::variables_map &vm, const std::string &inp
     std::map<std::string, std::unique_ptr<writer_t>> writers;
     for (auto it = directory_iterator(input); it != directory_iterator(); ++it) {
         if (!is_regular_file(*it) || it->path().extension() != ".wotreplay") {
-            std::cout << "Skipping: " << it->path() << "\n";
             continue;
-        } else {
-            std::cout << "Processing: " << it->path() << "\n";
         }
 
         std::ifstream in(it->path().string(), std::ios::binary);
@@ -126,7 +123,12 @@ int process_replay_directory(const po::variables_map &vm, const std::string &inp
         try {
             parser.parse(in, game);
         } catch (std::exception &e) {
-            std::cout << "Failed parsing replay: " << e.what() << "\n";
+            logger.writef(log_level_t::error, "Failed to open file (%1%): %2%\n", it->path().string(), e.what());
+            continue;
+        }
+
+        if (game.get_arena().name.empty()) {
+            continue;
         }
 
         std::string name = (boost::format("%s_%s") % game.get_map_name() % game.get_game_mode()).str();
@@ -144,7 +146,6 @@ int process_replay_directory(const po::variables_map &vm, const std::string &inp
 
     for (auto it = writers.begin(); it != writers.end(); ++it) {
         path file_name = path(output) / (boost::format("%s.png") % it->first).str();
-        std::cout << "Writing: " << file_name << "\n";
         std::ofstream out(file_name.string(), std::ios::binary);
         it->second->finish();
         it->second->write(out);
