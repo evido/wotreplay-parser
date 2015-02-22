@@ -80,7 +80,7 @@ int parse_replay(const po::variables_map &vm, const std::string &input, const st
     
     std::ifstream in(input, std::ios::binary);
     if (!in) {
-        logger.writef(log_level_t::error, "Something went wrong with opening file: %1%\n", input);
+        logger.writef(log_level_t::error, "Failed to open file: %1%\n", input);
         std::exit(0);
     }
     
