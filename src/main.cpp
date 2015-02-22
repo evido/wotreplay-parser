@@ -123,7 +123,7 @@ int process_replay_directory(const po::variables_map &vm, const std::string &inp
         try {
             parser.parse(in, game);
         } catch (std::exception &e) {
-            logger.writef(log_level_t::error, "Failed to open file (%1%): %2%\n", it->path().string(), e.what());
+            logger.writef(log_level_t::error, "Failed to parse file (%1%): %2%\n", it->path().string(), e.what());
             continue;
         }
 
