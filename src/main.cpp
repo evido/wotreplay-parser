@@ -212,8 +212,8 @@ int main(int argc, const char * argv[]) {
     
     desc.add_options()
         ("type"  , po::value(&type), "select output type")
-        ("output", po::value(&output), "target file")
-        ("input" , po::value(&input), "input file")
+        ("output", po::value(&output), "output file or directory")
+        ("input" , po::value(&input), "input file or directory")
         ("root"  , po::value(&root), "set root directory")
         ("help"  , "produce help message")
         ("debug"   , "enable parser debugging")
