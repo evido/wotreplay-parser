@@ -6,6 +6,7 @@
 #include <set>
 #include <vector>
 
+#include "arena.h"
 #include "game.h"
 #include "packet.h"
 #include "packet_reader.h"
@@ -55,6 +56,10 @@ namespace wotreplay {
          * @param game The output variable containing the parsed contents of the replay file.
          */
         void parse(buffer_t &buffer, wotreplay::game_t &game);
+        /**
+         * Load supporting game data (optional)
+         */
+        void load_data();
     private:
         /**
          * Configures parser configuration using the version string.

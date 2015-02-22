@@ -87,6 +87,7 @@ int parse_replay(const po::variables_map &vm, const std::string &input, const st
     game_t game;
 
     parser.set_debug(debug);
+    parser.load_data();
     parser.parse(in, game);
 
     std::unique_ptr<writer_t> writer;
@@ -196,8 +197,6 @@ int main(int argc, const char * argv[]) {
     if (exit_code < 0) {
         show_help(argc, argv, desc);
     }
-
-    
 
     return exit_code;
 }

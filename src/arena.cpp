@@ -20,6 +20,7 @@ static xmlDocPtr get_arena_xml_content(const boost::filesystem::path &path) {
     while ((pos = content.find(base_file_name)) != -1) {
         content.replace(pos, base_file_name.length(), "arena");
     }
+    
     xmlDocPtr doc = xmlReadMemory(content.c_str(), (int) content.length(), base_file_name.c_str(), NULL, 0);
     return doc;
 }
@@ -159,24 +160,25 @@ static std::map<std::string, arena_t> get_arena_definitions() {
 std::map<std::string, arena_t> arenas;
 static bool is_arenas_initalized = false;
 
-const std::map<std::string, arena_t> &wotreplay::get_arenas() {
+void wotreplay::init_arena_definition() {
     if (!is_arenas_initalized) {
         arenas = get_arena_definitions();
         is_arenas_initalized = true;
     }
+}
+
+const std::map<std::string, arena_t> &wotreplay::get_arenas() {
     return arenas;
 }
 
 bool wotreplay::get_arena(const std::string &name, arena_t& arena) {
-    if (!is_arenas_initalized) {
-        arenas = get_arena_definitions();
-        is_arenas_initalized = true;
-    }
-    
+    bool has_result = false;
     auto it = arenas.find(name);
+
     if (it == arenas.end()) {
         if (name == "north_america") {
             arena = arenas["44_north_america"];
+            has_result = true;
         } else {
             for (auto entry : arenas) {
                 std::string map_name = entry.first;
@@ -184,12 +186,14 @@ bool wotreplay::get_arena(const std::string &name, arena_t& arena) {
                 if (short_map_name == name) {
                     // rewrite map name
                     arena = entry.second;
+                    has_result = true;
                 }
             }
         }
     } else {
         arena = arenas[name];
+        has_result = true;
     }
     
-    return true;
+    return has_result;
 }

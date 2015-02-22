@@ -163,9 +163,9 @@ void parser_t::decrypt_replay(buffer_t &replay_data, const unsigned char *key_da
         replay_data.resize(required_size, 0);
     }
     
-    unsigned char previous[block_size] = {0};
+    unsigned char previous[block_size] = {0},
+                  decrypted[block_size] = {0};
     for (auto it = replay_data.begin(); it != replay_data.end(); it += block_size) {
-        unsigned char decrypted[block_size] = { 0 };
         BF_ecb_encrypt(reinterpret_cast<unsigned char*>(&(*it)), decrypted, &key, BF_DECRYPT);
         std::transform(previous, previous + block_size, decrypted, decrypted, std::bit_xor<unsigned char>());
         std::copy_n(decrypted, block_size, previous);
@@ -278,7 +278,6 @@ void parser_t::read_game_info(game_t& game) {
 
     auto player_name = root["playerName"].asString();
 
-
     for (auto it = vehicles.begin(); it != vehicles.end(); ++it) {
         unsigned player_id = boost::lexical_cast<int>(it.key().asString());
         std::string name = (*it)["name"].asString();
@@ -299,9 +298,7 @@ void parser_t::read_game_info(game_t& game) {
     }
 
     // explicit check for game version should be better
-    if (!get_arena(map_name, game.arena)) {
-        throw std::runtime_error("Could not find appropriate arena definition");
-    }
+    get_arena(map_name, game.arena);
 }
 
 void wotreplay::show_packet_summary(const std::vector<packet_t>& packets) {
@@ -320,4 +317,8 @@ void wotreplay::show_packet_summary(const std::vector<packet_t>& packets) {
 
 bool wotreplay::is_replayfile(const boost::filesystem::path &p) {
     return is_regular_file(p) && p.extension() == ".wotreplay" ;
+}
+
+void parser_t::load_data() {
+    init_arena_definition();
 }
