@@ -1,4 +1,5 @@
 #include "image_writer.h"
+#include "heatmap_writer.h"
 #include "json_writer.h"
 #include "logger.h"
 #include "parser.h"
@@ -102,8 +103,11 @@ int parse_replay(const po::variables_map &vm, const std::string &input, const st
         if (vm.count("supress-empty")) {
             writer->set_filter(&is_not_empty);
         }
+    } else if (type == "heatmap") {
+        writer = std::unique_ptr<writer_t>(new heatmap_writer_t());
     } else {
         logger.writef(log_level_t::error, "Invalid output type (%1%), supported types: png and json.\n", type);
+        return -EXIT_FAILURE;
     }
 
     writer->init(game.get_arena(), game.get_game_mode());

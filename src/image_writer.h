@@ -58,7 +58,7 @@ namespace wotreplay {
          * @return recorder_team
          */
         int get_recorder_team() const;
-    private:
+    protected:
         /**
          * Load a background image from the combination map name and game mode.
          * @param path the path to the minimap image
