@@ -42,6 +42,7 @@ add_library(wotreplay STATIC
 			src/packet_reader.h
 			src/packet_reader_80.h
 			src/json_writer.h
+			src/heatmap_writer.h
 			src/packet.cpp 
 			src/packet_reader_80.cpp 
 			src/parser.cpp 
@@ -49,7 +50,8 @@ add_library(wotreplay STATIC
 			src/game.cpp src/image_util.cpp 
 			src/logger.cpp 
 			src/json_writer.cpp
-			src/arena.cpp)
+			src/arena.cpp
+			src/heatmap_writer.cpp)
 
 add_library(jsoncpp STATIC 
 			ext/jsoncpp/src/jsoncpp.cpp)
