@@ -5,6 +5,7 @@
 #include "parser.h"
 #include "logger.h"
 
+#include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <boost/program_options.hpp>
 #include <fstream>
@@ -12,6 +13,7 @@
 #include <float.h>
 
 using namespace wotreplay;
+using namespace boost::filesystem;
 namespace po = boost::program_options;
 
 void show_help(int argc, const char *argv[], po::options_description &desc) {
@@ -72,25 +74,7 @@ int create_minimaps(const po::variables_map &vm, const std::string &output, bool
     return EXIT_SUCCESS;
 }
 
-int parse_replay(const po::variables_map &vm, const std::string &input, const std::string &output, const std::string &type, bool debug) {
-    if ( !(vm.count("type") > 0 && vm.count("input") > 0) ) {
-        logger.write(wotreplay::log_level_t::error, "parameters type and input are required to use this mode\n");
-        return -EXIT_FAILURE;
-    }
-    
-    std::ifstream in(input, std::ios::binary);
-    if (!in) {
-        logger.writef(log_level_t::error, "Failed to open file: %1%\n", input);
-        std::exit(0);
-    }
-    
-    parser_t parser;
-    game_t game;
-
-    parser.set_debug(debug);
-    parser.load_data();
-    parser.parse(in, game);
-
+std::unique_ptr<writer_t> create_writer(const std::string &type, const po::variables_map &vm) {
     std::unique_ptr<writer_t> writer;
 
     if (type == "png") {
@@ -106,7 +90,91 @@ int parse_replay(const po::variables_map &vm, const std::string &input, const st
     } else if (type == "heatmap") {
         writer = std::unique_ptr<writer_t>(new heatmap_writer_t());
     } else {
-        logger.writef(log_level_t::error, "Invalid output type (%1%), supported types: png and json.\n", type);
+        logger.writef(log_level_t::error, "Invalid output type (%1%), supported types: png, json and heatmap.\n", type);
+    }
+
+    return writer;
+}
+
+int process_replay_directory(const po::variables_map &vm, const std::string &input, const std::string &output, const std::string &type, bool debug) {
+    if ( !(vm.count("type") > 0 && vm.count("input") > 0) ) {
+        logger.write(wotreplay::log_level_t::error, "parameters type and input are required to use this mode\n");
+        return -EXIT_FAILURE;
+    }
+
+    parser_t parser;
+    parser.set_debug(debug);
+    parser.load_data();
+
+    std::map<std::string, std::unique_ptr<writer_t>> writers;
+    for (auto it = directory_iterator(input); it != directory_iterator(); ++it) {
+        if (!is_regular_file(*it) || it->path().extension() != ".wotreplay") {
+            std::cout << "Skipping: " << it->path() << "\n";
+            continue;
+        } else {
+            std::cout << "Processing: " << it->path() << "\n";
+        }
+
+        std::ifstream in(it->path().string(), std::ios::binary);
+        if (!in) {
+            logger.writef(log_level_t::error, "Failed to open file: %1%\n", it->path().string());
+            return -EXIT_FAILURE;
+        }
+
+        game_t game;
+
+        try {
+            parser.parse(in, game);
+        } catch (std::exception &e) {
+            std::cout << "Failed parsing replay: " << e.what() << "\n";
+        }
+
+        std::string name = (boost::format("%s_%s") % game.get_map_name() % game.get_game_mode()).str();
+        auto writer = writers.find(name);
+
+        if (writer == writers.end()) {
+            auto new_writer = create_writer(type, vm);
+            auto result = writers.insert(std::make_pair(name, std::move(new_writer)));
+            writer = result.first;
+            (writer->second)->init(game.get_arena(), game.get_game_mode());
+        }
+
+        (writer->second)->update(game);
+    }
+
+    for (auto it = writers.begin(); it != writers.end(); ++it) {
+        path file_name = path(output) / (boost::format("%s.png") % it->first).str();
+        std::cout << "Writing: " << file_name << "\n";
+        std::ofstream out(file_name.string(), std::ios::binary);
+        it->second->finish();
+        it->second->write(out);
+    }
+
+    return EXIT_SUCCESS;
+}
+
+int process_replay_file(const po::variables_map &vm, const std::string &input, const std::string &output, const std::string &type, bool debug) {
+    if ( !(vm.count("type") > 0 && vm.count("input") > 0) ) {
+        logger.write(wotreplay::log_level_t::error, "parameters type and input are required to use this mode\n");
+        return -EXIT_FAILURE;
+    }
+    
+    std::ifstream in(input, std::ios::binary);
+    if (!in) {
+        logger.writef(log_level_t::error, "Failed to open file: %1%\n", input);
+        return -EXIT_FAILURE;
+    }
+    
+    parser_t parser;
+    game_t game;
+
+    parser.set_debug(debug);
+    parser.load_data();
+    parser.parse(in, game);
+
+    std::unique_ptr<writer_t> writer = create_writer(type, vm);
+
+    if (!writer) {
         return -EXIT_FAILURE;
     }
 
@@ -189,10 +257,14 @@ int main(int argc, const char * argv[]) {
     int exit_code;
     if (vm.count("parse") > 0) {
         // parse
-        exit_code = parse_replay(vm, input, output, type, debug);
+        if (is_directory(input)) {
+            exit_code = process_replay_directory(vm, input, output, type, debug);
+        } else {
+            exit_code = process_replay_file(vm, input, output, type, debug);
+        }
     } else if (vm.count("create-minimaps") > 0) {
         // create all minimaps
-        exit_code =  create_minimaps(vm, output, debug);
+        exit_code = create_minimaps(vm, output, debug);
     } else {
         logger.write(wotreplay::log_level_t::error, "Error: no mode specified\n");
         exit_code = -EXIT_FAILURE;
