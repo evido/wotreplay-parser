@@ -16,7 +16,15 @@ When using the json output option, the replay is decoded into a list of packets,
 
 # Examples
 
+## Output type PNG
+
+Displays a summary of the battle on a map, green lines are your own team, red lines the enemy team, and blue is the recording player.
+
 ![Output example of type 'png'](examples/example_png.png)
+
+## Output type HEATMAP
+
+Displays a heatmap of the positions of the tanks in the battle (for both teams combined)
 
 ![Output example of type 'heatmap'](examples/example_heatmap.png)
 
