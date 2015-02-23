@@ -3,7 +3,7 @@
 #include "json_writer.h"
 #include "logger.h"
 #include "parser.h"
-#include "logger.h"
+#include "regex.h"
 
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
@@ -89,6 +89,14 @@ std::unique_ptr<writer_t> create_writer(const std::string &type, const po::varia
         }
     } else if (type == "heatmap") {
         writer = std::unique_ptr<writer_t>(new heatmap_writer_t());
+        auto &heatmap_writer = dynamic_cast<heatmap_writer_t&>(*writer);
+        if (vm.count("skip")) {
+            heatmap_writer.skip = vm["skip"].as<double>();
+        }
+        if (vm.count("bounds_min") && vm.count("bounds_max")) {
+            heatmap_writer.bounds = std::make_pair(vm["bounds_min"].as<double>(),
+                                                   vm["bounds_max"].as<double>());
+        }
     } else {
         logger.writef(log_level_t::error, "Invalid output type (%1%), supported types: png, json and heatmap.\n", type);
     }
@@ -123,10 +131,11 @@ int process_replay_directory(const po::variables_map &vm, const std::string &inp
         try {
             parser.parse(in, game);
         } catch (std::exception &e) {
-            logger.writef(log_level_t::error, "Failed to open file (%1%): %2%\n", it->path().string(), e.what());
+            logger.writef(log_level_t::error, "Failed to parse file (%1%): %2%\n", it->path().string(), e.what());
             continue;
         }
 
+        // if we can't load arena data, skip this replay
         if (game.get_arena().name.empty()) {
             continue;
         }
@@ -209,6 +218,7 @@ int main(int argc, const char * argv[]) {
     po::options_description desc("Allowed options");
 
     std::string type, output, input, root;
+    double skip, bounds_min, bounds_max;
     
     desc.add_options()
         ("type"  , po::value(&type), "select output type")
@@ -216,11 +226,14 @@ int main(int argc, const char * argv[]) {
         ("input" , po::value(&input), "input file or directory")
         ("root"  , po::value(&root), "set root directory")
         ("help"  , "produce help message")
-        ("debug"   , "enable parser debugging")
+        ("debug" , "enable parser debugging")
         ("supress-empty", "supress empty packets from json output")
         ("create-minimaps", "create all empty minimaps in output directory")
         ("parse", "parse a replay file")
-        ("quiet", "supress diagnostic messages");
+        ("quiet", "supress diagnostic messages")
+        ("skip", po::value(&skip), "for heatmaps, skip a certain number of seconds after the start of the battle (default: 60)")
+        ("bounds-min", po::value(&bounds_min), "for heatmaps, set min value to display (default: 0.66)")
+        ("bounds-max", po::value(&bounds_max), "for heatmaps, set max value to display (default: 0.999)");
 
     po::variables_map vm;
 
