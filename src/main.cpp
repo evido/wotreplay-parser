@@ -93,9 +93,9 @@ std::unique_ptr<writer_t> create_writer(const std::string &type, const po::varia
         if (vm.count("skip")) {
             heatmap_writer.skip = vm["skip"].as<double>();
         }
-        if (vm.count("bounds_min") && vm.count("bounds_max")) {
-            heatmap_writer.bounds = std::make_pair(vm["bounds_min"].as<double>(),
-                                                   vm["bounds_max"].as<double>());
+        if (vm.count("bounds-min") && vm.count("bounds-max")) {
+            heatmap_writer.bounds = std::make_pair(vm["bounds-min"].as<double>(),
+                                                   vm["bounds-max"].as<double>());
         }
     } else {
         logger.writef(log_level_t::error, "Invalid output type (%1%), supported types: png, json and heatmap.\n", type);
