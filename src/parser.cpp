@@ -203,7 +203,7 @@ void parser_t::extract_replay(buffer_t &compressed_replay, buffer_t &replay) {
         throw std::runtime_error(msg.str());
     }
     
-    const int chunk = 1048576;
+    const int chunk = 10*1024*1024;
     std::unique_ptr<unsigned char[]> out(new unsigned char[chunk]);
     
     do {
