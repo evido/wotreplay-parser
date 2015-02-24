@@ -16,7 +16,8 @@ void json_writer_t::init(const arena_t &arena, const std::string &mode) {
 }
 
 void json_writer_t::write(std::ostream &os) {
-    os << root;
+    Json::FastWriter writer;
+    os << writer.write(root);
 }
 
 json_writer_t::json_writer_t()
@@ -46,14 +47,14 @@ void json_writer_t::update(const game_t &game) {
     const buffer_t &buffer = game.get_game_begin();
     std::string summary_str(buffer.begin(), buffer.end());
     reader.parse(summary_str, summary);
-
+    
     root["summary"] = summary;
 
     for (const auto &packet : game.get_packets()) {
         // skip empty packet
         if (!filter(packet)) continue;
-        
-        Json::Value value(Json::objectValue);
+
+        auto &value = packets.append(Json::objectValue);
 
         if (packet.has_property(property_t::type)) {
             value["type"] = packet.type();
@@ -72,21 +73,19 @@ void json_writer_t::update(const game_t &game) {
         }
 
         if (packet.has_property(property_t::position)) {
-            Json::Value positionValue(Json::arrayValue);
+            auto &positionValue = value["position"] = Json::Value(Json::arrayValue);
             const auto &position = packet.position();
             positionValue.append(std::get<0>(position));
             positionValue.append(std::get<1>(position));
             positionValue.append(std::get<2>(position));
-            value["position"] = positionValue;
         }
 
         if (packet.has_property(property_t::hull_orientation)) {
-            Json::Value orientationValue(Json::arrayValue);
+            auto &orientationValue = value["hull_orientation"] = Json::Value(Json::arrayValue);
             const auto &orientation = packet.hull_orientation();
             orientationValue.append(std::get<0>(orientation));
             orientationValue.append(std::get<1>(orientation));
             orientationValue.append(std::get<2>(orientation));
-            value["hull_orientation"] = orientationValue;
         }
 
         if (packet.has_property(property_t::tank_destroyed)) {
@@ -123,8 +122,6 @@ void json_writer_t::update(const game_t &game) {
         if (packet.has_property(property_t::alt_track_state)) {
             value["alt_track_state"] = packet.alt_track_state();
         }
-
-        packets.append(value);
     }
 }
 

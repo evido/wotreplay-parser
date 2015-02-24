@@ -15,6 +15,15 @@
 /** @file */
 
 namespace wotreplay {
+    /**
+     * @enum wotreplay::load_data_mode_t
+     * @brief Options to modify data loading behaviour of the parser
+     */
+    enum load_data_mode_t {
+        manual,
+        on_demand,
+        bulk
+    };
     /** wotreplay::parser_t is a class responsible for parsing a World of Tanks replay file.  */
     class parser_t {
         /**
@@ -28,8 +37,10 @@ namespace wotreplay {
     public:
         /** 
          * Default constructor for creating an empty replay_file 
+         * @param load_data_mode set data loading behavior
+         * @param debug enable debug mode
          */
-        parser_t(bool debug = false);
+        parser_t(load_data_mode_t load_data_mode = load_data_mode_t::bulk, bool debug = false);
         /**
          * Indicates if the parsed file is a legacy (< 0.7.2) replay file. This means 'game begin', 'game end' will be missing.
          * @return \c true if file is in a legacy format \c false if the file is in the 'new' format.
@@ -128,6 +139,7 @@ namespace wotreplay {
         /** Packet lengths */
         std::map<uint8_t, int> packet_lengths;
         std::unique_ptr<packet_reader_t> packet_reader;
+        load_data_mode_t load_data_mode;
     };
 
     template <typename iterator>

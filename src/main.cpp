@@ -8,6 +8,8 @@
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <boost/program_options.hpp>
+#include <boost/tokenizer.hpp>
+
 #include <fstream>
 
 #include <float.h>
@@ -33,7 +35,7 @@ float distance(const std::tuple<float, float, float> &left, const std::tuple<flo
 
 static bool is_not_empty(const packet_t &packet) {
     // list of default properties with no special meaning
-    std::set<property_t> standard_properties = { property_t::clock, property_t::player_id, property_t::type, property_t::sub_type };
+    std::set<property_t> standard_properties = { property_t::clock, property_t::player_id, property_t::type, property_t::sub_type, property_t::length };
     auto properties = packet.get_properties();
     for (int i = 0; i < properties.size(); ++i) {
         property_t property = static_cast<property_t>(i);
@@ -110,9 +112,8 @@ int process_replay_directory(const po::variables_map &vm, const std::string &inp
         return -EXIT_FAILURE;
     }
 
-    parser_t parser;
+    parser_t parser(load_data_mode_t::bulk);
     parser.set_debug(debug);
-    parser.load_data();
 
     std::map<std::string, std::unique_ptr<writer_t>> writers;
     for (auto it = directory_iterator(input); it != directory_iterator(); ++it) {
@@ -164,6 +165,12 @@ int process_replay_directory(const po::variables_map &vm, const std::string &inp
 }
 
 int process_replay_file(const po::variables_map &vm, const std::string &input, const std::string &output, const std::string &type, bool debug) {
+    static std::map<std::string, std::string> suffixes = {
+        {"png", ".png"},
+        {"json", ".json"},
+        {"heatmap", "_heatmap.png"}
+    };
+
     if ( !(vm.count("type") > 0 && vm.count("input") > 0) ) {
         logger.write(wotreplay::log_level_t::error, "parameters type and input are required to use this mode\n");
         return -EXIT_FAILURE;
@@ -175,40 +182,46 @@ int process_replay_file(const po::variables_map &vm, const std::string &input, c
         return -EXIT_FAILURE;
     }
     
-    parser_t parser;
+    parser_t parser(load_data_mode_t::on_demand);
     game_t game;
 
     parser.set_debug(debug);
-    parser.load_data();
     parser.parse(in, game);
 
-    std::unique_ptr<writer_t> writer = create_writer(type, vm);
+    boost::char_separator<char> sep(",");
+    boost::tokenizer<boost::char_separator<char>> tokens(type, sep);
+    bool single = std::distance(tokens.begin(), tokens.end()) == 1;
+    for(auto it = tokens.begin(); it != tokens.end(); ++it){
+        std::unique_ptr<writer_t> writer = create_writer(*it, vm);
 
-    if (!writer) {
-        return -EXIT_FAILURE;
-    }
-
-    writer->init(game.get_arena(), game.get_game_mode());
-    writer->update(game);
-    writer->finish();
-
-    std::ostream *out;
-
-    if (vm.count("output") > 0) {
-        out = new std::ofstream(output, std::ios::binary);
-        if (!out) {
-            logger.writef(log_level_t::error, "Something went wrong with opening file: %1%\n", input);
-            std::exit(0);
+        if (!writer) {
+            return -EXIT_FAILURE;
         }
-    } else {
-        out = &std::cout;
-    }
 
-    writer->write(*out);
+        writer->init(game.get_arena(), game.get_game_mode());
+        writer->update(game);
+        writer->finish();
 
-    if (dynamic_cast<std::ofstream*>(out)) {
-        dynamic_cast<std::ofstream*>(out)->close();
-        delete out;
+        std::ostream *out;
+
+        if (vm.count("output") > 0) {
+            auto file_name = single ? output : output + suffixes[*it];
+            out = new std::ofstream(file_name, std::ios::binary);
+
+            if (!out) {
+                logger.writef(log_level_t::error, "Something went wrong with opening file: %1%\n", input);
+                return -EXIT_FAILURE;
+            }
+        } else {
+            out = &std::cout;
+        }
+
+        writer->write(*out);
+
+        if (dynamic_cast<std::ofstream*>(out)) {
+            dynamic_cast<std::ofstream*>(out)->close();
+            delete out;
+        }
     }
 
     return EXIT_SUCCESS;

@@ -39,10 +39,13 @@ static void debug_stream_content(const std::string &file_name, T begin, T end) {
 
 #endif
 
-parser_t::parser_t(bool debug)
-    : debug(debug)
+parser_t::parser_t(load_data_mode_t load_data_mode, bool debug)
+    : debug(debug), load_data_mode(load_data_mode)
 {
     // empty
+    if (load_data_mode == load_data_mode_t::bulk) {
+        this->load_data();
+    }
 }
 
 void parser_t::parse(std::istream &is, wotreplay::game_t &game) {
@@ -307,7 +310,7 @@ void parser_t::read_game_info(game_t& game) {
     }
 
     // explicit check for game version should be better
-    get_arena(map_name, game.arena);
+    get_arena(map_name, game.arena, load_data_mode == load_data_mode_t::on_demand);
 }
 
 void wotreplay::show_packet_summary(const std::vector<packet_t>& packets) {

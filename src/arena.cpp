@@ -11,6 +11,7 @@
 #include <sstream>
 
 using namespace wotreplay;
+using namespace boost::filesystem;
 
 static xmlDocPtr get_arena_xml_content(const boost::filesystem::path &path) {
     std::ifstream is(path.string());
@@ -171,7 +172,7 @@ const std::map<std::string, arena_t> &wotreplay::get_arenas() {
     return arenas;
 }
 
-bool wotreplay::get_arena(const std::string &name, arena_t& arena) {
+bool wotreplay::get_arena(const std::string &name, arena_t& arena, bool force) {
     bool has_result = false;
     auto it = arenas.find(name);
 
@@ -193,6 +194,17 @@ bool wotreplay::get_arena(const std::string &name, arena_t& arena) {
     } else {
         arena = arenas[name];
         has_result = true;
+    }
+
+    if (!has_result && force) {
+        xmlInitParser();
+        path path("maps/definitions");
+        path /= name + ".xml";
+        if (is_regular_file(path)) {
+            arena = arenas[name] = get_arena_definition(path);
+            has_result = true;
+        }
+        xmlCleanupParser();
     }
     
     return has_result;

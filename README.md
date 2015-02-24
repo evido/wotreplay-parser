@@ -65,7 +65,7 @@ The program can be used to convert wotreplay files to images or json files.
 
     wotreplay-parser --parse --root <working directory> --type <output type> --input <input file> --output <output file>
 
-* `output type` can be png, json and heatmap
+* `output type` can be png, json and heatmap, it is possible to specify multiple types (e.g. png,json), when using multiple types the output file specification will be appended with a suffix (.png, .json and _heatmap.png)
 * `output` is optional, the program will then write to stdout
 * `input` and  `output` are relative to root
 * `root` should contain a folder maps with the images to maps and the arena definitions

@@ -60,9 +60,10 @@ namespace wotreplay {
      * Find the arena definition for the arena name
      * @param name the arena name
      * @param arena output variable to store the arena
+     * @param when definition is not found in cache, force lookup on disk
      * @return \c true if the arena was found \c false if not
      */
-    bool get_arena(const std::string &name, arena_t &arena);
+    bool get_arena(const std::string &name, arena_t &arena, bool force);
 
     /**
      * Get the complete list of available arena definitions
