@@ -89,7 +89,7 @@ std::unique_ptr<writer_t> create_writer(const std::string &type, const po::varia
         if (vm.count("supress-empty")) {
             writer->set_filter(&is_not_empty);
         }
-    } else if (type == "heatmap") {
+    } else if (type == "heatmap" || type == "team-heatmap") {
         writer = std::unique_ptr<writer_t>(new heatmap_writer_t());
         auto &heatmap_writer = dynamic_cast<heatmap_writer_t&>(*writer);
         if (vm.count("skip")) {
@@ -99,8 +99,9 @@ std::unique_ptr<writer_t> create_writer(const std::string &type, const po::varia
             heatmap_writer.bounds = std::make_pair(vm["bounds-min"].as<double>(),
                                                    vm["bounds-max"].as<double>());
         }
+        heatmap_writer.combined = type != "team-heatmap";
     } else {
-        logger.writef(log_level_t::error, "Invalid output type (%1%), supported types: png, json and heatmap.\n", type);
+        logger.writef(log_level_t::error, "Invalid output type (%1%), supported types: png, json, heatmap and team-heatmap.\n", type);
     }
 
     return writer;
@@ -168,7 +169,8 @@ int process_replay_file(const po::variables_map &vm, const std::string &input, c
     static std::map<std::string, std::string> suffixes = {
         {"png", ".png"},
         {"json", ".json"},
-        {"heatmap", "_heatmap.png"}
+        {"heatmap", "_heatmap.png"},
+        {"team-heatmap", "_team_heatmap.png"}
     };
 
     if ( !(vm.count("type") > 0 && vm.count("input") > 0) ) {
@@ -245,8 +247,8 @@ int main(int argc, const char * argv[]) {
         ("parse", "parse a replay file")
         ("quiet", "supress diagnostic messages")
         ("skip", po::value(&skip), "for heatmaps, skip a certain number of seconds after the start of the battle (default: 60)")
-        ("bounds-min", po::value(&bounds_min), "for heatmaps, set min value to display (default: 0.66)")
-        ("bounds-max", po::value(&bounds_max), "for heatmaps, set max value to display (default: 0.999)");
+        ("bounds-min", po::value(&bounds_min), "for heatmaps, set min value to display (default: 0.02)")
+        ("bounds-max", po::value(&bounds_max), "for heatmaps, set max value to display (default: 0.98)");
 
     po::variables_map vm;
 

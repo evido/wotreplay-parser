@@ -23,7 +23,7 @@ static unsigned char mixed_data[] = {
 };
 
 heatmap_writer_t::heatmap_writer_t()
-    : skip(60), bounds(std::make_pair(0.66, 0.999))
+    : skip(60), bounds(std::make_pair(0.02, 0.98))
 {}
 
 constexpr unsigned char *get_color(double val) {
@@ -103,19 +103,56 @@ void heatmap_writer_t::finish() {
     draw_elements();
     result = base;
 
-    double min, max;
+    if (combined) {
+        double min, max;
+        for (int y = 0; y < shape[0]; y += 1) {
+            for (int x = 0; x < shape[1]; x += 1) {
+                for (int i = 0; i < 9; i += 1) {
+                    for (int j = 0; j < 9; j += 1) {
+                        float val = positions[1][y][x] + positions[0][y][x];
+                        if ((y + i - 5) >= 0 && (y + i - 5) < shape[0]
+                            && (x + j - 5) >= 0 && (x + j - 5) < shape[0]) {
+                            positions[2][y + i - 5][x + j - 5] += val*stamp_default_4_data[i*9+j];
+                        }
+                    }
+                }
+            }
+        }
 
-    std::tie(min, max) = get_bounds(positions[0], std::get<0>(bounds), std::get<1>(bounds));
+        std::tie(min, max) = get_bounds(positions[2],
+                                        std::get<0>(bounds),
+                                        std::get<1>(bounds));
 
-    for (int i = 0; i < shape[0]; i += 1) {
-        for (int j = 0; j < shape[1]; j += 1) {
-            double val = clamp(positions[0][i][j], min, max);
-            const unsigned char *c = get_color((val - min) / (max - min));
-            double a = c[3] / 255.0;
-            a *= .66;
-            result[i][j][0] = mix(result[i][j][0], result[i][j][0], 1 - a, c[0], a);
-            result[i][j][1] = mix(result[i][j][1], result[i][j][1], 1 - a, c[1], a);
-            result[i][j][2] = mix(result[i][j][2], result[i][j][2], 1 - a, c[2], a);
+        for (int i = 0; i < shape[0]; i += 1) {
+            for (int j = 0; j < shape[1]; j += 1) {
+                double val = clamp(positions[2][i][j], min, max);
+                const unsigned char *c = get_color((val - min) / (max - min));
+                double a = c[3] / 255.0;
+                a *= .66;
+                result[i][j][0] = mix(result[i][j][0], result[i][j][0], 1 - a, c[0], a);
+                result[i][j][1] = mix(result[i][j][1], result[i][j][1], 1 - a, c[1], a);
+                result[i][j][2] = mix(result[i][j][2], result[i][j][2], 1 - a, c[2], a);
+            }
+        }
+    } else {
+        double min[2], max[2];
+        std::tie(min[0], max[0]) = get_bounds(positions[0],
+                                        std::get<0>(bounds),
+                                        std::get<1>(bounds));
+        std::tie(min[1], max[1]) = get_bounds(positions[1],
+                                        std::get<0>(bounds),
+                                        std::get<1>(bounds));
+
+        for (int i = 0; i < shape[0]; i += 1) {
+            for (int j = 0; j < shape[1]; j += 1) {
+                double a[] = {
+                    (clamp(positions[0][i][j], min[0], max[0]) - min[0]) / (max[0] - min[0]),
+                    (clamp(positions[1][i][j], min[1], max[1]) - min[1]) / (max[1] - min[1])
+                };
+                result[i][j][0] = mix(result[i][j][0], 0, a[0], 255, a[1]);
+                result[i][j][1] = mix(result[i][j][1], 255, a[0], 0, a[1]);
+                result[i][j][2] = mix(result[i][j][2], 0, a[0], 0, a[1]);
+            }
         }
     }
 }
@@ -153,15 +190,15 @@ void heatmap_writer_t::update(const game_t &game) {
 
         const bounding_box_t &bounding_box = game.get_arena().bounding_box;
         std::tuple<float, float> position = get_2d_coord( packet.position(), bounding_box, width, height);
-        long x = std::lround(std::get<0>(position));
-        long y = std::lround(std::get<1>(position));
-        for (int i = 0; i < 9; i += 1) {
-            for (int j = 0; j < 9; j += 1) {
-                if ((y + i - 5) >= 0 && (y + i - 5) < height
-                    && (x + j - 5) >= 0 && (x + j - 5) < width) {
-                    positions[0][y + i - 5][x + j - 5] += stamp_default_4_data[i*9 + j];
-                }
-            }
+        double x = std::get<0>(position);
+        double y = std::get<1>(position);
+
+        if (x >= 0 && y >= 0 && x <= (width - 1) && y <= (height - 1)) {
+            float px = x - floor(x), py = y - floor(y);
+            positions[team_id][floor(y)][floor(x)] += px*py;
+            positions[team_id][ceil(y)][floor(x)] += px*(1-py);
+            positions[team_id][floor(y)][ceil(x)] += (1-px)*py;
+            positions[team_id][ceil(y)][ceil(x)] += (1-px)*(1-py);
         }
     }
 }

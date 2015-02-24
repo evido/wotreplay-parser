@@ -28,6 +28,12 @@ Displays a heatmap of the positions of the tanks in the battle (for both teams c
 
 ![Output example of type 'heatmap'](examples/example_heatmap.png)
 
+## Output type Team Heatmap
+
+Displays a heatmap of the positions of the tanks in the battle (colored by team)
+
+![Output example of type 'team-heatmap'](examples/example_team_heatmap.png)
+
 # Build
 
 ## Dependencies
@@ -65,7 +71,7 @@ The program can be used to convert wotreplay files to images or json files.
 
     wotreplay-parser --parse --root <working directory> --type <output type> --input <input file> --output <output file>
 
-* `output type` can be png, json and heatmap, it is possible to specify multiple types (e.g. png,json), when using multiple types the output file specification will be appended with a suffix (.png, .json and _heatmap.png)
+* `output type` can be png, json, and team-heatmap, it is possible to specify multiple types (e.g. png,json), when using multiple types the output file specification will be appended with a suffix (.png, .json and _heatmap.png)
 * `output` is optional, the program will then write to stdout
 * `input` and  `output` are relative to root
 * `root` should contain a folder maps with the images to maps and the arena definitions
