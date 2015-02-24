@@ -110,9 +110,8 @@ int process_replay_directory(const po::variables_map &vm, const std::string &inp
         return -EXIT_FAILURE;
     }
 
-    parser_t parser;
+    parser_t parser(load_data_mode_t::bulk);
     parser.set_debug(debug);
-    parser.load_data();
 
     std::map<std::string, std::unique_ptr<writer_t>> writers;
     for (auto it = directory_iterator(input); it != directory_iterator(); ++it) {
@@ -175,11 +174,10 @@ int process_replay_file(const po::variables_map &vm, const std::string &input, c
         return -EXIT_FAILURE;
     }
     
-    parser_t parser;
+    parser_t parser(load_data_mode_t::on_demand);
     game_t game;
 
     parser.set_debug(debug);
-    parser.load_data();
     parser.parse(in, game);
 
     std::unique_ptr<writer_t> writer = create_writer(type, vm);
