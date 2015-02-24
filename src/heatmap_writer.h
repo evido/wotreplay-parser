@@ -13,5 +13,6 @@ namespace wotreplay {
         float skip;
         /** Modify boundaries for heatmap colors */
         std::tuple<double, double> bounds;
+        bool combined;
     };
 }
