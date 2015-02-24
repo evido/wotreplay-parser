@@ -13,7 +13,7 @@
 namespace wotreplay {
     
     /**
-     * @enum wot::property_t
+     * @enum wotreplay::property_t
      * @brief A list of detectable properties in packets of a wot:replay_file.
      */
     enum property_t {
