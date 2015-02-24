@@ -33,7 +33,7 @@ float distance(const std::tuple<float, float, float> &left, const std::tuple<flo
 
 static bool is_not_empty(const packet_t &packet) {
     // list of default properties with no special meaning
-    std::set<property_t> standard_properties = { property_t::clock, property_t::player_id, property_t::type, property_t::sub_type };
+    std::set<property_t> standard_properties = { property_t::clock, property_t::player_id, property_t::type, property_t::sub_type, property_t::length };
     auto properties = packet.get_properties();
     for (int i = 0; i < properties.size(); ++i) {
         property_t property = static_cast<property_t>(i);
