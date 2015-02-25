@@ -54,7 +54,9 @@ add_library(wotreplay STATIC
 			src/heatmap_writer.cpp)
 
 add_library(jsoncpp STATIC 
-			ext/jsoncpp/src/jsoncpp.cpp)
+			ext/jsoncpp/src/jsoncpp.cpp
+			ext/jsoncpp/include/json/json.h
+			ext/jsoncpp/include/json/json-forwards.h)
 
 add_executable(wotreplay-parser src/main.cpp)
 
