@@ -13,7 +13,7 @@ find_package(ZLIB REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(TBB)
 
-include_directories(AFTER ext/jsoncpp/include ${Boost_INCLUDE_DIRS} ${LIBXML2_INCLUDE_DIR} ${ZLIB_INCLUDE_DIR} ${PNG_INCLUDE_DIR} ${OPENSSL_INCLUDE_DIR} ${TBB_INCLUDE_DIR} ${INCLUDE_DIRECTORIES})
+include_directories(AFTER ext/jsoncpp/include ${Boost_INCLUDE_DIRS} ${LIBXML2_INCLUDE_DIRS} ${ZLIB_INCLUDE_DIRS} ${PNG_INCLUDE_DIRS} ${OPENSSL_INCLUDE_DIRS} ${TBB_INCLUDE_DIRS} ${INCLUDE_DIRECTORIES})
 
 link_directories(${LINK_DIRECTORIES})
 
@@ -30,9 +30,9 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
   set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
 endif()
 
-IF(TBB_FOUND)
-    ADD_DEFINITIONS(-DENABLE_TBB)
-ENDIF()
+if(TBB_FOUND)
+    add_definitions(-DENABLE_TBB)
+endif()
 
 add_library(wotreplay STATIC 
 			src/packet.h
