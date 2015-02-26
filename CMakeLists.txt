@@ -1,9 +1,10 @@
 cmake_minimum_required (VERSION 2.6)
 project (wotreplay-parser)
 
-set(Boost_USE_MULTITHREADED		ON)
-set(Boost_USE_STATIC_RUNTIME   OFF)
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/ext/cmake_modules")
+set(Boost_USE_MULTITHREADED     ON)
+set(Boost_USE_STATIC_RUNTIME    OFF)
+set(CMAKE_MODULE_PATH           ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/ext/cmake_modules")
+set(CMAKE_FIND_FRAMEWORK        LAST)
 
 find_package(Boost 1.50.0 COMPONENTS filesystem program_options system regex REQUIRED)
 find_package(LibXml2 REQUIRED)
