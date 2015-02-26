@@ -98,20 +98,20 @@ static int get_start_packet (const game_t &game, double skip) {
 }
 
 void heatmap_writer_t::finish() {
+    load_base_map(arena.mini_map);
     const size_t *shape = base.shape();
     result.resize(boost::extents[shape[0]][shape[1]][shape[2]]);
     draw_elements();
     result = base;
 
     if (combined) {
-        double min, max;
         for (int y = 0; y < shape[0]; y += 1) {
             for (int x = 0; x < shape[1]; x += 1) {
+                float val = positions[1][y][x] + positions[0][y][x];
                 for (int i = 0; i < 9; i += 1) {
                     for (int j = 0; j < 9; j += 1) {
-                        float val = positions[1][y][x] + positions[0][y][x];
                         if ((y + i - 5) >= 0 && (y + i - 5) < shape[0]
-                            && (x + j - 5) >= 0 && (x + j - 5) < shape[0]) {
+                            && (x + j - 5) >= 0 && (x + j - 5) < shape[1]) {
                             positions[2][y + i - 5][x + j - 5] += val*stamp_default_4_data[i*9+j];
                         }
                     }
@@ -119,6 +119,7 @@ void heatmap_writer_t::finish() {
             }
         }
 
+        double min, max;
         std::tie(min, max) = get_bounds(positions[2],
                                         std::get<0>(bounds),
                                         std::get<1>(bounds));
@@ -127,8 +128,7 @@ void heatmap_writer_t::finish() {
             for (int j = 0; j < shape[1]; j += 1) {
                 double val = clamp(positions[2][i][j], min, max);
                 const unsigned char *c = get_color((val - min) / (max - min));
-                double a = c[3] / 255.0;
-                a *= .66;
+                double a = c[3] * .66 / 255.0;
                 result[i][j][0] = mix(result[i][j][0], result[i][j][0], 1 - a, c[0], a);
                 result[i][j][1] = mix(result[i][j][1], result[i][j][1], 1 - a, c[1], a);
                 result[i][j][2] = mix(result[i][j][2], result[i][j][2], 1 - a, c[2], a);
@@ -136,6 +136,7 @@ void heatmap_writer_t::finish() {
         }
     } else {
         double min[2], max[2];
+
         std::tie(min[0], max[0]) = get_bounds(positions[0],
                                         std::get<0>(bounds),
                                         std::get<1>(bounds));

@@ -10,6 +10,12 @@
 #include <boost/program_options.hpp>
 #include <boost/tokenizer.hpp>
 
+#ifdef ENABLE_TBB
+#include <tbb/tbb.h>
+#include <tbb/pipeline.h>
+#include <tbb/flow_graph.h>
+#endif
+
 #include <fstream>
 
 #include <float.h>
@@ -107,6 +113,105 @@ std::unique_ptr<writer_t> create_writer(const std::string &type, const po::varia
     return writer;
 }
 
+#ifdef ENABLE_TBB
+int process_replay_directory(const po::variables_map &vm, const std::string &input, const std::string &output, const std::string &type, bool debug)
+{
+    // load all arena's so we can use manual load parser
+    init_arena_definition();
+
+    auto it = directory_iterator(input);
+    auto f_generate_replay_paths = [&it](tbb::flow_control &fc) -> std::string {
+        while (it != directory_iterator()) {
+            auto path = it->path();
+            ++it;
+            if (is_regular_file(path) && path.extension() == ".wotreplay") {
+                return path.string();
+            }
+        }
+
+        if (it == directory_iterator()) {
+            fc.stop();
+        }
+
+        return "";
+    };
+
+    auto f_parse_replay = [](std::string file_name) -> game_t* {
+        std::ifstream in(file_name, std::ios::binary);
+
+        if (!in) {
+            logger.writef(log_level_t::error, "Failed to open file: %1%\n", file_name);
+            return nullptr;
+        }
+
+        std::unique_ptr<game_t> game(new game_t());
+        parser_t parser(load_data_mode_t::manual);
+        try {
+            parser.parse(in, *game);
+        } catch (std::exception &e) {
+            logger.writef(log_level_t::error, "Failed to parse file (%1%): %2%\n", file_name, e.what());
+            return nullptr;
+        }
+
+        // if we can't load arena data, skip this replay
+        if (game->get_arena().name.empty()) {
+            return nullptr;
+        }
+
+        return game.release();
+    };
+
+    auto f_generate_image = [&type, &vm](game_t *game_) -> image_writer_t* {
+        if (game_ == nullptr) return nullptr;
+        std::unique_ptr<game_t> game(game_);
+        std::unique_ptr<writer_t> writer(create_writer(type, vm));
+        if (writer && dynamic_cast<image_writer_t*>(writer.get())) {
+            std::unique_ptr<image_writer_t> image_writer(static_cast<image_writer_t*>(writer.release()));
+            image_writer->init(game->get_arena(), game->get_game_mode());
+            image_writer->update(*game);
+            return image_writer.release();
+        }
+        return nullptr;
+    };
+
+    std::map<std::tuple<std::string, std::string>, image_writer_t*> writers;
+
+    auto f_merge_image = [&writers](image_writer_t *writer_) {
+        if (writer_ == nullptr) return;
+        std::unique_ptr<image_writer_t> writer(writer_);
+
+        auto key = std::make_tuple(writer->get_arena().name, writer->get_game_mode());
+        auto it = writers.find(key);
+
+        if (it == writers.end()) {
+            writers.insert(std::make_pair(key, writer.release()));
+        } else {
+            it->second->merge(*writer);
+        }
+    };
+
+    int tokens = vm.count("tokens") > 0 ? vm["tokens"].as<int>() : 10;
+    tbb::parallel_pipeline(tokens,
+         tbb::make_filter<void, std::string>(tbb::filter::serial_in_order, f_generate_replay_paths) &
+         tbb::make_filter<std::string, game_t*>(tbb::filter::parallel, f_parse_replay) &
+         tbb::make_filter<game_t*, image_writer_t*>(tbb::filter::parallel, f_generate_image) &
+         tbb::make_filter<image_writer_t*, void>(tbb::filter::serial_out_of_order, f_merge_image)
+    );
+
+    typedef std::map<std::tuple<std::string, std::string>, image_writer_t*>::iterator::value_type item_t;
+    tbb::parallel_do(writers, [&output](const item_t &it) {
+        path file_name = path(output) / (boost::format("%s_%s.png") %
+                                         std::get<0>(it.first) %
+                                         std::get<1>(it.first)).str();
+        std::ofstream out(file_name.string(), std::ios::binary);
+        it.second->finish();
+        it.second->write(out);
+        delete it.second;
+    });
+
+    return EXIT_SUCCESS;
+}
+#else
 int process_replay_directory(const po::variables_map &vm, const std::string &input, const std::string &output, const std::string &type, bool debug) {
     if ( !(vm.count("type") > 0 && vm.count("input") > 0) ) {
         logger.write(wotreplay::log_level_t::error, "parameters type and input are required to use this mode\n");
@@ -164,6 +269,7 @@ int process_replay_directory(const po::variables_map &vm, const std::string &inp
 
     return EXIT_SUCCESS;
 }
+#endif
 
 int process_replay_file(const po::variables_map &vm, const std::string &input, const std::string &output, const std::string &type, bool debug) {
     static std::map<std::string, std::string> suffixes = {
@@ -234,7 +340,11 @@ int main(int argc, const char * argv[]) {
 
     std::string type, output, input, root;
     double skip, bounds_min, bounds_max;
-    
+
+#ifdef ENABLE_TBB
+    int tokens = 10;
+#endif
+
     desc.add_options()
         ("type"  , po::value(&type), "select output type")
         ("output", po::value(&output), "output file or directory")
@@ -248,7 +358,11 @@ int main(int argc, const char * argv[]) {
         ("quiet", "supress diagnostic messages")
         ("skip", po::value(&skip), "for heatmaps, skip a certain number of seconds after the start of the battle (default: 60)")
         ("bounds-min", po::value(&bounds_min), "for heatmaps, set min value to display (default: 0.02)")
-        ("bounds-max", po::value(&bounds_max), "for heatmaps, set max value to display (default: 0.98)");
+        ("bounds-max", po::value(&bounds_max), "for heatmaps, set max value to display (default: 0.98)")
+#ifdef ENABLE_TBB
+        ("tokens", po::value(&tokens), "number of pipeline tokens (default: 10)")
+#endif
+    ;
 
     po::variables_map vm;
 
