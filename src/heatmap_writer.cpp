@@ -98,6 +98,7 @@ static int get_start_packet (const game_t &game, double skip) {
 }
 
 void heatmap_writer_t::finish() {
+    load_base_map(arena.mini_map);
     const size_t *shape = base.shape();
     result.resize(boost::extents[shape[0]][shape[1]][shape[2]]);
     draw_elements();

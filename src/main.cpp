@@ -169,6 +169,7 @@ int process_replay_directory(const po::variables_map &vm, const std::string &inp
             std::unique_ptr<image_writer_t> image_writer(static_cast<image_writer_t*>(writer.release()));
             image_writer->init(game->get_arena(), game->get_game_mode());
             image_writer->update(*game);
+            return image_writer.release();
         }
         return nullptr;
     };
@@ -190,7 +191,7 @@ int process_replay_directory(const po::variables_map &vm, const std::string &inp
     };
 
     int tokens = vm.count("tokens") > 0 ? vm["tokens"].as<int>() : 10;
-    tbb::parallel_pipeline(10,
+    tbb::parallel_pipeline(tokens,
          tbb::make_filter<void, std::string>(tbb::filter::serial_in_order, f_generate_replay_paths) &
          tbb::make_filter<std::string, game_t*>(tbb::filter::parallel, f_parse_replay) &
          tbb::make_filter<game_t*, image_writer_t*>(tbb::filter::parallel, f_generate_image) &

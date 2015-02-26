@@ -175,9 +175,8 @@ void image_writer_t::write(std::ostream &os) {
 void image_writer_t::init(const arena_t &arena, const std::string &mode) {
     this->arena = arena;
     this->mode = mode;
-    load_base_map(arena.mini_map);
-    const size_t *shape = base.shape();
-    size_t height = shape[0], width = shape[1];
+
+    size_t height = 512, width = 512;
     positions.resize(boost::extents[3][height][width]);
     deaths.resize(boost::extents[3][height][width]);
     clear();
@@ -192,8 +191,10 @@ void image_writer_t::clear() {
 
 void image_writer_t::finish() {
     // copy background to result
+    load_base_map(arena.mini_map);
     const size_t *shape = base.shape();
     result.resize(boost::extents[shape[0]][shape[1]][shape[2]]);
+
     draw_elements();
     result = base;
     int reference_team_id = use_fixed_teamcolors ? 0 : recorder_team;
