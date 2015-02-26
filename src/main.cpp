@@ -174,7 +174,7 @@ int process_replay_directory(const po::variables_map &vm, const std::string &inp
         return nullptr;
     };
 
-    std::map<std::tuple<std::string, std::string>, std::unique_ptr<image_writer_t>> writers;
+    std::map<std::tuple<std::string, std::string>, image_writer_t*> writers;
 
     auto f_merge_image = [&writers](image_writer_t *writer_) {
         if (writer_ == nullptr) return;
@@ -184,7 +184,7 @@ int process_replay_directory(const po::variables_map &vm, const std::string &inp
         auto it = writers.find(key);
 
         if (it == writers.end()) {
-            writers.insert(std::make_pair(key, std::move(writer)));
+            writers.insert(std::make_pair(key, writer.release()));
         } else {
             it->second->merge(*writer);
         }
@@ -198,14 +198,16 @@ int process_replay_directory(const po::variables_map &vm, const std::string &inp
          tbb::make_filter<image_writer_t*, void>(tbb::filter::serial_out_of_order, f_merge_image)
     );
 
-    for (auto it = writers.begin(); it != writers.end(); ++it) {
+    typedef std::map<std::tuple<std::string, std::string>, image_writer_t*>::iterator::value_type item_t;
+    tbb::parallel_do(writers, [&output](const item_t &it) {
         path file_name = path(output) / (boost::format("%s_%s.png") %
-                                         std::get<0>(it->first) %
-                                         std::get<1>(it->first)).str();
+                                         std::get<0>(it.first) %
+                                         std::get<1>(it.first)).str();
         std::ofstream out(file_name.string(), std::ios::binary);
-        it->second->finish();
-        it->second->write(out);
-    }
+        it.second->finish();
+        it.second->write(out);
+        delete it.second;
+    });
 
     return EXIT_SUCCESS;
 }
