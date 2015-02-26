@@ -199,7 +199,7 @@ int process_replay_directory(const po::variables_map &vm, const std::string &inp
     );
 
     typedef std::map<std::tuple<std::string, std::string>, image_writer_t*>::iterator::value_type item_t;
-    tbb::parallel_do(writers, [&output](const item_t &it) {
+    tbb::parallel_do(writers.begin(), writers.end(), [&output](const item_t &it) {
         path file_name = path(output) / (boost::format("%s_%s.png") %
                                          std::get<0>(it.first) %
                                          std::get<1>(it.first)).str();
