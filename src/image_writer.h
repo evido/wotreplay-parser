@@ -58,6 +58,21 @@ namespace wotreplay {
          * @return recorder_team
          */
         int get_recorder_team() const;
+        /**
+         * Get current arena definition
+         * @returns arena definition with which the writer was initialized
+         */
+        virtual const arena_t &get_arena() const;
+        /**
+         * Get current game mode
+         * @returns game mode with which the writer was initialized
+         */
+        virtual const std::string &get_game_mode() const;
+        /**
+         * Include data from referenced writer in current writer
+         * @param writer other writer
+         */
+        virtual void merge(const image_writer_t &writer);
     protected:
         /**
          * Load a background image from the combination map name and game mode.

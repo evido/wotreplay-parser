@@ -292,3 +292,17 @@ int image_writer_t::get_recorder_team() const {
 void image_writer_t::set_filter(filter_t filter) {
     this->filter = filter;
 }
+
+const arena_t &image_writer_t::get_arena() const {
+    return arena;
+}
+
+const std::string &image_writer_t::get_game_mode() const {
+    return mode;
+}
+
+void image_writer_t::merge(const image_writer_t &writer) {
+    // TODO: implement this
+    std::transform(positions.origin(), positions.origin() + positions.num_elements(),
+                   writer.positions.origin(), positions.origin(), std::plus<float>());
+}
