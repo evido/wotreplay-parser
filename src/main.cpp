@@ -98,13 +98,9 @@ std::unique_ptr<writer_t> create_writer(const std::string &type, const po::varia
     } else if (type == "heatmap" || type == "team-heatmap") {
         writer = std::unique_ptr<writer_t>(new heatmap_writer_t());
         auto &heatmap_writer = dynamic_cast<heatmap_writer_t&>(*writer);
-        if (vm.count("skip")) {
-            heatmap_writer.skip = vm["skip"].as<double>();
-        }
-        if (vm.count("bounds-min") && vm.count("bounds-max")) {
-            heatmap_writer.bounds = std::make_pair(vm["bounds-min"].as<double>(),
-                                                   vm["bounds-max"].as<double>());
-        }
+        heatmap_writer.skip = vm["skip"].as<double>();
+        heatmap_writer.bounds = std::make_pair(vm["bounds-min"].as<double>(),
+                                               vm["bounds-max"].as<double>());
         heatmap_writer.combined = type != "team-heatmap";
     } else {
         logger.writef(log_level_t::error, "Invalid output type (%1%), supported types: png, json, heatmap and team-heatmap.\n", type);
@@ -190,7 +186,7 @@ int process_replay_directory(const po::variables_map &vm, const std::string &inp
         }
     };
 
-    int tokens = vm.count("tokens") > 0 ? vm["tokens"].as<int>() : 10;
+    int tokens = vm["tokens"].as<int>();
     tbb::parallel_pipeline(tokens,
          tbb::make_filter<void, std::string>(tbb::filter::serial_in_order, f_generate_replay_paths) &
          tbb::make_filter<std::string, game_t*>(tbb::filter::parallel, f_parse_replay) &
@@ -356,11 +352,11 @@ int main(int argc, const char * argv[]) {
         ("create-minimaps", "create all empty minimaps in output directory")
         ("parse", "parse a replay file")
         ("quiet", "supress diagnostic messages")
-        ("skip", po::value(&skip), "for heatmaps, skip a certain number of seconds after the start of the battle (default: 60)")
-        ("bounds-min", po::value(&bounds_min), "for heatmaps, set min value to display (default: 0.02)")
-        ("bounds-max", po::value(&bounds_max), "for heatmaps, set max value to display (default: 0.98)")
+        ("skip", po::value(&skip)->default_value(60., "60"), "for heatmaps, skip a certain number of seconds after the start of the battle")
+        ("bounds-min", po::value(&bounds_min)->default_value(0.02, "0.02"), "for heatmaps, set min value to display")
+        ("bounds-max", po::value(&bounds_max)->default_value(0.98, "0.98"), "for heatmaps, set max value to display")
 #ifdef ENABLE_TBB
-        ("tokens", po::value(&tokens), "number of pipeline tokens (default: 10)")
+        ("tokens", po::value(&tokens)->default_value(10), "number of pipeline tokens")
 #endif
     ;
 

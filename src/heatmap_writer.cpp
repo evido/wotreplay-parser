@@ -34,11 +34,13 @@ static std::tuple<float, float> get_bounds(boost::multi_array<float, 3>::const_r
     std::vector<float> values;
     auto not_zero = [](float value) { return value != 0.f; };
     std::copy_if(image.origin(), image.origin() + image.num_elements(), std::inserter(values, values.begin()), not_zero);
-    std::nth_element(values.begin(), values.begin() + static_cast<int>(l_quant*values.size()), values.end());
-    float lower_bound = *(values.begin() + static_cast<int>(l_quant*values.size()));
-    std::nth_element(values.begin(), values.begin() + static_cast<int>(r_quant*values.size()), values.end());
-    float upper_bound = *(values.begin() + static_cast<int>(r_quant*values.size()));
-    return std::make_tuple(lower_bound, upper_bound);
+    int l = std::lround(l_quant*(values.size() - 1)),
+        u = std::lround(r_quant*(values.size() - 1));
+    std::nth_element(values.begin(), values.begin() + l, values.end());
+    float l_value = values[l];
+    std::nth_element(values.begin(), values.begin() + u, values.end());
+    float u_value = values[u];
+    return std::make_tuple(l_value, u_value);
 }
 
 static double dist(const std::tuple<float, float, float> &begin,
