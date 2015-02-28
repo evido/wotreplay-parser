@@ -101,9 +101,15 @@ std::unique_ptr<writer_t> create_writer(const std::string &type, const po::varia
         heatmap_writer.skip = vm["skip"].as<double>();
         heatmap_writer.bounds = std::make_pair(vm["bounds-min"].as<double>(),
                                                vm["bounds-max"].as<double>());
-        heatmap_writer.combined = type != "team-heatmap";
+        if (type == "heatmap") {
+            heatmap_writer.mode = heatmap_mode_t::combined;
+        } else if (type == "team-heatmap") {
+            heatmap_writer.mode = heatmap_mode_t::team;
+        } else if (type == "team-heatmap-soft") {
+            heatmap_writer.mode = heatmap_mode_t::team_soft;
+        }
     } else {
-        logger.writef(log_level_t::error, "Invalid output type (%1%), supported types: png, json, heatmap and team-heatmap.\n", type);
+        logger.writef(log_level_t::error, "Invalid output type (%1%), supported types: png, json, heatmap, team-heatmap, team-heatmap-soft.\n", type);
     }
 
     return writer;

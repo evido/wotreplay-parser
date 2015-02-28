@@ -1,6 +1,12 @@
 #include "image_writer.h"
 
 namespace wotreplay {
+    enum heatmap_mode_t {
+        combined,
+        team,
+        team_soft
+    };
+
     /**
      * wotreplay::heatmap_writer_t draws a heatmap from wotreplay::packet_t on a minimap
      */
@@ -13,6 +19,6 @@ namespace wotreplay {
         float skip;
         /** Modify boundaries for heatmap colors */
         std::tuple<double, double> bounds;
-        bool combined;
+        heatmap_mode_t mode;
     };
 }

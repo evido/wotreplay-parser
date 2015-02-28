@@ -106,7 +106,7 @@ void heatmap_writer_t::finish() {
     draw_elements();
     result = base;
 
-    if (combined) {
+    if (mode == heatmap_mode_t::combined) {
         for (int y = 0; y < shape[0]; y += 1) {
             for (int x = 0; x < shape[1]; x += 1) {
                 float val = positions[1][y][x] + positions[0][y][x];
@@ -139,12 +139,36 @@ void heatmap_writer_t::finish() {
     } else {
         double min[2], max[2];
 
-        std::tie(min[0], max[0]) = get_bounds(positions[0],
-                                        std::get<0>(bounds),
-                                        std::get<1>(bounds));
-        std::tie(min[1], max[1]) = get_bounds(positions[1],
-                                        std::get<0>(bounds),
-                                        std::get<1>(bounds));
+        for (int k = 0; k < 2; k += 1) {
+            if (mode == heatmap_mode_t::team_soft) {
+                float *result = new float[512*512]();
+
+                for (int y = 0; y < shape[0]; y += 1) {
+                    for (int x = 0; x < shape[1]; x += 1) {
+                        float val = positions[k][y][x];
+                        for (int i = 0; i < 9; i += 1) {
+                            for (int j = 0; j < 9; j += 1) {
+                                if ((y + i - 5) >= 0 && (y + i - 5) < 512 && (x + j - 5) >= 0 && (x + j - 5) < 512) {
+                                    result[(y + i - 5)*512 + (x + j - 5)] += val*stamp_default_4_data[i*9+j];
+                                }
+                            }
+                        }
+                    }
+                }
+
+                std::copy_n(result, 512*512, positions[k].origin());
+                delete []result;
+            }
+
+            std::tie(min[k], max[k]) = get_bounds(positions[k],
+                                                  std::get<0>(bounds),
+                                                  std::get<1>(bounds));
+        }
+
+        static auto f = [](double x) {
+            auto y = (log10(x + 0.01) + 2) / 2;
+            return std::pow(y, 1.5);
+        };
 
         for (int i = 0; i < shape[0]; i += 1) {
             for (int j = 0; j < shape[1]; j += 1) {
@@ -152,6 +176,10 @@ void heatmap_writer_t::finish() {
                     (clamp(positions[0][i][j], min[0], max[0]) - min[0]) / (max[0] - min[0]),
                     (clamp(positions[1][i][j], min[1], max[1]) - min[1]) / (max[1] - min[1])
                 };
+
+                a[0] = f(a[0]);
+                a[1] = f(a[1]);
+
                 result[i][j][0] = mix(result[i][j][0], 0, a[0], 255, a[1]);
                 result[i][j][1] = mix(result[i][j][1], 255, a[0], 0, a[1]);
                 result[i][j][2] = mix(result[i][j][2], 0, a[0], 0, a[1]);
