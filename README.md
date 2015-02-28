@@ -34,6 +34,12 @@ Displays a heatmap of the positions of the tanks in the battle (colored by team)
 
 ![Output example of type 'team-heatmap'](examples/example_team_heatmap.png)
 
+## Output type Team Heatmap (Soft)
+
+Displays a heatmap of the positions of the tanks in the battle (colored by team), with some smoothing applied.
+
+![Output example of type 'team-heatmap-soft'](examples/example_team_heatmap_soft.png)
+
 # Build
 
 ## Dependencies

@@ -95,7 +95,7 @@ std::unique_ptr<writer_t> create_writer(const std::string &type, const po::varia
         if (vm.count("supress-empty")) {
             writer->set_filter(&is_not_empty);
         }
-    } else if (type == "heatmap" || type == "team-heatmap") {
+    } else if (type == "heatmap" || type == "team-heatmap" || type == "team-heatmap-soft") {
         writer = std::unique_ptr<writer_t>(new heatmap_writer_t());
         auto &heatmap_writer = dynamic_cast<heatmap_writer_t&>(*writer);
         heatmap_writer.skip = vm["skip"].as<double>();

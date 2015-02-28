@@ -165,16 +165,17 @@ void heatmap_writer_t::finish() {
                                                   std::get<1>(bounds));
         }
 
-        static auto f = [](double x) {
-            auto y = (log10(x + 0.01) + 2) / 2;
-            return std::pow(y, 1.5);
-        };
+        static auto f =  mode == team_soft ? [](double x) {
+            x = clamp(x, 0.0, 1.0);
+            auto y = log10(0.99*x+0.01)/2. + 1.;
+            return clamp(y, 0.0, 1.0);
+        } : [](double x) { return x; };
 
         for (int i = 0; i < shape[0]; i += 1) {
             for (int j = 0; j < shape[1]; j += 1) {
                 double a[] = {
-                    (clamp(positions[0][i][j], min[0], max[0]) - min[0]) / (max[0] - min[0]),
-                    (clamp(positions[1][i][j], min[1], max[1]) - min[1]) / (max[1] - min[1])
+                    (positions[0][i][j] - min[0]) / (max[0] - min[0]),
+                    (positions[1][i][j] - min[1]) / (max[1] - min[1])
                 };
 
                 a[0] = f(a[0]);
