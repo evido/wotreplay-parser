@@ -34,11 +34,13 @@ static std::tuple<float, float> get_bounds(boost::multi_array<float, 3>::const_r
     std::vector<float> values;
     auto not_zero = [](float value) { return value != 0.f; };
     std::copy_if(image.origin(), image.origin() + image.num_elements(), std::inserter(values, values.begin()), not_zero);
-    std::nth_element(values.begin(), values.begin() + static_cast<int>(l_quant*values.size()), values.end());
-    float lower_bound = *(values.begin() + static_cast<int>(l_quant*values.size()));
-    std::nth_element(values.begin(), values.begin() + static_cast<int>(r_quant*values.size()), values.end());
-    float upper_bound = *(values.begin() + static_cast<int>(r_quant*values.size()));
-    return std::make_tuple(lower_bound, upper_bound);
+    int l = std::lround(l_quant*(values.size() - 1)),
+        u = std::lround(r_quant*(values.size() - 1));
+    std::nth_element(values.begin(), values.begin() + l, values.end());
+    float l_value = values[l];
+    std::nth_element(values.begin(), values.begin() + u, values.end());
+    float u_value = values[u];
+    return std::make_tuple(l_value, u_value);
 }
 
 static double dist(const std::tuple<float, float, float> &begin,
@@ -104,7 +106,7 @@ void heatmap_writer_t::finish() {
     draw_elements();
     result = base;
 
-    if (combined) {
+    if (mode == heatmap_mode_t::combined) {
         for (int y = 0; y < shape[0]; y += 1) {
             for (int x = 0; x < shape[1]; x += 1) {
                 float val = positions[1][y][x] + positions[0][y][x];
@@ -137,19 +139,47 @@ void heatmap_writer_t::finish() {
     } else {
         double min[2], max[2];
 
-        std::tie(min[0], max[0]) = get_bounds(positions[0],
-                                        std::get<0>(bounds),
-                                        std::get<1>(bounds));
-        std::tie(min[1], max[1]) = get_bounds(positions[1],
-                                        std::get<0>(bounds),
-                                        std::get<1>(bounds));
+        for (int k = 0; k < 2; k += 1) {
+            if (mode == heatmap_mode_t::team_soft) {
+                std::unique_ptr<float[]> result(new float[512*512]());
+
+                for (int y = 0; y < shape[0]; y += 1) {
+                    for (int x = 0; x < shape[1]; x += 1) {
+                        float val = positions[k][y][x];
+                        for (int i = 0; i < 9; i += 1) {
+                            for (int j = 0; j < 9; j += 1) {
+                                if ((y + i - 5) >= 0 && (y + i - 5) < 512 && (x + j - 5) >= 0 && (x + j - 5) < 512) {
+                                    result[(y + i - 5)*512 + (x + j - 5)] += val*stamp_default_4_data[i*9+j];
+                                }
+                            }
+                        }
+                    }
+                }
+
+                std::copy_n(result.get(), 512*512, positions[k].origin());
+            }
+
+            std::tie(min[k], max[k]) = get_bounds(positions[k],
+                                                  std::get<0>(bounds),
+                                                  std::get<1>(bounds));
+        }
+
+        static auto f =  mode == team_soft ? [](double x) {
+            x = clamp(x, 0.0, 1.0);
+            auto y = log10(0.99*x+0.01)/2. + 1.;
+            return clamp(y, 0.0, 1.0);
+        } : [](double x) { return x; };
 
         for (int i = 0; i < shape[0]; i += 1) {
             for (int j = 0; j < shape[1]; j += 1) {
                 double a[] = {
-                    (clamp(positions[0][i][j], min[0], max[0]) - min[0]) / (max[0] - min[0]),
-                    (clamp(positions[1][i][j], min[1], max[1]) - min[1]) / (max[1] - min[1])
+                    clamp((positions[0][i][j] - min[0]) / (max[0] - min[0]), 0.0, 1.0),
+                    clamp((positions[1][i][j] - min[1]) / (max[1] - min[1]), 0.0, 1.0)
                 };
+
+                a[0] = f(a[0]);
+                a[1] = f(a[1]);
+
                 result[i][j][0] = mix(result[i][j][0], 0, a[0], 255, a[1]);
                 result[i][j][1] = mix(result[i][j][1], 255, a[0], 0, a[1]);
                 result[i][j][2] = mix(result[i][j][2], 0, a[0], 0, a[1]);

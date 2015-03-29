@@ -34,6 +34,12 @@ Displays a heatmap of the positions of the tanks in the battle (colored by team)
 
 ![Output example of type 'team-heatmap'](examples/example_team_heatmap.png)
 
+## Output type Team Heatmap (Soft)
+
+Displays a heatmap of the positions of the tanks in the battle (colored by team), with some smoothing applied.
+
+![Output example of type 'team-heatmap-soft'](examples/example_team_heatmap_soft.png)
+
 # Build
 
 ## Dependencies
@@ -43,7 +49,7 @@ Displays a heatmap of the positions of the tanks in the battle (colored by team)
 * LibPNG
 * LibXML2
 * libjson-cpp (included in the source, from [http://jsoncpp.sourceforge.net/](http://jsoncpp.sourceforge.net/))
-* Intel Threading Blocks (Optional)
+* Intel Threading Building Blocks (Optional)
 
 ## Compiler Support
 
@@ -76,7 +82,6 @@ The program can be used to convert wotreplay files to images or json files.
 * `output` is optional, the program will then write to stdout
 * `input` and  `output` are relative to root
 * `root` should contain a folder maps with the images to maps and the arena definitions
-* `
 
 ## Create Heatmaps
 
