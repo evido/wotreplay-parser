@@ -141,7 +141,7 @@ void heatmap_writer_t::finish() {
 
         for (int k = 0; k < 2; k += 1) {
             if (mode == heatmap_mode_t::team_soft) {
-                float *result = new float[512*512]();
+                std::unique_ptr<float[]> result(new float[512*512]());
 
                 for (int y = 0; y < shape[0]; y += 1) {
                     for (int x = 0; x < shape[1]; x += 1) {
@@ -156,8 +156,7 @@ void heatmap_writer_t::finish() {
                     }
                 }
 
-                std::copy_n(result, 512*512, positions[k].origin());
-                delete []result;
+                std::copy_n(result.get(), 512*512, positions[k].origin());
             }
 
             std::tie(min[k], max[k]) = get_bounds(positions[k],
@@ -174,8 +173,8 @@ void heatmap_writer_t::finish() {
         for (int i = 0; i < shape[0]; i += 1) {
             for (int j = 0; j < shape[1]; j += 1) {
                 double a[] = {
-                    (positions[0][i][j] - min[0]) / (max[0] - min[0]),
-                    (positions[1][i][j] - min[1]) / (max[1] - min[1])
+                    clamp((positions[0][i][j] - min[0]) / (max[0] - min[0]), 0.0, 1.0),
+                    clamp((positions[1][i][j] - min[1]) / (max[1] - min[1]), 0.0, 1.0)
                 };
 
                 a[0] = f(a[0]);
