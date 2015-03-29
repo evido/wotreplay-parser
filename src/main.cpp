@@ -90,6 +90,8 @@ std::unique_ptr<writer_t> create_writer(const std::string &type, const po::varia
         auto &image_writer = dynamic_cast<image_writer_t&>(*writer);
         image_writer.set_show_self(true);
         image_writer.set_use_fixed_teamcolors(false);
+        image_writer.set_image_width(vm["size"].as<int>());
+        image_writer.set_image_height(vm["size"].as<int>());
     } else if (type == "json") {
         writer = std::unique_ptr<writer_t>(new json_writer_t());
         if (vm.count("supress-empty")) {
@@ -108,6 +110,9 @@ std::unique_ptr<writer_t> create_writer(const std::string &type, const po::varia
         } else if (type == "team-heatmap-soft") {
             heatmap_writer.mode = heatmap_mode_t::team_soft;
         }
+
+        heatmap_writer.set_image_width(vm["size"].as<int>());
+        heatmap_writer.set_image_height(vm["size"].as<int>());
     } else {
         logger.writef(log_level_t::error, "Invalid output type (%1%), supported types: png, json, heatmap, team-heatmap, team-heatmap-soft.\n", type);
     }
@@ -342,6 +347,7 @@ int main(int argc, const char * argv[]) {
 
     std::string type, output, input, root;
     double skip, bounds_min, bounds_max;
+    int size;
 
 #ifdef ENABLE_TBB
     int tokens = 10;
@@ -361,6 +367,7 @@ int main(int argc, const char * argv[]) {
         ("skip", po::value(&skip)->default_value(60., "60"), "for heatmaps, skip a certain number of seconds after the start of the battle")
         ("bounds-min", po::value(&bounds_min)->default_value(0.02, "0.02"), "for heatmaps, set min value to display")
         ("bounds-max", po::value(&bounds_max)->default_value(0.98, "0.98"), "for heatmaps, set max value to display")
+        ("size", po::value(&size)->default_value(512), "")
 #ifdef ENABLE_TBB
         ("tokens", po::value(&tokens)->default_value(10), "number of pipeline tokens")
 #endif

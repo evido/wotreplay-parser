@@ -10,7 +10,8 @@ using namespace wotreplay;
 const int element_size = 48;
 
 image_writer_t::image_writer_t()
-    : filter([](const packet_t &){ return true; })
+    : filter([](const packet_t &){ return true; }),
+      image_width(512), image_height(512)
 {}
 
 void image_writer_t::draw_element(const boost::multi_array<uint8_t, 3> &element, int x, int y, int mask) {
@@ -34,7 +35,8 @@ boost::multi_array<uint8_t, 3> image_writer_t::get_element(const std::string &na
     boost::multi_array<uint8_t, 3> element, resized_element;
     std::ifstream is("elements/" + name + ".png", std::ios::binary);
     read_png(is, element);
-    resize(element, element_size, element_size, resized_element);
+    double f = image_width / 512.0;
+    resize(element, element_size*f, element_size*f, resized_element);
     return resized_element;
 }
 
@@ -176,9 +178,8 @@ void image_writer_t::init(const arena_t &arena, const std::string &mode) {
     this->arena = arena;
     this->mode = mode;
 
-    size_t height = 512, width = 512;
-    positions.resize(boost::extents[3][height][width]);
-    deaths.resize(boost::extents[3][height][width]);
+    positions.resize(boost::extents[3][image_height][image_width]);
+    deaths.resize(boost::extents[3][image_height][image_width]);
     clear();
     initialized = true;
 }
@@ -306,4 +307,21 @@ void image_writer_t::merge(const image_writer_t &writer) {
     // TODO: implement this
     std::transform(positions.origin(), positions.origin() + positions.num_elements(),
                    writer.positions.origin(), positions.origin(), std::plus<float>());
+}
+
+int image_writer_t::get_image_height() {
+    return image_height;
+}
+
+void image_writer_t::set_image_height(int image_height) {
+    this->image_height = image_height;
+}
+
+
+int image_writer_t::get_image_width() {
+    return image_width;
+}
+
+void image_writer_t::set_image_width(int image_width) {
+    this->image_width = image_width;
 }

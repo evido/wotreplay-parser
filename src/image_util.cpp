@@ -121,9 +121,9 @@ void wotreplay::resize(boost::multi_array<uint8_t, 3> &original, int width, int 
             
             for (int c = 0; c < shape[2]; ++c) {
                 result[y][x][c] = original[yy][xx][c]*(1-dy)*(1-dx) +
-                                    original[std::min(yy + 1, (int) shape[0])][xx][c]*dy*(1-dx) +
-                                    original[std::min(yy + 1, (int) shape[0])][std::min(xx + 1, (int) shape[1])][c]*dy*dx +
-                                    original[yy][std::min(xx + 1, (int) shape[1])][c]*(1-dy)*dx;
+                                    original[std::min(yy + 1, (int) shape[0] - 1)][xx][c]*dy*(1-dx) +
+                                    original[std::min(yy + 1, (int) shape[0] - 1)][std::min(xx + 1, (int) shape[1] - 1)][c]*dy*dx +
+                                    original[yy][std::min(xx + 1, (int) shape[1]  - 1)][c]*(1-dy)*dx;
             }
         }
     }

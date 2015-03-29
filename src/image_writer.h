@@ -73,6 +73,24 @@ namespace wotreplay {
          * @param writer other writer
          */
         virtual void merge(const image_writer_t &writer);
+        /**
+         * @return image width
+         */
+        int get_image_width();
+        /**
+         * set image width
+         * @param image_width new image width
+         */
+        void set_image_width(int image_width);
+        /**
+         * @return image height
+         */
+        int get_image_height();
+        /**
+         * set image height
+         * @param image_height new image height
+         */
+        void set_image_height(int image_height);
     protected:
         /**
          * Load a background image from the combination map name and game mode.
@@ -137,6 +155,8 @@ namespace wotreplay {
         arena_t arena;
         int recorder_team = -1;
         filter_t filter;
+        int image_width;
+        int image_height;
     };
 }
 
