@@ -35,7 +35,7 @@ boost::multi_array<uint8_t, 3> image_writer_t::get_element(const std::string &na
     boost::multi_array<uint8_t, 3> element, resized_element;
     std::ifstream is("elements/" + name + ".png", std::ios::binary);
     read_png(is, element);
-    double f = image_width / 512.0;
+    double f = image_width / 512.0; // we need to scale the elements to the right size
     resize(element, element_size*f, element_size*f, resized_element);
     return resized_element;
 }
@@ -166,8 +166,10 @@ void image_writer_t::update(const game_t &game) {
 }
 
 void image_writer_t::load_base_map(const std::string &path) {
+    boost::multi_array<uint8_t, 3> map;
     std::ifstream is(path, std::ios::binary);
-    read_png(is, this->base);
+    read_png(is, map);
+    resize(map, image_width, image_height, this->base);
 }
 
 void image_writer_t::write(std::ostream &os) {
