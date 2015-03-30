@@ -8,8 +8,8 @@
 
 namespace wotreplay {
     enum operator_t {
-        EQUAL,
         NOT_EQUAL,
+        EQUAL,
         GREATER_THAN_OR_EQUAL,
         GREATER_THAN,
         LESS_THAN_OR_EQUAL,
@@ -45,5 +45,6 @@ namespace wotreplay {
     };
 
     draw_rules_t parse_draw_rules(const std::string &expr);
+    void print(const draw_rules_t& rules);
 }
 

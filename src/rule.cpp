@@ -1,5 +1,6 @@
 #include "rule.h"
 
+#include "logger.h"
 #include <boost/fusion/include/adapt_struct.hpp>
 #include <boost/spirit/include/qi.hpp>
 #include <boost/spirit/include/phoenix_core.hpp>
@@ -129,29 +130,135 @@ struct draw_rules_grammar_t : qi::grammar<Iterator, draw_rules_t(), ascii::space
 };
 
 draw_rules_t wotreplay::parse_draw_rules(const std::string &expr) {
+    std::cout << expr << std::endl;
+
     draw_rules_grammar_t<std::string::const_iterator> grammar;
     draw_rules_t rules;
 
     std::string::const_iterator iter = expr.begin();
     std::string::const_iterator end = expr.end();
     bool r = qi::phrase_parse(iter, end, grammar, ascii::space, rules);
-    std::cout << std::string(iter, end) << std::endl;
+
     if (r && iter == end)
     {
-        std::cout << boost::fusion::tuple_open('[');
-        std::cout << boost::fusion::tuple_close(']');
-        std::cout << boost::fusion::tuple_delimiter(", ");
-
-        std::cout << "-------------------------\n";
-        std::cout << "Parsing succeeded\n";
-        std::cout << "\n-------------------------\n";
+        logger.writef(log_level_t::info, "Parsing failed, remaining: %1%\n", std::string(iter, end));
     }
     else
     {
-        std::cout << "-------------------------\n";
-        std::cout << "Parsing failed\n";
-        std::cout << "-------------------------\n";
+        logger.writef(log_level_t::warning, "Parsing failed, remaining: %1%\n", std::string(iter, end));
     }
 
+    print(rules);
+
     return rules;
+}
+
+// boost::variant<nil, std::string, symbol_t, boost::recursive_wrapper<operation_t>>
+
+class printer : public boost::static_visitor<void> {
+public:
+     typedef void result_type;
+
+    printer(const draw_rules_t &rules)
+        : rules(rules) {}
+
+    void operator()() {
+        std::cout << "number of rules: " << rules.rules.size() << "\n";
+        for (int i = 0; i < rules.rules.size(); i += 1) {
+            pad();
+            logger.writef(log_level_t::debug, "Rule #%1%\n", i);
+            (*this)(rules.rules[i]);
+        }
+    }
+
+
+    void operator()(std::string str) {
+        logger.write(log_level_t::debug, str);
+    }
+
+    void operator()(nil nil) {
+        logger.write(log_level_t::debug, "nil");
+    }
+
+    void operator()(symbol_t symbol) {
+        switch(symbol) {
+            case wotreplay::PLAYER:
+                logger.write(log_level_t::debug, "PLAYER");
+                break;
+            case wotreplay::TEAM:
+                logger.write(log_level_t::debug, "TEAM");
+                break;
+            case wotreplay::CLOCK:
+                logger.write(log_level_t::debug, "CLOCK");
+                break;
+            default:
+                logger.write(log_level_t::debug, "<invalid symbol>");
+                break;
+        }
+    }
+
+    void operator()(operator_t symbol) {
+        switch(symbol) {
+            case wotreplay::AND:
+                logger.write(log_level_t::debug, "and");
+                break;
+            case wotreplay::OR:
+                logger.write(log_level_t::debug, "or");
+                break;
+            case wotreplay::EQUAL:
+                logger.write(log_level_t::debug, "=");
+                break;
+            case wotreplay::NOT_EQUAL:
+                logger.write(log_level_t::debug, "!=");
+                break;
+            case wotreplay::GREATER_THAN:
+                logger.write(log_level_t::debug, ">");
+                break;
+            case wotreplay::GREATER_THAN_OR_EQUAL:
+                logger.write(log_level_t::debug, ">=");
+                break;
+            case wotreplay::LESS_THAN:
+                logger.write(log_level_t::debug, "<");
+                break;
+            case wotreplay::LESS_THAN_OR_EQUAL:
+                logger.write(log_level_t::debug, "<=");
+                break;
+            default:
+                break;
+        }
+    }
+
+    void operator()(operation_t operation) {
+        logger.write(log_level_t::debug, "(");
+        (*this)(operation.op);
+        logger.write(log_level_t::debug, ", ");
+        boost::apply_visitor(*this, operation.left);
+        logger.write(log_level_t::debug, ", ");
+        boost::apply_visitor(*this, operation.right);
+        logger.write(log_level_t::debug, ")");
+    }
+
+    void operator()(draw_rule_t &rule) {
+        indent++;
+        pad();
+        logger.writef(log_level_t::debug, "Color: #%1$06x\n", rule.color);
+        pad();
+        logger.write(log_level_t::debug, "Expression: ");
+        (*this)(rule.expr);
+        logger.write(log_level_t::debug, "\n");
+        indent--;
+    }
+
+    void pad() {
+        std::string pad(indent * 3, ' ');
+        logger.write(log_level_t::debug, pad);
+    }
+
+    draw_rules_t rules;
+    int indent = 0;
+};
+
+void wotreplay::print(const draw_rules_t& rules) {
+    printer p(rules);
+    p();
 }

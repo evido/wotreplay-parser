@@ -381,7 +381,6 @@ int main(int argc, const char * argv[]) {
 
     try {
         po::store(po::parse_command_line(argc, argv, desc), vm);
-        parse_draw_rules(vm["rules"].as<std::string>());
         po::notify(vm);
     } catch (std::exception &e) {
         show_help(argc, argv, desc);
@@ -409,6 +408,10 @@ int main(int argc, const char * argv[]) {
         logger.set_log_level(log_level_t::none);
     } else {
         logger.set_log_level(log_level_t::warning);
+    }
+
+    if (vm.count("rules")) {
+        parse_draw_rules(vm["rules"].as<std::string>());
     }
 
     int exit_code;
