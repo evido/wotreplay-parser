@@ -4,6 +4,7 @@
 #include "logger.h"
 #include "parser.h"
 #include "regex.h"
+#include "rule.h"
 
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
@@ -283,7 +284,8 @@ int process_replay_file(const po::variables_map &vm, const std::string &input, c
         {"png", ".png"},
         {"json", ".json"},
         {"heatmap", "_heatmap.png"},
-        {"team-heatmap", "_team_heatmap.png"}
+        {"team-heatmap", "_team_heatmap.png"},
+        {"team-heatmap-soft", "_team_heatmap_soft.png"}
     };
 
     if ( !(vm.count("type") > 0 && vm.count("input") > 0) ) {
@@ -306,7 +308,7 @@ int process_replay_file(const po::variables_map &vm, const std::string &input, c
     boost::char_separator<char> sep(",");
     boost::tokenizer<boost::char_separator<char>> tokens(type, sep);
     bool single = std::distance(tokens.begin(), tokens.end()) == 1;
-    for(auto it = tokens.begin(); it != tokens.end(); ++it){
+    for(auto it = tokens.begin(); it != tokens.end(); ++it) {
         std::unique_ptr<writer_t> writer = create_writer(*it, vm);
 
         if (!writer) {
@@ -345,7 +347,7 @@ int process_replay_file(const po::variables_map &vm, const std::string &input, c
 int main(int argc, const char * argv[]) {
     po::options_description desc("Allowed options");
 
-    std::string type, output, input, root;
+    std::string type, output, input, root, rules;
     double skip, bounds_min, bounds_max;
     int size;
 
@@ -367,7 +369,9 @@ int main(int argc, const char * argv[]) {
         ("skip", po::value(&skip)->default_value(60., "60"), "for heatmaps, skip a certain number of seconds after the start of the battle")
         ("bounds-min", po::value(&bounds_min)->default_value(0.02, "0.02"), "for heatmaps, set min value to display")
         ("bounds-max", po::value(&bounds_max)->default_value(0.98, "0.98"), "for heatmaps, set max value to display")
-        ("size", po::value(&size)->default_value(512), "")
+        ("size", po::value(&size)->default_value(512), "output image size for image writers")
+        ("rules", po::value(&rules)->default_value("#ff0000 := team = '1'; #00ff00 := team = '0'"),
+         "specify drawing rules, allowing the user to choose the colors used")
 #ifdef ENABLE_TBB
         ("tokens", po::value(&tokens)->default_value(10), "number of pipeline tokens")
 #endif
@@ -377,6 +381,7 @@ int main(int argc, const char * argv[]) {
 
     try {
         po::store(po::parse_command_line(argc, argv, desc), vm);
+        parse_draw_rules(vm["rules"].as<std::string>());
         po::notify(vm);
     } catch (std::exception &e) {
         show_help(argc, argv, desc);
