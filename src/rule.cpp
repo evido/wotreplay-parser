@@ -1,7 +1,8 @@
 #include "rule.h"
-
 #include "logger.h"
+
 #include <boost/fusion/include/adapt_struct.hpp>
+#include <boost/lexical_cast.hpp>
 #include <boost/spirit/include/qi.hpp>
 #include <boost/spirit/include/phoenix_core.hpp>
 #include <boost/spirit/include/phoenix_operator.hpp>
@@ -153,17 +154,14 @@ draw_rules_t wotreplay::parse_draw_rules(const std::string &expr) {
     return rules;
 }
 
-// boost::variant<nil, std::string, symbol_t, boost::recursive_wrapper<operation_t>>
 
 class printer : public boost::static_visitor<void> {
 public:
-     typedef void result_type;
-
     printer(const draw_rules_t &rules)
         : rules(rules) {}
 
     void operator()() {
-        std::cout << "number of rules: " << rules.rules.size() << "\n";
+        logger.writef(log_level_t::info, "Number of rules: %1%\n", rules.rules.size());
         for (int i = 0; i < rules.rules.size(); i += 1) {
             pad();
             logger.writef(log_level_t::debug, "Rule #%1%\n", i);
@@ -197,8 +195,8 @@ public:
         }
     }
 
-    void operator()(operator_t symbol) {
-        switch(symbol) {
+    void operator()(operator_t op) {
+        switch(op) {
             case wotreplay::AND:
                 logger.write(log_level_t::debug, "and");
                 break;
@@ -262,3 +260,75 @@ void wotreplay::print(const draw_rules_t& rules) {
     printer p(rules);
     p();
 }
+
+
+virtual_machine::virtual_machine(const game_t &game, const draw_rules_t &rules)
+    : rules(rules), game(game)
+{}
+
+int virtual_machine::operator()(const packet_t &packet) {
+    this->p = &packet;
+    for (int i = 0; i < rules.rules.size(); i += 1) {
+        if ((*this)(rules.rules[i])) return i;
+    }
+    return -1;
+}
+
+bool virtual_machine::operator()(const draw_rule_t rule) {
+    return false;
+}
+
+std::string virtual_machine::operator()(nil nil) {
+    return "nil";
+}
+
+std::string virtual_machine::operator()(std::string str) {
+    return str;
+}
+
+std::string virtual_machine::operator()(symbol_t symbol) {
+    switch(symbol) {
+        case symbol_t::PLAYER:
+            return p->has_property(property_t::player_id) ?
+                boost::lexical_cast<std::string>(p->player_id()) : "";
+        case symbol_t::TEAM:
+            return p->has_property(property_t::player_id) ?
+                boost::lexical_cast<std::string>(game.get_team_id(p->player_id())) : "";
+        case symbol_t::CLOCK:
+            return p->has_property(property_t::clock) ?
+                boost::lexical_cast<std::string>(p->clock()) : "";
+        default:
+            return "";
+    }
+}
+
+std::string virtual_machine::operator()(operation_t operation) {
+    std::string lhs = boost::apply_visitor(*this, operation.left);
+    std::string rhs = boost::apply_visitor(*this, operation.right);
+
+    bool result = false;
+
+    switch(operation.op) {
+        case operator_t::EQUAL:
+            result = lhs == rhs;
+        case operator_t::NOT_EQUAL:
+            result = lhs == rhs;
+        case operator_t::LESS_THAN:
+            result = boost::lexical_cast<double>(lhs) < boost::lexical_cast<double>(rhs);
+        case operator_t::GREATER_THAN:
+            result = boost::lexical_cast<double>(lhs) > boost::lexical_cast<double>(rhs);
+        case operator_t::LESS_THAN_OR_EQUAL:
+            result = boost::lexical_cast<double>(lhs) <= boost::lexical_cast<double>(rhs);
+        case operator_t::GREATER_THAN_OR_EQUAL:
+            result = boost::lexical_cast<double>(lhs) >= boost::lexical_cast<double>(rhs);
+        case operator_t::AND:
+            result = lhs == "true" && rhs == "true";
+        case operator_t::OR:
+            result = lhs == "true" || rhs == "true";
+        default:
+            result = false;
+    }
+
+    return result ? "true" : "false";
+}
+
