@@ -146,6 +146,10 @@ namespace wotreplay {
      * @param packets a list of all the packets in a replay
      */
     void show_map_boundaries(const game_t &game, const std::vector<packet_t> &packets);
+
+    int get_start_packet (const game_t &game, double skip);
+    double dist(const std::tuple<float, float, float> &begin,
+                const std::tuple<float, float, float> &end);
 }
 
 #endif /* defined(wotreplay_game_h) */

@@ -96,8 +96,9 @@ struct draw_rules_grammar_t : qi::grammar<Iterator, draw_rules_t(), ascii::space
 
         color %= '#' >> qi::hex;
 
-        expression = operation[at_c<1>(_val) = _1] >>
-            *(logical_operators[at_c<0>(_val) = _1] > expression[at_c<2>(_val) = _1]);
+        expression =
+            (operation[at_c<1>(_val) = _1] >> logical_operators[at_c<0>(_val) = _1] >> operation[at_c<2>(_val) = _1]) |
+            (operation[at_c<1>(_val) = _1] >> logical_operators[at_c<0>(_val) = _1] >> expression[at_c<2>(_val) = _1]) | operation[_val = _1];
 
         operation = operand  [at_c<1>(_val) = _1] >
                     operators[at_c<0>(_val) = _1] >
@@ -121,7 +122,7 @@ struct draw_rules_grammar_t : qi::grammar<Iterator, draw_rules_t(), ascii::space
     qi::rule<Iterator, uint32_t()    , ascii::space_type> color;
     qi::rule<Iterator, operation_t() , ascii::space_type> expression;
     qi::rule<Iterator, operation_t() , ascii::space_type> operation;
-    qi::rule<Iterator, operand() , ascii::space_type> operand;
+    qi::rule<Iterator, operand()     , ascii::space_type> operand;
     qi::rule<Iterator, std::string() , ascii::space_type> value;
 
     // symbol maps
@@ -131,8 +132,6 @@ struct draw_rules_grammar_t : qi::grammar<Iterator, draw_rules_t(), ascii::space
 };
 
 draw_rules_t wotreplay::parse_draw_rules(const std::string &expr) {
-    std::cout << expr << std::endl;
-
     draw_rules_grammar_t<std::string::const_iterator> grammar;
     draw_rules_t rules;
 
@@ -142,14 +141,13 @@ draw_rules_t wotreplay::parse_draw_rules(const std::string &expr) {
 
     if (r && iter == end)
     {
-        logger.writef(log_level_t::info, "Parsing failed, remaining: %1%\n", std::string(iter, end));
+        logger.writef(log_level_t::info, "Parsing succesfull\n");
+        print(rules);
     }
     else
     {
         logger.writef(log_level_t::warning, "Parsing failed, remaining: %1%\n", std::string(iter, end));
     }
-
-    print(rules);
 
     return rules;
 }
@@ -275,7 +273,7 @@ int virtual_machine::operator()(const packet_t &packet) {
 }
 
 bool virtual_machine::operator()(const draw_rule_t rule) {
-    return false;
+    return (*this)(rule.expr) == "true";
 }
 
 std::string virtual_machine::operator()(nil nil) {
@@ -311,20 +309,28 @@ std::string virtual_machine::operator()(operation_t operation) {
     switch(operation.op) {
         case operator_t::EQUAL:
             result = lhs == rhs;
+            break;
         case operator_t::NOT_EQUAL:
-            result = lhs == rhs;
+            result = (rhs != "nil") && lhs != rhs;
+            break;
         case operator_t::LESS_THAN:
             result = boost::lexical_cast<double>(lhs) < boost::lexical_cast<double>(rhs);
+            break;
         case operator_t::GREATER_THAN:
             result = boost::lexical_cast<double>(lhs) > boost::lexical_cast<double>(rhs);
+            break;
         case operator_t::LESS_THAN_OR_EQUAL:
             result = boost::lexical_cast<double>(lhs) <= boost::lexical_cast<double>(rhs);
+            break;
         case operator_t::GREATER_THAN_OR_EQUAL:
             result = boost::lexical_cast<double>(lhs) >= boost::lexical_cast<double>(rhs);
+            break;
         case operator_t::AND:
             result = lhs == "true" && rhs == "true";
+            break;
         case operator_t::OR:
             result = lhs == "true" || rhs == "true";
+            break;
         default:
             result = false;
     }

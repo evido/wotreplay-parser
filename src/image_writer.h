@@ -151,7 +151,7 @@ namespace wotreplay {
         bool initialized = false;
         bool show_self = false;
         bool use_fixed_teamcolors = true;
-        std::string mode;
+        std::string game_mode;
         arena_t arena;
         int recorder_team = -1;
         filter_t filter;

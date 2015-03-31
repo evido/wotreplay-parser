@@ -59,7 +59,7 @@ namespace wotreplay {
         std::string operator()(std::string str);
     private:
         draw_rules_t rules;
-        game_t game;
+        const game_t &game;
         packet_t const *p;
     };
 }

@@ -76,16 +76,16 @@ void image_writer_t::draw_grid(boost::multi_array<uint8_t, 3> &image) {
 }
 
 void image_writer_t::draw_elements() {
-    auto it = arena.configurations.find(mode);
+    auto it = arena.configurations.find(game_mode);
     if (it == arena.configurations.end()) {
-        wotreplay::logger.writef(log_level_t::warning, "Could not find configuration for game mode '%1%'\n", mode);
+        wotreplay::logger.writef(log_level_t::warning, "Could not find configuration for game mode '%1%'\n", game_mode);
         return;
     }
 
-    const arena_configuration_t &configuration = arena.configurations[mode];
+    const arena_configuration_t &configuration = arena.configurations[game_mode];
     int reference_team_id = use_fixed_teamcolors ? 0 : recorder_team;
     
-    if (mode == "domination") {
+    if (game_mode == "domination") {
         auto neutral_base = get_element("neutral_base");
         draw_element(neutral_base, configuration.control_point);
     }
@@ -178,11 +178,13 @@ void image_writer_t::write(std::ostream &os) {
 
 void image_writer_t::init(const arena_t &arena, const std::string &mode) {
     this->arena = arena;
-    this->mode = mode;
+    this->game_mode = mode;
 
     positions.resize(boost::extents[3][image_height][image_width]);
     deaths.resize(boost::extents[3][image_height][image_width]);
+
     clear();
+
     initialized = true;
 }
 
@@ -302,7 +304,7 @@ const arena_t &image_writer_t::get_arena() const {
 }
 
 const std::string &image_writer_t::get_game_mode() const {
-    return mode;
+    return game_mode;
 }
 
 void image_writer_t::merge(const image_writer_t &writer) {

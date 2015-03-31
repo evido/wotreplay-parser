@@ -1,3 +1,6 @@
+#ifndef wotreplay__heatmap_writer_h
+#define wotreplay__heatmap_writer_h
+
 #include "image_writer.h"
 
 namespace wotreplay {
@@ -14,11 +17,16 @@ namespace wotreplay {
     public:
         heatmap_writer_t();
         virtual void update(const game_t &game) override;
-        virtual void finish();
+        virtual void finish() override;
         /** Skip number of seconds after start of battle */
         float skip;
         /** Modify boundaries for heatmap colors */
         std::tuple<double, double> bounds;
         heatmap_mode_t mode;
     };
+
+    std::tuple<float, float> get_bounds(boost::multi_array<float, 3>::const_reference image,
+                                        float l_quant,float r_quant);
 }
+
+#endif

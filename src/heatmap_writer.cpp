@@ -1,7 +1,9 @@
 #include "heatmap_writer.h"
 #include "image_util.h"
-#include <unordered_map>
+
 #include <boost/algorithm/clamp.hpp>
+
+#include <unordered_map>
 
 using namespace wotreplay;
 using boost::algorithm::clamp;
@@ -30,7 +32,7 @@ constexpr unsigned char *get_color(double val) {
     return mixed_data + ((int) (val * (sizeof(mixed_data) / (sizeof(mixed_data[0])*4) - 1) + 0.5f)*4);
 }
 
-static std::tuple<float, float> get_bounds(boost::multi_array<float, 3>::const_reference image, float l_quant,float r_quant) {
+std::tuple<float, float> wotreplay::get_bounds(boost::multi_array<float, 3>::const_reference image, float l_quant,float r_quant) {
     std::vector<float> values;
     auto not_zero = [](float value) { return value != 0.f; };
     std::copy_if(image.origin(), image.origin() + image.num_elements(), std::inserter(values, values.begin()), not_zero);
@@ -41,62 +43,6 @@ static std::tuple<float, float> get_bounds(boost::multi_array<float, 3>::const_r
     std::nth_element(values.begin(), values.begin() + u, values.end());
     float u_value = values[u];
     return std::make_tuple(l_value, u_value);
-}
-
-static double dist(const std::tuple<float, float, float> &begin,
-            const std::tuple<float, float, float> &end) {
-    float dy = std::get<2>(begin) - std::get<2>(end),
-    dx = std::get<0>(begin) - std::get<0>(end),
-    dz = std::get<1>(begin) - std::get<1>(end);
-
-    return std::sqrt(dy * dy + dx * dx);
-}
-
-static int get_start_packet (const game_t &game, double skip) {
-    std::unordered_map<int, packet_t> last_packets;
-    int i = 0;
-
-    for (const auto &packet : game.get_packets()) {
-        i++;
-
-        if (!packet.has_property(property_t::position)) {
-            continue;
-        }
-
-        int player_id = packet.player_id(),
-        team_id = game.get_team_id(player_id);
-
-
-        if (team_id < 0) {
-            continue; // belongs to no team
-        }
-
-        auto last = last_packets.find(player_id);
-        if (last != last_packets.end()) {
-            int distance = dist(last->second.position(), packet.position());
-            if (distance > 0.01) {
-                break;
-            }
-        }
-
-        last_packets[player_id] = packet;
-    }
-
-    const auto &packets = game.get_packets();
-
-    if (i < packets.size()) {
-        float clock = packets[i].clock(),
-        offset = skip;
-        for (auto it = packets.begin() + i; it != packets.end(); ++it) {
-            if (it->has_property(property_t::clock) &&
-                it->clock() >= clock + offset) {
-                break;
-            }
-            ++i;
-        }
-    }
-    
-    return i;
 }
 
 void heatmap_writer_t::finish() {
