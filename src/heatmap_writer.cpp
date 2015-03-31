@@ -36,6 +36,11 @@ std::tuple<float, float> wotreplay::get_bounds(boost::multi_array<float, 3>::con
     std::vector<float> values;
     auto not_zero = [](float value) { return value != 0.f; };
     std::copy_if(image.origin(), image.origin() + image.num_elements(), std::inserter(values, values.begin()), not_zero);
+
+    if (values.size() == 0) {
+        return std::make_tuple(0, std::numeric_limits<float>::max());
+    }
+
     int l = std::lround(l_quant*(values.size() - 1)),
         u = std::lround(r_quant*(values.size() - 1));
     std::nth_element(values.begin(), values.begin() + l, values.end());
