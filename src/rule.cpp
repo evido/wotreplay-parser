@@ -97,8 +97,11 @@ struct draw_rules_grammar_t : qi::grammar<Iterator, draw_rules_t(), ascii::space
         color %= '#' >> qi::hex;
 
         expression =
-            (operation[at_c<1>(_val) = _1] >> logical_operators[at_c<0>(_val) = _1] >> operation[at_c<2>(_val) = _1]) |
-            (operation[at_c<1>(_val) = _1] >> logical_operators[at_c<0>(_val) = _1] >> expression[at_c<2>(_val) = _1]) | operation[_val = _1];
+            (operation[at_c<1>(_val) = _1] >> logical_operators[at_c<0>(_val) = _1]
+                                           >> expression[at_c<2>(_val) = _1]) |
+            (operation[at_c<1>(_val) = _1] >> logical_operators[at_c<0>(_val) = _1]
+                                           >> operation[at_c<2>(_val) = _1]) |
+            (operation[_val = _1]);
 
         operation = operand  [at_c<1>(_val) = _1] >
                     operators[at_c<0>(_val) = _1] >
@@ -311,7 +314,7 @@ std::string virtual_machine::operator()(operation_t operation) {
             result = lhs == rhs;
             break;
         case operator_t::NOT_EQUAL:
-            result = (rhs != "nil") && lhs != rhs;
+            result = lhs != rhs;
             break;
         case operator_t::LESS_THAN:
             result = boost::lexical_cast<double>(lhs) < boost::lexical_cast<double>(rhs);
