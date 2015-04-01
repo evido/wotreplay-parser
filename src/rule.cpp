@@ -172,11 +172,11 @@ public:
 
 
     void operator()(std::string str) {
-        logger.write(log_level_t::debug, str);
+        logger.writef(log_level_t::debug, "'%1%'", str);
     }
 
     void operator()(nil_t nil) {
-        logger.write(log_level_t::debug, "nil");
+        logger.write(log_level_t::debug, "(nil)");
     }
 
     void operator()(symbol_t symbol) {
@@ -280,11 +280,11 @@ bool virtual_machine::operator()(const draw_rule_t rule) {
 }
 
 std::string virtual_machine::operator()(nil_t nil) {
-    return "(nil)";
+    return "nil";
 }
 
 std::string virtual_machine::operator()(std::string str) {
-    return "'" + str + "'";
+    return str;
 }
 
 std::string virtual_machine::operator()(symbol_t symbol) {
