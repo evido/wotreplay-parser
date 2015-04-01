@@ -19,8 +19,8 @@ namespace ascii = boost::spirit::ascii;
 BOOST_FUSION_ADAPT_STRUCT(
     operation_t,
     (operator_t, op)
-    (operand, left)
-    (operand, right)
+    (operand_t, left)
+    (operand_t, right)
 )
 
 BOOST_FUSION_ADAPT_STRUCT(
@@ -125,7 +125,7 @@ struct draw_rules_grammar_t : qi::grammar<Iterator, draw_rules_t(), ascii::space
     qi::rule<Iterator, uint32_t()    , ascii::space_type> color;
     qi::rule<Iterator, operation_t() , ascii::space_type> expression;
     qi::rule<Iterator, operation_t() , ascii::space_type> operation;
-    qi::rule<Iterator, operand()     , ascii::space_type> operand;
+    qi::rule<Iterator, operand_t()   , ascii::space_type> operand;
     qi::rule<Iterator, std::string() , ascii::space_type> value;
 
     // symbol maps
@@ -175,7 +175,7 @@ public:
         logger.write(log_level_t::debug, str);
     }
 
-    void operator()(nil nil) {
+    void operator()(nil_t nil) {
         logger.write(log_level_t::debug, "nil");
     }
 
@@ -279,12 +279,12 @@ bool virtual_machine::operator()(const draw_rule_t rule) {
     return (*this)(rule.expr) == "true";
 }
 
-std::string virtual_machine::operator()(nil nil) {
-    return "nil";
+std::string virtual_machine::operator()(nil_t nil) {
+    return "(nil)";
 }
 
 std::string virtual_machine::operator()(std::string str) {
-    return str;
+    return "'" + str + "'";
 }
 
 std::string virtual_machine::operator()(symbol_t symbol) {

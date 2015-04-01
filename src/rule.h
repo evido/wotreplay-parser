@@ -25,14 +25,14 @@ namespace wotreplay {
     };
 
     struct operation_t;
-    struct nil {};
+    struct nil_t {};
 
-    typedef boost::variant<nil, std::string, symbol_t, boost::recursive_wrapper<operation_t>> operand;
+    typedef boost::variant<nil_t, std::string, symbol_t, boost::recursive_wrapper<operation_t>> operand_t;
 
     struct operation_t {
         operator_t op;
-        operand left;
-        operand right;
+        operand_t left;
+        operand_t right;
     };
     
     struct draw_rule_t {
@@ -53,7 +53,7 @@ namespace wotreplay {
         virtual_machine(const game_t &game, const draw_rules_t &rules);
         int operator()(const packet_t &packet);
         bool operator()(const draw_rule_t rule);
-        std::string operator()(nil nil);
+        std::string operator()(nil_t nil);
         std::string operator()(symbol_t symbol);
         std::string operator()(operation_t operation);
         std::string operator()(std::string str);
