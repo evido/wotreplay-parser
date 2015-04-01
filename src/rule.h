@@ -63,4 +63,3 @@ namespace wotreplay {
         packet_t const *p;
     };
 }
-

@@ -107,9 +107,6 @@ static std::map<std::string, arena_configuration_t> getArenaConfigurations(xmlNo
 }
 
 static arena_t get_arena_definition(const boost::filesystem::path &path) {
-    std::ifstream is(path.string());
-    
-    std::string content((std::istreambuf_iterator<char>(is)), std::istreambuf_iterator<char>());
     xmlDocPtr doc = get_arena_xml_content(path);
     xmlNodePtr root = xmlDocGetRootElement(doc);
 
@@ -135,7 +132,9 @@ static arena_t get_arena_definition(const boost::filesystem::path &path) {
             }
         }
     }
+
     xmlFreeDoc(doc);
+
     return arena;
 }
 
@@ -158,7 +157,7 @@ static std::map<std::string, arena_t> get_arena_definitions() {
 }
 
 
-std::map<std::string, arena_t> arenas;
+static std::map<std::string, arena_t> arenas;
 static bool is_arenas_initalized = false;
 
 void wotreplay::init_arena_definition() {

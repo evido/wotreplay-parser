@@ -21,16 +21,15 @@ void class_heatmap_writer_t::init(const wotreplay::arena_t &arena, const std::st
 
     classes.clear();
 
+    int class_count = 0;
     for (const auto &rule : rules.rules) {
         if (classes.find(rule.color) == classes.end()) {
-            classes[rule.color] = classes.size();
+            classes[rule.color] = class_count;
+            class_count += 1;
         }
     }
 
-    int class_count = classes.size();
-
     positions.resize(boost::extents[class_count][image_height][image_width]);
-    deaths.resize(boost::extents[class_count][image_height][image_width]);
 
     clear();
 
@@ -45,7 +44,9 @@ void class_heatmap_writer_t::update(const wotreplay::game_t &game) {
     int i = 0, offset = get_start_packet(game, skip);
     for (auto it = packets.begin(); it != packets.end() ; it++ ) {
         const auto &packet = *it;
-        ++i;
+
+        i += 1;
+
         if (!packet.has_property(property_t::position)) {
             if (packet.has_property(property_t::tank_destroyed)) {
                 uint32_t target, killer;
@@ -69,7 +70,7 @@ void class_heatmap_writer_t::update(const wotreplay::game_t &game) {
         int class_id = classes[rules.rules[rule_id].color];
 
         const bounding_box_t &bounding_box = game.get_arena().bounding_box;
-        std::tuple<float, float> position = get_2d_coord( packet.position(), bounding_box, image_width, image_height);
+        std::tuple<float, float> position = get_2d_coord(packet.position(), bounding_box, image_width, image_height);
         double x = std::get<0>(position);
         double y = std::get<1>(position);
 
