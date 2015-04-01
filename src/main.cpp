@@ -378,6 +378,7 @@ int main(int argc, const char * argv[]) {
         ("size", po::value(&size)->default_value(512), "output image size for image writers")
         ("rules", po::value(&rules)->default_value("#ff0000 := team = '1'; #00ff00 := team = '0'"),
          "specify drawing rules, allowing the user to choose the colors used")
+        ("parse-rules", "parse rules only and print parsed expression")
 #ifdef ENABLE_TBB
         ("tokens", po::value(&tokens)->default_value(10), "number of pipeline tokens")
 #endif
@@ -414,6 +415,12 @@ int main(int argc, const char * argv[]) {
         logger.set_log_level(log_level_t::none);
     } else {
         logger.set_log_level(log_level_t::warning);
+    }
+
+    if (vm.count("parse-rules") > 0) {
+        logger.set_log_level(log_level_t::debug);
+        parse_draw_rules(vm["rules"].as<std::string>());
+        std::exit(0);
     }
     
     int exit_code;

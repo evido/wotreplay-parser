@@ -88,8 +88,6 @@ The program can be used to convert wotreplay files to images or json files.
 * `output` is optional, the program will then write to stdout
 * `input` and  `output` are relative to root
 * `root` should contain a folder maps with the images to maps and the arena definitions
-* `size` specifies the output dimensions of the generated image (for image output types)
-* `rules` specify drawing rules to be used for output type class-heatmap
 
 ## Create Heatmaps
 
@@ -100,6 +98,8 @@ The program can be used to create heatmaps for a directory of replays
 * `input directory` is the directory containing all the replays (relative to root, only first level will be scanned)
 * `output directory` images will be written to this directory, for each map / game mode an output file will be generated (relative to root)
 * `root` should contain a folder maps with the images to maps and the arena definitions
+* `size` specifies the output dimensions of the generated image (for image output types)
+* `rules` specify drawing rules to be used for output type class-heatmap (surround the argument with quotes to avoid the program interpreting it as seperate arguments)
 
 ## Create Minimaps
 
@@ -123,7 +123,7 @@ The syntax of drawing rules is as follows (EBNF syntax)
     comparison = '=' | '!=' | '>' | '<' | '>=' | '<='
     color = '#' hex{6}
     symbol = 'player' | 'clock' | 'team'
-    value = ''' +(digit | alpha | _ | - ) '''
+    value = ''' +(digit | alpha | '_' | '-' ) '''
 
 Each packet is evaluated using the defined rules and assigned a class (first match), which will be used in the resulting heatmap.
 
