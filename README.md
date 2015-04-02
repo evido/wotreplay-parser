@@ -122,7 +122,7 @@ The syntax of drawing rules is as follows (EBNF syntax)
     logical_operator = 'and' | 'or'
     comparison = '=' | '!=' | '>' | '<' | '>=' | '<='
     color = '#' hex{6}
-    symbol = 'player' | 'clock' | 'team'
+    symbol = 'player' | 'clock' | 'team' | 'tank_name' | 'tank_country' | 'tank_tier' | 'tank_icon' | 'tank_class'
     value = ''' +(digit | alpha | '_' | '-' ) '''
 
 Each packet is evaluated using the defined rules and assigned a class (first match), which will be used in the resulting heatmap.

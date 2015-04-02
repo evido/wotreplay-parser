@@ -1,5 +1,6 @@
 #include "rule.h"
 #include "logger.h"
+#include "tank.h"
 
 #include <boost/fusion/include/adapt_struct.hpp>
 #include <boost/lexical_cast.hpp>
@@ -87,7 +88,12 @@ struct draw_rules_grammar_t : qi::grammar<Iterator, draw_rules_t(), ascii::space
         // define symbols
         symbols.add("player", symbol_t::PLAYER)
                    ("clock" , symbol_t::CLOCK)
-                   ("team"  , symbol_t::TEAM);
+                   ("team"  , symbol_t::TEAM)
+                   ("tank_tier", symbol_t::TANK_TIER)
+                   ("tank_class", symbol_t::TANK_CLASS)
+                   ("tank_icon", symbol_t::TANK_ICON)
+                   ("tank_country", symbol_t::TANK_COUNTRY)
+                   ("tank_name", symbol_t::TANK_NAME);
 
         rules = rule[push_back(at_c<0>(_val), _1)] >>
                 *(';' >> rule[push_back(at_c<0>(_val), _1)]);
@@ -190,6 +196,21 @@ public:
             case wotreplay::CLOCK:
                 logger.write(log_level_t::debug, "CLOCK");
                 break;
+            case wotreplay::TANK_ICON:
+                logger.write(log_level_t::debug, "TANK_ICON");
+                break;
+            case wotreplay::TANK_NAME:
+                logger.write(log_level_t::debug, "TANK_NAME");
+                break;
+            case wotreplay::TANK_COUNTRY:
+                logger.write(log_level_t::debug, "TANK_COUNTRY");
+                break;
+            case wotreplay::TANK_TIER:
+                logger.write(log_level_t::debug, "TANK_TIER");
+                break;
+            case wotreplay::TANK_CLASS:
+                logger.write(log_level_t::debug, "TANK_CLASS");
+                break;
             default:
                 logger.write(log_level_t::debug, "<invalid symbol>");
                 break;
@@ -268,10 +289,14 @@ virtual_machine::virtual_machine(const game_t &game, const draw_rules_t &rules)
 {}
 
 int virtual_machine::operator()(const packet_t &packet) {
+    if (game.get_team_id(packet.player_id()) == -1)
+        return -1;
+
     this->p = &packet;
     for (int i = 0; i < rules.rules.size(); i += 1) {
         if ((*this)(rules.rules[i])) return i;
     }
+
     return -1;
 }
 
@@ -287,6 +312,12 @@ std::string virtual_machine::operator()(std::string str) {
     return str;
 }
 
+static const tank_t get_tank(const game_t &game, const packet_t &p) {
+    const player_t player = game.get_player(p.player_id());
+    const auto &tanks = get_tanks();
+    return tanks.count(player.tank) ? tanks.at(player.tank) : tank_t {};
+}
+
 std::string virtual_machine::operator()(symbol_t symbol) {
     switch(symbol) {
         case symbol_t::PLAYER:
@@ -298,6 +329,34 @@ std::string virtual_machine::operator()(symbol_t symbol) {
         case symbol_t::CLOCK:
             return p->has_property(property_t::clock) ?
                 boost::lexical_cast<std::string>(p->clock()) : "";
+        case symbol_t::TANK_NAME:
+            if (!p->has_property(property_t::player_id)) {
+                return "";
+            }
+            return get_tank(game, *p).name;
+        case symbol_t::TANK_ICON:
+            if (!p->has_property(property_t::player_id)) {
+                return "";
+            }
+            return game.get_player(p->player_id()).tank;
+        case symbol_t::TANK_COUNTRY:
+            if (!p->has_property(property_t::player_id)) {
+                return "";
+            }
+            return get_tank(game, *p).country_name;
+        case symbol_t::TANK_CLASS:
+            if (!p->has_property(property_t::player_id)) {
+                return "";
+            }
+            return get_tank(game, *p).class_name;
+        case symbol_t::TANK_TIER:
+        {
+            if (!p->has_property(property_t::player_id)) {
+                return "";
+            }
+            int tier = get_tank(game, *p).tier;
+            return boost::lexical_cast<std::string>(tier);
+        }
         default:
             return "";
     }

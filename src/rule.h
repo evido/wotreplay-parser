@@ -21,7 +21,12 @@ namespace wotreplay {
     enum symbol_t {
         PLAYER,
         CLOCK,
-        TEAM
+        TEAM,
+        TANK_ICON,
+        TANK_NAME,
+        TANK_TIER,
+        TANK_CLASS,
+        TANK_COUNTRY
     };
 
     struct operation_t;

@@ -34,6 +34,13 @@ namespace wotreplay {
         std::string text;
     };
 
+    struct player_t {
+        int player_id;
+        int team;
+        std::string name;
+        std::string tank;
+    };
+
     /**
      * An object wrapping the properties of the game with the actions
      * by the players in the game represented by a list of packets.
@@ -109,6 +116,8 @@ namespace wotreplay {
          * @return Data block 'game end'
          */
         const buffer_t &get_game_end() const;
+
+        const player_t &get_player(int player_id) const;
     private:
         std::vector<packet_t> packets;
         std::array<std::set<int>, 2> teams;
@@ -119,6 +128,7 @@ namespace wotreplay {
         buffer_t replay;
         uint32_t recorder_id;
         version_t version;
+        std::map<int, player_t> players;
     };
 
     /**

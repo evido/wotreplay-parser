@@ -5,6 +5,7 @@
 #include "logger.h"
 #include "parser.h"
 #include "regex.h"
+#include "tank.h"
 
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
@@ -131,6 +132,7 @@ int process_replay_directory(const po::variables_map &vm, const std::string &inp
 {
     // load all arena's so we can use manual load parser
     init_arena_definition();
+    init_tank_definition();
 
     auto it = directory_iterator(input);
     auto f_generate_replay_paths = [&it](tbb::flow_control &fc) -> std::string {

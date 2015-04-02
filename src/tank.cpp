@@ -15,11 +15,6 @@ static bool is_tanks_initialized = false;
 
 static xmlDocPtr get_tanks_xml_content(const std::string &file_name) {
     std::ifstream is(file_name);
-
-    if (!is) {
-        logger.writef(log_level_t::error, "%1% could not be found!", file_name);
-    }
-
     std::string content((std::istreambuf_iterator<char>(is)), std::istreambuf_iterator<char>());
     xmlDocPtr doc = xmlReadMemory(content.c_str(), (int) content.length(), file_name.c_str(), NULL, 0);
     return doc;
@@ -68,6 +63,11 @@ static std::map<std::string, tank_t> get_tank_definitions() {
     xmlNodePtr root = xmlDocGetRootElement(doc);
 
     std::map<std::string, tank_t> tanks;
+
+    if (!root) {
+        logger.writef(log_level_t::error, "Failed to load tanks.xml\n");
+        return tanks;
+    }
 
     for (xmlNodePtr node = root->children; node; node = node->next) {
         if (node->type == XML_ELEMENT_NODE) {
