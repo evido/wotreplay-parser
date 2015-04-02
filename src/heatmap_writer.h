@@ -3,6 +3,8 @@
 
 #include "image_writer.h"
 
+/** @file */
+
 namespace wotreplay {
     enum heatmap_mode_t {
         combined,
@@ -22,11 +24,20 @@ namespace wotreplay {
         float skip;
         /** Modify boundaries for heatmap colors */
         std::tuple<double, double> bounds;
+        /** Heatmap mode */
         heatmap_mode_t mode;
     };
 
+    /**
+     * @fn std::tuple<float, float> get_bounds(boost::multi_array<float, 3>::const_reference image, float l_quant,float r_quant)
+     * Determine nth_value from sorted arrays for lower and upper bound
+     * @param image image  with values
+     * @param l_quant lower bound to find
+     * @param r_quant upper bound to find
+     * @return bounds values
+     */
     std::tuple<float, float> get_bounds(boost::multi_array<float, 3>::const_reference image,
-                                        float l_quant,float r_quant);
+                                        float l_quant, float r_quant);
 }
 
 #endif

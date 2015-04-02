@@ -4,7 +4,12 @@
 #include <map>
 #include <string>
 
+/** @file */
+
 namespace wotreplay {
+    /**
+     * tank information
+     */
     struct tank_t {
         int country_id;
         std::string country_name;

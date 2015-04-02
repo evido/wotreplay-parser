@@ -108,7 +108,6 @@ void wotreplay::resize(boost::multi_array<uint8_t, 3> &original, int width, int 
     const size_t *shape = original.shape();
     result.resize(boost::extents[height][width][shape[2]]);
 
-
     float ty = ((float) shape[0] / height);
     float tx = ((float) shape[1] / width);
 

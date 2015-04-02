@@ -24,6 +24,7 @@ namespace wotreplay {
         on_demand,
         bulk
     };
+    
     /** wotreplay::parser_t is a class responsible for parsing a World of Tanks replay file.  */
     class parser_t {
         /**
@@ -138,7 +139,9 @@ namespace wotreplay {
         bool debug;
         /** Packet lengths */
         std::map<uint8_t, int> packet_lengths;
+        /** Packet reader */
         std::unique_ptr<packet_reader_t> packet_reader;
+        /** Load data mode */
         load_data_mode_t load_data_mode;
     };
 

@@ -7,11 +7,11 @@
 using namespace wotreplay;
 using boost::algorithm::clamp;
 
-void class_heatmap_writer_t::set_draw_rules(const wotreplay::draw_rules_t &rules) {
+void class_heatmap_writer_t::set_draw_rules(const std::vector<draw_rule_t> &rules) {
     this->rules = rules;
 }
 
-const draw_rules_t &class_heatmap_writer_t::get_draw_rules() const {
+const std::vector<draw_rule_t> &class_heatmap_writer_t::get_draw_rules() const {
     return this->rules;
 }
 
@@ -22,7 +22,7 @@ void class_heatmap_writer_t::init(const wotreplay::arena_t &arena, const std::st
     classes.clear();
 
     int class_count = 0;
-    for (const auto &rule : rules.rules) {
+    for (const auto &rule : rules) {
         if (classes.find(rule.color) == classes.end()) {
             classes[rule.color] = class_count;
             class_count += 1;
@@ -38,7 +38,7 @@ void class_heatmap_writer_t::init(const wotreplay::arena_t &arena, const std::st
 
 void class_heatmap_writer_t::update(const wotreplay::game_t &game) {
     std::set<int> dead_players;
-    virtual_machine vm(game, rules);
+    virtual_machine_t vm(game, rules);
 
     const auto &packets = game.get_packets();
     int i = 0, offset = get_start_packet(game, skip);
@@ -67,7 +67,7 @@ void class_heatmap_writer_t::update(const wotreplay::game_t &game) {
             continue;
         }
 
-        int class_id = classes[rules.rules[rule_id].color];
+        int class_id = classes[rules[rule_id].color];
 
         const bounding_box_t &bounding_box = game.get_arena().bounding_box;
         std::tuple<float, float> position = get_2d_coord(packet.position(), bounding_box, image_width, image_height);

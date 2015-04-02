@@ -110,7 +110,7 @@ std::unique_ptr<writer_t> create_writer(const std::string &type, const po::varia
         writer = std::unique_ptr<writer_t>(new class_heatmap_writer_t());
         auto &class_heatmap_writer = dynamic_cast<class_heatmap_writer_t&>(*writer);
 
-        draw_rules_t rules = parse_draw_rules(vm["rules"].as<std::string>());
+        std::vector<draw_rule_t> rules = parse_draw_rules(vm["rules"].as<std::string>());
 
         class_heatmap_writer.set_draw_rules(rules);
         class_heatmap_writer.set_image_width(vm["size"].as<int>());

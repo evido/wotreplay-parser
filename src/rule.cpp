@@ -30,11 +30,6 @@ BOOST_FUSION_ADAPT_STRUCT(
     (operation_t, expr)
 )
 
-BOOST_FUSION_ADAPT_STRUCT(
-    draw_rules_t,
-    (std::vector<draw_rule_t>, rules)
-)
-
 struct error_handler_
 {
     template <typename, typename, typename>
@@ -59,7 +54,7 @@ struct error_handler_
 boost::phoenix::function<error_handler_> const error_handler = error_handler_();
 
 template<typename Iterator>
-struct draw_rules_grammar_t : qi::grammar<Iterator, draw_rules_t(), ascii::space_type> {
+struct draw_rules_grammar_t : qi::grammar<Iterator, std::vector<draw_rule_t>(), ascii::space_type> {
     draw_rules_grammar_t() : draw_rules_grammar_t::base_type(rules) {
         using qi::char_;
         using namespace qi::labels;
@@ -95,8 +90,8 @@ struct draw_rules_grammar_t : qi::grammar<Iterator, draw_rules_t(), ascii::space
                    ("tank_country", symbol_t::TANK_COUNTRY)
                    ("tank_name", symbol_t::TANK_NAME);
 
-        rules = rule[push_back(at_c<0>(_val), _1)] >>
-                *(';' >> rule[push_back(at_c<0>(_val), _1)]);
+        rules = rule[push_back(_val, _1)] >>
+                *(';' >> rule[push_back(_val, _1)]);
 
         rule  %= color >> ":=" >> expression;
 
@@ -126,7 +121,7 @@ struct draw_rules_grammar_t : qi::grammar<Iterator, draw_rules_t(), ascii::space
     }
 
     // parsing rules
-    qi::rule<Iterator, draw_rules_t(), ascii::space_type> rules;
+    qi::rule<Iterator, std::vector<draw_rule_t>(), ascii::space_type> rules;
     qi::rule<Iterator, draw_rule_t() , ascii::space_type> rule;
     qi::rule<Iterator, uint32_t()    , ascii::space_type> color;
     qi::rule<Iterator, operation_t() , ascii::space_type> expression;
@@ -140,9 +135,9 @@ struct draw_rules_grammar_t : qi::grammar<Iterator, draw_rules_t(), ascii::space
     qi::symbols<char, symbol_t>   symbols;
 };
 
-draw_rules_t wotreplay::parse_draw_rules(const std::string &expr) {
+std::vector<draw_rule_t> wotreplay::parse_draw_rules(const std::string &expr) {
     draw_rules_grammar_t<std::string::const_iterator> grammar;
-    draw_rules_t rules;
+    std::vector<draw_rule_t> rules;
 
     std::string::const_iterator iter = expr.begin();
     std::string::const_iterator end = expr.end();
@@ -161,30 +156,48 @@ draw_rules_t wotreplay::parse_draw_rules(const std::string &expr) {
     return rules;
 }
 
-
-class printer : public boost::static_visitor<void> {
+/** pretty print drawing rules */
+class printer_t : public boost::static_visitor<void> {
 public:
-    printer(const draw_rules_t &rules)
+    /** 
+     * contstruct new printer
+     * @param rules rules
+     */
+    printer_t(const std::vector<draw_rule_t> &rules)
         : rules(rules) {}
 
+    /**
+     * Print current rules
+     */
     void operator()() {
-        logger.writef(log_level_t::info, "Number of rules: %1%\n", rules.rules.size());
-        for (int i = 0; i < rules.rules.size(); i += 1) {
+        logger.writef(log_level_t::info, "Number of rules: %1%\n", rules.size());
+        for (int i = 0; i < rules.size(); i += 1) {
             pad();
             logger.writef(log_level_t::debug, "Rule #%1%\n", i);
-            (*this)(rules.rules[i]);
+            (*this)(rules[i]);
         }
     }
 
-
+    /**
+     * Print string value
+     * @param str string value
+     */
     void operator()(std::string str) {
         logger.writef(log_level_t::debug, "'%1%'", str);
     }
 
+    /**
+     * Print nil value
+     * @param nil nil value
+     */
     void operator()(nil_t nil) {
         logger.write(log_level_t::debug, "(nil)");
     }
 
+    /**
+     * Print symbol value
+     * @param symbol symbol value
+     */
     void operator()(symbol_t symbol) {
         switch(symbol) {
             case wotreplay::PLAYER:
@@ -217,6 +230,10 @@ public:
         }
     }
 
+    /**
+     * Print operator value
+     * @param op operator value
+     */
     void operator()(operator_t op) {
         switch(op) {
             case wotreplay::AND:
@@ -248,6 +265,10 @@ public:
         }
     }
 
+    /**
+     * Print operation
+     * @param operation operation
+     */
     void operator()(operation_t operation) {
         logger.write(log_level_t::debug, "(");
         (*this)(operation.op);
@@ -258,6 +279,10 @@ public:
         logger.write(log_level_t::debug, ")");
     }
 
+    /**
+     * Print rule
+     * @param rule rule
+     */
     void operator()(draw_rule_t &rule) {
         indent++;
         pad();
@@ -274,41 +299,41 @@ public:
         logger.write(log_level_t::debug, pad);
     }
 
-    draw_rules_t rules;
+    std::vector<draw_rule_t> rules;
     int indent = 0;
 };
 
-void wotreplay::print(const draw_rules_t& rules) {
-    printer p(rules);
+void wotreplay::print(const std::vector<draw_rule_t>& rules) {
+    printer_t p(rules);
     p();
 }
 
 
-virtual_machine::virtual_machine(const game_t &game, const draw_rules_t &rules)
+virtual_machine_t::virtual_machine_t(const game_t &game, const std::vector<draw_rule_t> &rules)
     : rules(rules), game(game)
 {}
 
-int virtual_machine::operator()(const packet_t &packet) {
+int virtual_machine_t::operator()(const packet_t &packet) {
     if (game.get_team_id(packet.player_id()) == -1)
         return -1;
 
     this->p = &packet;
-    for (int i = 0; i < rules.rules.size(); i += 1) {
-        if ((*this)(rules.rules[i])) return i;
+    for (int i = 0; i < rules.size(); i += 1) {
+        if ((*this)(rules[i])) return i;
     }
 
     return -1;
 }
 
-bool virtual_machine::operator()(const draw_rule_t rule) {
+bool virtual_machine_t::operator()(const draw_rule_t rule) {
     return (*this)(rule.expr) == "true";
 }
 
-std::string virtual_machine::operator()(nil_t nil) {
+std::string virtual_machine_t::operator()(nil_t nil) {
     return "nil";
 }
 
-std::string virtual_machine::operator()(std::string str) {
+std::string virtual_machine_t::operator()(std::string str) {
     return str;
 }
 
@@ -318,7 +343,7 @@ static const tank_t get_tank(const game_t &game, const packet_t &p) {
     return tanks.count(player.tank) ? tanks.at(player.tank) : tank_t {};
 }
 
-std::string virtual_machine::operator()(symbol_t symbol) {
+std::string virtual_machine_t::operator()(symbol_t symbol) {
     switch(symbol) {
         case symbol_t::PLAYER:
             return p->has_property(property_t::player_id) ?
@@ -362,7 +387,7 @@ std::string virtual_machine::operator()(symbol_t symbol) {
     }
 }
 
-std::string virtual_machine::operator()(operation_t operation) {
+std::string virtual_machine_t::operator()(operation_t operation) {
     std::string lhs = boost::apply_visitor(*this, operation.left);
     std::string rhs = boost::apply_visitor(*this, operation.right);
 

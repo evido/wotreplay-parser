@@ -34,6 +34,9 @@ namespace wotreplay {
         std::string text;
     };
 
+    /**
+     * Player information
+     */
     struct player_t {
         int player_id;
         int team;
@@ -116,7 +119,10 @@ namespace wotreplay {
          * @return Data block 'game end'
          */
         const buffer_t &get_game_end() const;
-
+        /**
+         * Get player information with the player id
+         * @return Player information
+         */
         const player_t &get_player(int player_id) const;
     private:
         std::vector<packet_t> packets;
@@ -157,7 +163,22 @@ namespace wotreplay {
      */
     void show_map_boundaries(const game_t &game, const std::vector<packet_t> &packets);
 
+    /**
+     * @fn int wotreplay::get_start_packet(const game_t &game, double skip)
+     * Determine offset of first packet a number of seconds after the game has started
+     * @param game game information
+     * @param skip number of seconds since start of game
+     * @return offset for first packet
+     */
     int get_start_packet (const game_t &game, double skip);
+
+    /**
+     * @fn double wotreplay::dist(const std::tuple<float, float, float> &begin, const std::tuple<float, float, float> &end)
+     * Calculate the distance between two points
+     * @param begin starting point
+     * @param end end point
+     * @return distance
+     */
     double dist(const std::tuple<float, float, float> &begin,
                 const std::tuple<float, float, float> &end);
 }
