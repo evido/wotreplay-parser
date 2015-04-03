@@ -85,6 +85,7 @@ std::unique_ptr<writer_t> create_writer(const std::string &type, const po::varia
         image_writer.set_use_fixed_teamcolors(false);
         image_writer.set_image_width(vm["size"].as<int>());
         image_writer.set_image_height(vm["size"].as<int>());
+        image_writer.set_no_basemap(vm.count("overlay") > 0);
     } else if (type == "json") {
         writer = std::unique_ptr<writer_t>(new json_writer_t());
         if (vm.count("supress-empty")) {
@@ -106,6 +107,7 @@ std::unique_ptr<writer_t> create_writer(const std::string &type, const po::varia
 
         heatmap_writer.set_image_width(vm["size"].as<int>());
         heatmap_writer.set_image_height(vm["size"].as<int>());
+        heatmap_writer.set_no_basemap(vm.count("no-basemap") > 0);
     } else if (type == "class-heatmap") {
         writer = std::unique_ptr<writer_t>(new class_heatmap_writer_t());
         auto &class_heatmap_writer = dynamic_cast<class_heatmap_writer_t&>(*writer);
@@ -115,7 +117,7 @@ std::unique_ptr<writer_t> create_writer(const std::string &type, const po::varia
         class_heatmap_writer.set_draw_rules(rules);
         class_heatmap_writer.set_image_width(vm["size"].as<int>());
         class_heatmap_writer.set_image_height(vm["size"].as<int>());
-
+        class_heatmap_writer.set_no_basemap(vm.count("no-basemap") > 0);
         class_heatmap_writer.skip = vm["skip"].as<double>();
         class_heatmap_writer.bounds = std::make_pair(vm["bounds-min"].as<double>(),
                                                      vm["bounds-max"].as<double>());
@@ -381,6 +383,7 @@ int main(int argc, const char * argv[]) {
         ("rules", po::value(&rules)->default_value("#ff0000 := team = '1'; #00ff00 := team = '0'"),
          "specify drawing rules, allowing the user to choose the colors used")
         ("parse-rules", "parse rules only and print parsed expression")
+        ("overlay", "generate overlay, don't draw basemap in output image")
 #ifdef ENABLE_TBB
         ("tokens", po::value(&tokens)->default_value(10), "number of pipeline tokens")
 #endif

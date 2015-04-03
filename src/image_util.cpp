@@ -1,4 +1,5 @@
 #include "image_util.h"
+#include "logger.h"
 
 #include <boost/format.hpp>
 #include <cmath>

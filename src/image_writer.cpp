@@ -195,16 +195,15 @@ void image_writer_t::clear() {
 }
 
 void image_writer_t::finish() {
-    // copy background to result
-    load_base_map(arena.mini_map);
+    draw_basemap();
+
     const size_t *shape = base.shape();
     result.resize(boost::extents[shape[0]][shape[1]][shape[2]]);
-
-    draw_elements();
     result = base;
+
     int reference_team_id = use_fixed_teamcolors ? 0 : recorder_team;
-    for (int i = 0; i < shape[0]; ++i) {
-        for (int j = 0; j < shape[1]; ++j) {
+    for (int i = 0; i < image_height; ++i) {
+        for (int j = 0; j < image_width; ++j) {
             if (positions[0][i][j] > positions[1][i][j]) {
                 // position claimed by first team
                 if (reference_team_id == 0) {
@@ -252,7 +251,7 @@ void image_writer_t::finish() {
                     int y = i + offset[1];
 
                     // draw only if within bounds
-                    if (x >= 0 && x < shape[0] && y >= 0  && y < shape[1]) {
+                    if (x >= 0 && x < image_width && y >= 0  && y < image_height) {
                         result[y][x][3] = result[y][x][0] = result[y][x][1] = 0xFF;
                         result[y][x][2] = 0x00;
                     }
@@ -313,7 +312,7 @@ void image_writer_t::merge(const image_writer_t &writer) {
                    writer.positions.origin(), positions.origin(), std::plus<float>());
 }
 
-int image_writer_t::get_image_height() {
+int image_writer_t::get_image_height() const {
     return image_height;
 }
 
@@ -322,10 +321,29 @@ void image_writer_t::set_image_height(int image_height) {
 }
 
 
-int image_writer_t::get_image_width() {
+int image_writer_t::get_image_width() const {
     return image_width;
 }
 
 void image_writer_t::set_image_width(int image_width) {
     this->image_width = image_width;
+}
+
+bool image_writer_t::get_no_basemap() const {
+    return no_basemap;
+}
+
+void image_writer_t::set_no_basemap(bool no_basemap) {
+    this->no_basemap = no_basemap;
+}
+
+void image_writer_t::draw_basemap() {
+    if (!no_basemap) {
+        load_base_map(arena.mini_map);
+        const size_t *shape = base.shape();
+        result.resize(boost::extents[shape[0]][shape[1]][shape[2]]);
+        draw_elements();
+    } else {
+        base.resize(boost::extents[image_width][image_height][4]);
+    }
 }

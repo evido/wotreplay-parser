@@ -85,10 +85,10 @@ void class_heatmap_writer_t::update(const wotreplay::game_t &game) {
 }
 
 void class_heatmap_writer_t::finish() {
-    load_base_map(arena.mini_map);
+    draw_basemap();
+
     const size_t *shape = base.shape();
     result.resize(boost::extents[shape[0]][shape[1]][shape[2]]);
-    draw_elements();
     result = base;
 
     int class_count = classes.size();
@@ -106,8 +106,8 @@ void class_heatmap_writer_t::finish() {
                                               std::get<1>(bounds));
     }
 
-    for (int i = 0; i < shape[0]; i += 1) {
-        for (int j = 0; j < shape[1]; j += 1) {
+    for (int i = 0; i < image_width; i += 1) {
+        for (int j = 0; j < image_height; j += 1) {
             int ix = 0;
             double a = clamp((positions[0][i][j] - min[0]) / (max[0] - min[0]), 0.0, 1.0);
 
@@ -121,9 +121,16 @@ void class_heatmap_writer_t::finish() {
 
             uint32_t c = colors[ix];
 
-            result[i][j][0] = mix(result[i][j][0], result[i][j][0], 1. - a, (c >> 16) & 0xFF, a);
-            result[i][j][1] = mix(result[i][j][1], result[i][j][1], 1. - a, (c >> 8 ) & 0xFF, a);
-            result[i][j][2] = mix(result[i][j][2], result[i][j][2], 1. - a,  c        & 0xFF, a);
+            if (!no_basemap) {
+                result[i][j][0] = mix(result[i][j][0], result[i][j][0], 1. - a, (c >> 16) & 0xFF, a);
+                result[i][j][1] = mix(result[i][j][1], result[i][j][1], 1. - a, (c >> 8 ) & 0xFF, a);
+                result[i][j][2] = mix(result[i][j][2], result[i][j][2], 1. - a,  c        & 0xFF, a);
+            } else {
+                result[i][j][0] = (c >> 16) & 0xFF;
+                result[i][j][1] = (c >> 8 ) & 0xFF;
+                result[i][j][2] =  c        & 0xFF;
+                result[i][j][3] = a*255;
+            }
         }
     }
 }

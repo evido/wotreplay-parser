@@ -51,20 +51,20 @@ std::tuple<float, float> wotreplay::get_bounds(boost::multi_array<float, 3>::con
 }
 
 void heatmap_writer_t::finish() {
-    load_base_map(arena.mini_map);
+    draw_basemap();
+
     const size_t *shape = base.shape();
     result.resize(boost::extents[shape[0]][shape[1]][shape[2]]);
-    draw_elements();
     result = base;
 
     if (mode == heatmap_mode_t::combined) {
-        for (int y = 0; y < shape[0]; y += 1) {
-            for (int x = 0; x < shape[1]; x += 1) {
+        for (int y = 0; y < image_height; y += 1) {
+            for (int x = 0; x < image_width; x += 1) {
                 float val = positions[1][y][x] + positions[0][y][x];
                 for (int i = 0; i < 9; i += 1) {
                     for (int j = 0; j < 9; j += 1) {
-                        if ((y + i - 5) >= 0 && (y + i - 5) < shape[0]
-                            && (x + j - 5) >= 0 && (x + j - 5) < shape[1]) {
+                        if ((y + i - 5) >= 0 && (y + i - 5) < image_height
+                            && (x + j - 5) >= 0 && (x + j - 5) < image_width) {
                             positions[2][y + i - 5][x + j - 5] += val*stamp_default_4_data[i*9+j];
                         }
                     }
@@ -77,14 +77,23 @@ void heatmap_writer_t::finish() {
                                         std::get<0>(bounds),
                                         std::get<1>(bounds));
 
-        for (int i = 0; i < shape[0]; i += 1) {
-            for (int j = 0; j < shape[1]; j += 1) {
+        for (int i = 0; i < image_height; i += 1) {
+            for (int j = 0; j < image_width; j += 1) {
                 double val = clamp(positions[2][i][j], min, max);
                 const unsigned char *c = get_color((val - min) / (max - min));
                 double a = c[3] * .66 / 255.0;
-                result[i][j][0] = mix(result[i][j][0], result[i][j][0], 1 - a, c[0], a);
-                result[i][j][1] = mix(result[i][j][1], result[i][j][1], 1 - a, c[1], a);
-                result[i][j][2] = mix(result[i][j][2], result[i][j][2], 1 - a, c[2], a);
+
+                if (!no_basemap) {
+                    result[i][j][0] = mix(result[i][j][0], result[i][j][0], 1 - a, c[0], a);
+                    result[i][j][1] = mix(result[i][j][1], result[i][j][1], 1 - a, c[1], a);
+                    result[i][j][2] = mix(result[i][j][2], result[i][j][2], 1 - a, c[2], a);
+                } else {
+                    result[i][j][0] = c[0];
+                    result[i][j][1] = c[1];
+                    result[i][j][2] = c[2];
+                    result[i][j][3] = c[3];
+                }
+
             }
         }
     } else {
@@ -94,8 +103,8 @@ void heatmap_writer_t::finish() {
             if (mode == heatmap_mode_t::team_soft) {
                 std::unique_ptr<float[]> result(new float[image_width*image_height]());
 
-                for (int y = 0; y < shape[0]; y += 1) {
-                    for (int x = 0; x < shape[1]; x += 1) {
+                for (int y = 0; y < image_height; y += 1) {
+                    for (int x = 0; x < image_width; x += 1) {
                         float val = positions[k][y][x];
                         for (int i = 0; i < 9; i += 1) {
                             for (int j = 0; j < 9; j += 1) {
@@ -122,8 +131,8 @@ void heatmap_writer_t::finish() {
             return clamp(y, 0.0, 1.0);
         } : [](double x) { return x; };
 
-        for (int i = 0; i < shape[0]; i += 1) {
-            for (int j = 0; j < shape[1]; j += 1) {
+        for (int i = 0; i < image_height; i += 1) {
+            for (int j = 0; j < image_width; j += 1) {
                 double a[] = {
                     clamp((positions[0][i][j] - min[0]) / (max[0] - min[0]), 0.0, 1.0),
                     clamp((positions[1][i][j] - min[1]) / (max[1] - min[1]), 0.0, 1.0)
@@ -132,9 +141,16 @@ void heatmap_writer_t::finish() {
                 a[0] = f(a[0]);
                 a[1] = f(a[1]);
 
-                result[i][j][0] = mix(result[i][j][0], 0, a[0], 255, a[1]);
-                result[i][j][1] = mix(result[i][j][1], 255, a[0], 0, a[1]);
-                result[i][j][2] = mix(result[i][j][2], 0, a[0], 0, a[1]);
+                if (!no_basemap) {
+                    result[i][j][0] = mix(result[i][j][0], 0,   a[0], 255, a[1]);
+                    result[i][j][1] = mix(result[i][j][1], 255, a[0], 0  , a[1]);
+                    result[i][j][2] = mix(result[i][j][2], 0,   a[0], 0  , a[1]);
+                } else {
+                    result[i][j][0] = 255*(a[1] / (a[0] + a[1]));
+                    result[i][j][1] = 255*(a[0] / (a[0] + a[1]));
+                    result[i][j][2] = 0;
+                    result[i][j][3] = 255*clamp(a[0] + a[1], 0.0, 1.0);
+                }
             }
         }
     }
