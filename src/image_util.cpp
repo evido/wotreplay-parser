@@ -1,4 +1,5 @@
 #include "image_util.h"
+#include "logger.h"
 
 #include <boost/format.hpp>
 #include <cmath>
@@ -107,7 +108,6 @@ int wotreplay::mix(int v0, int v1, float a1, int v2, float a2) {
 void wotreplay::resize(boost::multi_array<uint8_t, 3> &original, int width, int height, boost::multi_array<uint8_t, 3> &result) {
     const size_t *shape = original.shape();
     result.resize(boost::extents[height][width][shape[2]]);
-
 
     float ty = ((float) shape[0] / height);
     float tx = ((float) shape[1] / width);

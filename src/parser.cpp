@@ -6,6 +6,7 @@
 #include "packet_reader_80.h"
 #include "parser.h"
 #include "regex.h"
+#include "tank.h"
 
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
@@ -291,13 +292,20 @@ void parser_t::read_game_info(game_t& game) {
     auto player_name = root["playerName"].asString();
 
     for (auto it = vehicles.begin(); it != vehicles.end(); ++it) {
-        unsigned player_id = boost::lexical_cast<int>(it.key().asString());
-        std::string name = (*it)["name"].asString();
-        if (name == player_name) {
-            game.recorder_id = player_id;
+        player_t player;
+        
+        player.player_id = boost::lexical_cast<int>(it.key().asString());
+        player.name = (*it)["name"].asString();
+        player.team = (*it)["team"].asInt();
+        player.tank = (*it)["vehicleType"].asString();
+        player.tank = player.tank.substr(player.tank.find(':') + 1);
+
+        if (player.name == player_name) {
+            game.recorder_id = player.player_id;
         }
-        int team_id = (*it)["team"].asInt();
-        game.teams[team_id - 1].insert(player_id);
+
+        game.players[player.player_id] = player;
+        game.teams[player.team - 1].insert(player.player_id);
     }
 
     std::string map_name = root["mapName"].asString();
@@ -333,4 +341,5 @@ bool wotreplay::is_replayfile(const boost::filesystem::path &p) {
 
 void parser_t::load_data() {
     init_arena_definition();
+    init_tank_definition();
 }

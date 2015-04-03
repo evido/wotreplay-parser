@@ -76,7 +76,7 @@ namespace wotreplay {
         /**
          * @return image width
          */
-        int get_image_width();
+        int get_image_width() const;
         /**
          * set image width
          * @param image_width new image width
@@ -85,12 +85,22 @@ namespace wotreplay {
         /**
          * @return image height
          */
-        int get_image_height();
+        int get_image_height() const;
         /**
          * set image height
          * @param image_height new image height
          */
         void set_image_height(int image_height);
+        /**
+         * @return no basemap
+         */
+        bool get_no_basemap() const;
+        /**
+         * set no basemap
+         * @param no_basemap new no_basemap value
+         */
+        void set_no_basemap(bool no_basemap);
+        virtual void draw_basemap();
     protected:
         /**
          * Load a background image from the combination map name and game mode.
@@ -151,12 +161,13 @@ namespace wotreplay {
         bool initialized = false;
         bool show_self = false;
         bool use_fixed_teamcolors = true;
-        std::string mode;
+        std::string game_mode;
         arena_t arena;
         int recorder_team = -1;
         filter_t filter;
         int image_width;
         int image_height;
+        bool no_basemap;
     };
 }
 
