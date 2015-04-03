@@ -1,9 +1,11 @@
 #include "image_writer.h"
 #include "heatmap_writer.h"
+#include "class_heatmap_writer.h"
 #include "json_writer.h"
 #include "logger.h"
 #include "parser.h"
 #include "regex.h"
+#include "tank.h"
 
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
@@ -28,15 +30,6 @@ void show_help(int argc, const char *argv[], po::options_description &desc) {
     std::stringstream help_message;
     help_message << desc << "\n";
     logger.write(help_message.str());
-}
-
-float distance(const std::tuple<float, float, float> &left, const std::tuple<float, float, float> &right) {
-    float delta_x = std::get<0>(left) - std::get<0>(right);
-    float delta_y = std::get<1>(left) - std::get<1>(right);
-    float delta_z = std::get<2>(left) - std::get<2>(right);
-    // distance in xy plane
-    float dist1 = std::sqrt(delta_x*delta_x + delta_y*delta_y);
-    return std::sqrt(dist1*dist1 + delta_z*delta_z);
 }
 
 static bool is_not_empty(const packet_t &packet) {
@@ -90,6 +83,9 @@ std::unique_ptr<writer_t> create_writer(const std::string &type, const po::varia
         auto &image_writer = dynamic_cast<image_writer_t&>(*writer);
         image_writer.set_show_self(true);
         image_writer.set_use_fixed_teamcolors(false);
+        image_writer.set_image_width(vm["size"].as<int>());
+        image_writer.set_image_height(vm["size"].as<int>());
+        image_writer.set_no_basemap(vm.count("overlay") > 0);
     } else if (type == "json") {
         writer = std::unique_ptr<writer_t>(new json_writer_t());
         if (vm.count("supress-empty")) {
@@ -108,8 +104,26 @@ std::unique_ptr<writer_t> create_writer(const std::string &type, const po::varia
         } else if (type == "team-heatmap-soft") {
             heatmap_writer.mode = heatmap_mode_t::team_soft;
         }
+
+        heatmap_writer.set_image_width(vm["size"].as<int>());
+        heatmap_writer.set_image_height(vm["size"].as<int>());
+        heatmap_writer.set_no_basemap(vm.count("no-basemap") > 0);
+    } else if (type == "class-heatmap") {
+        writer = std::unique_ptr<writer_t>(new class_heatmap_writer_t());
+        auto &class_heatmap_writer = dynamic_cast<class_heatmap_writer_t&>(*writer);
+
+        std::vector<draw_rule_t> rules = parse_draw_rules(vm["rules"].as<std::string>());
+
+        class_heatmap_writer.set_draw_rules(rules);
+        class_heatmap_writer.set_image_width(vm["size"].as<int>());
+        class_heatmap_writer.set_image_height(vm["size"].as<int>());
+        class_heatmap_writer.set_no_basemap(vm.count("no-basemap") > 0);
+        class_heatmap_writer.skip = vm["skip"].as<double>();
+        class_heatmap_writer.bounds = std::make_pair(vm["bounds-min"].as<double>(),
+                                                     vm["bounds-max"].as<double>());
+
     } else {
-        logger.writef(log_level_t::error, "Invalid output type (%1%), supported types: png, json, heatmap, team-heatmap, team-heatmap-soft.\n", type);
+        logger.writef(log_level_t::error, "Invalid output type (%1%), supported types: png, json, heatmap, team-heatmap, team-heatmap-soft or class-heatmap.\n", type);
     }
 
     return writer;
@@ -120,6 +134,7 @@ int process_replay_directory(const po::variables_map &vm, const std::string &inp
 {
     // load all arena's so we can use manual load parser
     init_arena_definition();
+    init_tank_definition();
 
     auto it = directory_iterator(input);
     auto f_generate_replay_paths = [&it](tbb::flow_control &fc) -> std::string {
@@ -278,7 +293,9 @@ int process_replay_file(const po::variables_map &vm, const std::string &input, c
         {"png", ".png"},
         {"json", ".json"},
         {"heatmap", "_heatmap.png"},
-        {"team-heatmap", "_team_heatmap.png"}
+        {"team-heatmap", "_team_heatmap.png"},
+        {"team-heatmap-soft", "_team_heatmap_soft.png"},
+        {"class-heatmap", "_class_heatmap.png"}
     };
 
     if ( !(vm.count("type") > 0 && vm.count("input") > 0) ) {
@@ -301,7 +318,7 @@ int process_replay_file(const po::variables_map &vm, const std::string &input, c
     boost::char_separator<char> sep(",");
     boost::tokenizer<boost::char_separator<char>> tokens(type, sep);
     bool single = std::distance(tokens.begin(), tokens.end()) == 1;
-    for(auto it = tokens.begin(); it != tokens.end(); ++it){
+    for(auto it = tokens.begin(); it != tokens.end(); ++it) {
         std::unique_ptr<writer_t> writer = create_writer(*it, vm);
 
         if (!writer) {
@@ -340,8 +357,9 @@ int process_replay_file(const po::variables_map &vm, const std::string &input, c
 int main(int argc, const char * argv[]) {
     po::options_description desc("Allowed options");
 
-    std::string type, output, input, root;
+    std::string type, output, input, root, rules;
     double skip, bounds_min, bounds_max;
+    int size;
 
 #ifdef ENABLE_TBB
     int tokens = 10;
@@ -361,6 +379,11 @@ int main(int argc, const char * argv[]) {
         ("skip", po::value(&skip)->default_value(60., "60"), "for heatmaps, skip a certain number of seconds after the start of the battle")
         ("bounds-min", po::value(&bounds_min)->default_value(0.02, "0.02"), "for heatmaps, set min value to display")
         ("bounds-max", po::value(&bounds_max)->default_value(0.98, "0.98"), "for heatmaps, set max value to display")
+        ("size", po::value(&size)->default_value(512), "output image size for image writers")
+        ("rules", po::value(&rules)->default_value("#ff0000 := team = '1'; #00ff00 := team = '0'"),
+         "specify drawing rules, allowing the user to choose the colors used")
+        ("parse-rules", "parse rules only and print parsed expression")
+        ("overlay", "generate overlay, don't draw basemap in output image")
 #ifdef ENABLE_TBB
         ("tokens", po::value(&tokens)->default_value(10), "number of pipeline tokens")
 #endif
@@ -399,6 +422,12 @@ int main(int argc, const char * argv[]) {
         logger.set_log_level(log_level_t::warning);
     }
 
+    if (vm.count("parse-rules") > 0) {
+        logger.set_log_level(log_level_t::debug);
+        parse_draw_rules(vm["rules"].as<std::string>());
+        std::exit(0);
+    }
+    
     int exit_code;
     if (vm.count("parse") > 0) {
         // parse

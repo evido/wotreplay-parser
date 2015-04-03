@@ -14,6 +14,8 @@
 #include <tuple>
 #include <vector>
 
+/** @file */
+
 namespace wotreplay {
     /**
      * define a bounding box of an arena by its bottom left

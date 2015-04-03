@@ -10,7 +10,8 @@ using namespace wotreplay;
 const int element_size = 48;
 
 image_writer_t::image_writer_t()
-    : filter([](const packet_t &){ return true; })
+    : filter([](const packet_t &){ return true; }),
+      image_width(512), image_height(512)
 {}
 
 void image_writer_t::draw_element(const boost::multi_array<uint8_t, 3> &element, int x, int y, int mask) {
@@ -34,7 +35,8 @@ boost::multi_array<uint8_t, 3> image_writer_t::get_element(const std::string &na
     boost::multi_array<uint8_t, 3> element, resized_element;
     std::ifstream is("elements/" + name + ".png", std::ios::binary);
     read_png(is, element);
-    resize(element, element_size, element_size, resized_element);
+    double f = image_width / 512.0; // we need to scale the elements to the right size
+    resize(element, element_size*f, element_size*f, resized_element);
     return resized_element;
 }
 
@@ -74,16 +76,16 @@ void image_writer_t::draw_grid(boost::multi_array<uint8_t, 3> &image) {
 }
 
 void image_writer_t::draw_elements() {
-    auto it = arena.configurations.find(mode);
+    auto it = arena.configurations.find(game_mode);
     if (it == arena.configurations.end()) {
-        wotreplay::logger.writef(log_level_t::warning, "Could not find configuration for game mode '%1%'\n", mode);
+        wotreplay::logger.writef(log_level_t::warning, "Could not find configuration for game mode '%1%'\n", game_mode);
         return;
     }
 
-    const arena_configuration_t &configuration = arena.configurations[mode];
+    const arena_configuration_t &configuration = arena.configurations[game_mode];
     int reference_team_id = use_fixed_teamcolors ? 0 : recorder_team;
     
-    if (mode == "domination") {
+    if (game_mode == "domination") {
         auto neutral_base = get_element("neutral_base");
         draw_element(neutral_base, configuration.control_point);
     }
@@ -164,8 +166,10 @@ void image_writer_t::update(const game_t &game) {
 }
 
 void image_writer_t::load_base_map(const std::string &path) {
+    boost::multi_array<uint8_t, 3> map;
     std::ifstream is(path, std::ios::binary);
-    read_png(is, this->base);
+    read_png(is, map);
+    resize(map, image_width, image_height, this->base);
 }
 
 void image_writer_t::write(std::ostream &os) {
@@ -174,12 +178,13 @@ void image_writer_t::write(std::ostream &os) {
 
 void image_writer_t::init(const arena_t &arena, const std::string &mode) {
     this->arena = arena;
-    this->mode = mode;
+    this->game_mode = mode;
 
-    size_t height = 512, width = 512;
-    positions.resize(boost::extents[3][height][width]);
-    deaths.resize(boost::extents[3][height][width]);
+    positions.resize(boost::extents[3][image_height][image_width]);
+    deaths.resize(boost::extents[3][image_height][image_width]);
+
     clear();
+
     initialized = true;
 }
 
@@ -190,16 +195,15 @@ void image_writer_t::clear() {
 }
 
 void image_writer_t::finish() {
-    // copy background to result
-    load_base_map(arena.mini_map);
+    draw_basemap();
+
     const size_t *shape = base.shape();
     result.resize(boost::extents[shape[0]][shape[1]][shape[2]]);
-
-    draw_elements();
     result = base;
+
     int reference_team_id = use_fixed_teamcolors ? 0 : recorder_team;
-    for (int i = 0; i < shape[0]; ++i) {
-        for (int j = 0; j < shape[1]; ++j) {
+    for (int i = 0; i < image_height; ++i) {
+        for (int j = 0; j < image_width; ++j) {
             if (positions[0][i][j] > positions[1][i][j]) {
                 // position claimed by first team
                 if (reference_team_id == 0) {
@@ -247,7 +251,7 @@ void image_writer_t::finish() {
                     int y = i + offset[1];
 
                     // draw only if within bounds
-                    if (x >= 0 && x < shape[0] && y >= 0  && y < shape[1]) {
+                    if (x >= 0 && x < image_width && y >= 0  && y < image_height) {
                         result[y][x][3] = result[y][x][0] = result[y][x][1] = 0xFF;
                         result[y][x][2] = 0x00;
                     }
@@ -299,11 +303,47 @@ const arena_t &image_writer_t::get_arena() const {
 }
 
 const std::string &image_writer_t::get_game_mode() const {
-    return mode;
+    return game_mode;
 }
 
 void image_writer_t::merge(const image_writer_t &writer) {
     // TODO: implement this
     std::transform(positions.origin(), positions.origin() + positions.num_elements(),
                    writer.positions.origin(), positions.origin(), std::plus<float>());
+}
+
+int image_writer_t::get_image_height() const {
+    return image_height;
+}
+
+void image_writer_t::set_image_height(int image_height) {
+    this->image_height = image_height;
+}
+
+
+int image_writer_t::get_image_width() const {
+    return image_width;
+}
+
+void image_writer_t::set_image_width(int image_width) {
+    this->image_width = image_width;
+}
+
+bool image_writer_t::get_no_basemap() const {
+    return no_basemap;
+}
+
+void image_writer_t::set_no_basemap(bool no_basemap) {
+    this->no_basemap = no_basemap;
+}
+
+void image_writer_t::draw_basemap() {
+    if (!no_basemap) {
+        load_base_map(arena.mini_map);
+        const size_t *shape = base.shape();
+        result.resize(boost::extents[shape[0]][shape[1]][shape[2]]);
+        draw_elements();
+    } else {
+        base.resize(boost::extents[image_width][image_height][4]);
+    }
 }

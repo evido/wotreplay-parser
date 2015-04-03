@@ -40,6 +40,12 @@ Displays a heatmap of the positions of the tanks in the battle (colored by team)
 
 ![Output example of type 'team-heatmap-soft'](examples/example_team_heatmap_soft.png)
 
+## Output type Class Heatmap
+
+![Output example of type 'class-heatmap'](examples/example_class_heatmap.png)
+
+Displays a heatmap of the positions following user defined classes.
+
 # Build
 
 ## Dependencies
@@ -78,7 +84,7 @@ The program can be used to convert wotreplay files to images or json files.
 
     wotreplay-parser --parse --root <working directory> --type <output type> --input <input file> --output <output file>
 
-* `output type` can be png, json, and team-heatmap, it is possible to specify multiple types (e.g. png,json), when using multiple types the output file specification will be appended with a suffix (.png, .json and _heatmap.png)
+* `output type` can be png, json, team-heatmap, heatmap and class-heatmap it is possible to specify multiple types (e.g. png,json), when using multiple types the output file specification will be appended with a suffix (.png, .json and _heatmap.png)
 * `output` is optional, the program will then write to stdout
 * `input` and  `output` are relative to root
 * `root` should contain a folder maps with the images to maps and the arena definitions
@@ -92,6 +98,8 @@ The program can be used to create heatmaps for a directory of replays
 * `input directory` is the directory containing all the replays (relative to root, only first level will be scanned)
 * `output directory` images will be written to this directory, for each map / game mode an output file will be generated (relative to root)
 * `root` should contain a folder maps with the images to maps and the arena definitions
+* `size` specifies the output dimensions of the generated image (for image output types)
+* `rules` specify drawing rules to be used for output type class-heatmap (surround the argument with quotes to avoid the program interpreting it as seperate arguments)
 
 ## Create Minimaps
 
@@ -101,6 +109,23 @@ The program can also be used to create all the minimaps for usage in [wotreplay-
 
 * `root` the working directory containing the necessary data
 * `output` the output directory relative to the root directory
+
+## Rules
+
+The syntax of drawing rules is as follows (EBNF syntax)
+
+    rules = rule *(';' rule)
+    rule = color ':=' expression
+    expression = operation *(logical_operator operation)
+    operation = operand comparison operand
+    operand = symbol | value
+    logical_operator = 'and' | 'or'
+    comparison = '=' | '!=' | '>' | '<' | '>=' | '<='
+    color = '#' hex{6}
+    symbol = 'player' | 'clock' | 'team' | 'tank_name' | 'tank_country' | 'tank_tier' | 'tank_icon' | 'tank_class'
+    value = ''' +(digit | alpha | '_' | '-' ) '''
+
+Each packet is evaluated using the defined rules and assigned a class (first match), which will be used in the resulting heatmap.
 
 # Packet Overview
 
