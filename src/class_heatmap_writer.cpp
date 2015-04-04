@@ -110,7 +110,6 @@ void class_heatmap_writer_t::finish() {
         for (int j = 0; j < image_height; j += 1) {
             int ix = 0;
             double a = clamp((positions[0][i][j] - min[0]) / (max[0] - min[0]), 0.0, 1.0);
-
             for (int k = 1; k < class_count; k += 1) {
                 double _a = clamp((positions[k][i][j] - min[k]) / (max[k] - min[k]), 0.0, 1.0);
                 if (_a > a) {
@@ -120,16 +119,16 @@ void class_heatmap_writer_t::finish() {
             }
 
             uint32_t c = colors[ix];
-
             if (!no_basemap) {
-                result[i][j][0] = mix(result[i][j][0], result[i][j][0], 1. - a, (c >> 16) & 0xFF, a);
-                result[i][j][1] = mix(result[i][j][1], result[i][j][1], 1. - a, (c >> 8 ) & 0xFF, a);
-                result[i][j][2] = mix(result[i][j][2], result[i][j][2], 1. - a,  c        & 0xFF, a);
+                a *= (c & 0xFF) / 255.;
+                result[i][j][0] = mix(result[i][j][0], result[i][j][0], 1. - a, (c >> 24) & 0xFF, a);
+                result[i][j][1] = mix(result[i][j][1], result[i][j][1], 1. - a, (c >> 16) & 0xFF, a);
+                result[i][j][2] = mix(result[i][j][2], result[i][j][2], 1. - a, (c >>  8) & 0xFF, a);
             } else {
-                result[i][j][0] = (c >> 16) & 0xFF;
-                result[i][j][1] = (c >> 8 ) & 0xFF;
-                result[i][j][2] =  c        & 0xFF;
-                result[i][j][3] = a*255;
+                result[i][j][0] = (c >> 24) & 0xFF;
+                result[i][j][1] = (c >> 16) & 0xFF;
+                result[i][j][2] = (c >>  8) & 0xFF;
+                result[i][j][3] = (c & 0xFF)* a;
             }
         }
     }
