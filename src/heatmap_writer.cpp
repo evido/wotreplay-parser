@@ -97,7 +97,7 @@ void heatmap_writer_t::finish() {
             }
         }
     } else {
-        double min[2], max[2];
+        float min[2], max[2];
 
         for (int k = 0; k < 2; k += 1) {
             if (mode == heatmap_mode_t::team_soft) {
@@ -125,17 +125,15 @@ void heatmap_writer_t::finish() {
                                                   std::get<1>(bounds));
         }
 
-        static auto f =  mode == team_soft ? [](double x) {
-            x = clamp(x, 0.0, 1.0);
-            auto y = log10(0.99*x+0.01)/2. + 1.;
-            return clamp(y, 0.0, 1.0);
-        } : [](double x) { return x; };
+        static auto f =  mode == team_soft ? [](float x) {
+            return std::pow(std::log10(9*x + 1.f), 0.75f);
+        } : [](float x) { return x; };
 
         for (int i = 0; i < image_height; i += 1) {
             for (int j = 0; j < image_width; j += 1) {
-                double a[] = {
-                    clamp((positions[0][i][j] - min[0]) / (max[0] - min[0]), 0.0, 1.0),
-                    clamp((positions[1][i][j] - min[1]) / (max[1] - min[1]), 0.0, 1.0)
+                float a[] = {
+                    clamp((positions[0][i][j] - min[0]) / (max[0] - min[0]), 0.0f, 1.0f),
+                    clamp((positions[1][i][j] - min[1]) / (max[1] - min[1]), 0.0f, 1.0f)
                 };
 
                 a[0] = f(a[0]);
@@ -156,15 +154,21 @@ void heatmap_writer_t::finish() {
     }
 }
 
-void heatmap_writer_t::update(const game_t &game) {
+int heatmap_writer_t::get_class(const game_t &game, const packet_t &packet) const {
+    return game.get_team_id(packet.player_id());
+}
+
+void heatmap_writer_t::update(const wotreplay::game_t &game) {
     std::set<int> dead_players;
 
     const auto &packets = game.get_packets();
-    int i = 0, offset = get_start_packet(game, skip);
-    for (auto it = packets.begin(); it != packets.end() ; it++ ) {
+    int offset = get_start_packet(game, skip);
+    for (auto it = packets.cbegin(); it != packets.cend() ; it++) {
         const auto &packet = *it;
-        ++i;
-        if (!packet.has_property(property_t::position)) {
+
+        offset -= 1;
+
+        if (offset > 0 || !packet.has_property(property_t::position)) {
             if (packet.has_property(property_t::tank_destroyed)) {
                 uint32_t target, killer;
                 std::tie(target, killer) = packet.tank_destroyed();
@@ -173,31 +177,28 @@ void heatmap_writer_t::update(const game_t &game) {
             continue;
         }
 
-        if (i < offset) {
-            continue;
-        }
-
         uint32_t player_id = packet.player_id();
-        int team_id = game.get_team_id(player_id);
-        if (team_id < 0 || dead_players.find(player_id) != dead_players.end()) {
+        int class_id;
+        if (dead_players.count(player_id) != 0 || (class_id = this->get_class(game, packet)) < 0) {
             continue;
         }
-
-        auto shape = positions.shape();
-        int height = static_cast<int>(shape[1]);
-        int width = static_cast<int>(shape[2]);
 
         const bounding_box_t &bounding_box = game.get_arena().bounding_box;
-        std::tuple<float, float> position = get_2d_coord( packet.position(), bounding_box, width, height);
-        double x = std::get<0>(position);
-        double y = std::get<1>(position);
+        std::tuple<float, float> position = get_2d_coord(packet.position(), bounding_box, image_width, image_height);
 
-        if (x >= 0 && y >= 0 && x <= (width - 1) && y <= (height - 1)) {
-            float px = x - floor(x), py = y - floor(y);
-            positions[team_id][floor(y)][floor(x)] += px*py;
-            positions[team_id][ceil(y)][floor(x)] += px*(1-py);
-            positions[team_id][floor(y)][ceil(x)] += (1-px)*py;
-            positions[team_id][ceil(y)][ceil(x)] += (1-px)*(1-py);
+        float x = std::get<0>(position);
+        float y = std::get<1>(position);
+
+        int ll_x = std::floor(x), ll_y = std::floor(y);
+        int ul_x = ll_x + 1, ul_y = ll_y + 1;
+
+        if (ll_x >= 0 && ll_y >= 0 && ul_x < image_width && ul_y < image_height) {
+            float px = x - ll_x, py = y - ll_y;
+
+            positions[class_id][ll_y][ll_x] += (1 - px) * (1 - py);
+            positions[class_id][ul_y][ll_x] += (1 - px) *  py;
+            positions[class_id][ll_y][ul_x] +=  px      * (1 - py);
+            positions[class_id][ul_y][ul_x] +=  px      *  py;
         }
     }
 }

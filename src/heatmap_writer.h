@@ -19,6 +19,7 @@ namespace wotreplay {
     public:
         heatmap_writer_t();
         virtual void update(const game_t &game) override;
+        virtual int  get_class(const game_t &game, const packet_t &packet) const;
         virtual void finish() override;
         /** Skip number of seconds after start of battle */
         float skip;

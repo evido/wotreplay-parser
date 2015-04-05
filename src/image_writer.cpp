@@ -131,18 +131,28 @@ void image_writer_t::draw_position(const packet_t &packet, const game_t &game, b
     int team_id = game.get_team_id(player_id);
     if (team_id < 0) return;
 
-    auto shape = image.shape();
-    int height = static_cast<int>(shape[1]);
-    int width = static_cast<int>(shape[2]);
-
     const bounding_box_t &bounding_box = game.get_arena().bounding_box;
-    std::tuple<float, float> position = get_2d_coord( packet.position(), bounding_box, width, height);
-    long x = std::lround(std::get<0>(position));
-    long y = std::lround(std::get<1>(position));
-    if (x >= 0 && y >= 0 && x < width && y < height) {
-        image[team_id][y][x]++;
+    std::tuple<float, float> position = get_2d_coord( packet.position(), bounding_box, image_width, image_height);
+    
+    double x = std::get<0>(position);
+    double y = std::get<1>(position);
+
+    int ll_x = std::floor(x), ll_y = std::floor(y);
+    int ul_x = ll_x + 1, ul_y = ll_y + 1;
+
+    if (ll_x >= 0 && ll_y >= 0 && ul_x < image_width && ul_y < image_height) {
+        float px = x - ll_x, py = y - ll_y;
+
+        positions[team_id][ll_y][ll_x] += (1 - px) * (1 - py);
+        positions[team_id][ul_y][ll_x] += (1 - px) *  py;
+        positions[team_id][ll_y][ul_x] +=  px      * (1 - py);
+        positions[team_id][ul_y][ul_x] +=  px      *  py;
+
         if (player_id == game.get_recorder_id()) {
-            image[2][y][x]++;
+            positions[team_id][ll_y][ll_x] += (1 - px) * (1 - py);
+            positions[team_id][ul_y][ll_x] += (1 - px) *  py;
+            positions[team_id][ll_y][ul_x] +=  px      * (1 - py);
+            positions[team_id][ul_y][ul_x] +=  px      *  py;
         }
     }
 }
