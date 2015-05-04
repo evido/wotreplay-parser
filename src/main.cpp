@@ -18,9 +18,18 @@
 #include <tbb/flow_graph.h>
 #endif
 
-#include <fstream>
+#ifdef BOOST_NO_EXCEPTIONS
+namespace boost {
+	template<class E> inline void throw_exception(E const & e)
+	{
+		throw e;
+	}
+}
+#endif
 
+#include <fstream>
 #include <float.h>
+#include <direct.h>
 
 using namespace wotreplay;
 using namespace boost::filesystem;
@@ -408,7 +417,7 @@ int main(int argc, const char * argv[]) {
     }
 
     if (vm.count("root") >  0
-            && chdir(root.c_str()) != 0) {
+            && _chdir(root.c_str()) != 0) {
         logger.writef(log_level_t::error, "Cannot change working directory to: %1%\n", root);
         std::exit(0);
     }

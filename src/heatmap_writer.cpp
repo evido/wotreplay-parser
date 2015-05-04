@@ -5,6 +5,10 @@
 
 #include <unordered_map>
 
+#ifdef _MSC_VER
+#define constexpr 
+#endif
+
 using namespace wotreplay;
 using boost::algorithm::clamp;
 
@@ -125,12 +129,17 @@ void heatmap_writer_t::finish() {
                                                   std::get<1>(bounds));
         }
 
-        static auto f =  mode == team_soft ? [](double x) {
-            x = clamp(x, 0.0, 1.0);
-            auto y = log10(0.99*x+0.01)/2. + 1.;
-            return clamp(y, 0.0, 1.0);
-        } : [](double x) { return x; };
-
+		static std::function<double(double)> f;
+		if (mode == team_soft) {
+			f = [](double x) {
+				x = clamp(x, 0.0, 1.0);
+				auto y = log10(0.99*x + 0.01) / 2. + 1.;
+				return clamp(y, 0.0, 1.0);
+			};
+		}
+		else {
+			f = [](double x) { return x; };
+		}
         for (int i = 0; i < image_height; i += 1) {
             for (int j = 0; j < image_width; j += 1) {
                 double a[] = {
