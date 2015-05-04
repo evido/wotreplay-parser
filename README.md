@@ -46,6 +46,10 @@ Displays a heatmap of the positions of the tanks in the battle (colored by team)
 
 Displays a heatmap of the positions following user defined classes.
 
+# Download
+
+* [Win32](https://drive.google.com/open?id=0B3nvac-cSAKRbEJ0XzFTT09lN2M&authuser=0)
+
 # Build
 
 ## Dependencies
@@ -74,7 +78,7 @@ You may need to specify the include directory for LibXML2 using the CMAKE variab
 
 # Data
 
-To use this software you need some data extracted from World of Tanks, this data contains some elements to draw the mini map, the actual minimaps and the arena definitions. I have prepared an archive which is available [here](https://drive.google.com/file/d/0B3nvac-cSAKRT3NFZnVkRU1JdVU/view?usp=sharing). This should be available in the `root` folder (see next paragraph).
+To use this software you need some data extracted from World of Tanks, this data contains some elements to draw the mini map, the actual minimaps and the arena definitions. I have prepared an archive which is available [here](https://drive.google.com/open?id=0B3nvac-cSAKReTk2T1RHZFRvYk0&authuser=0). This should be available in the `root` folder (see next paragraph).
 
 # Run
 

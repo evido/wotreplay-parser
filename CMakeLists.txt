@@ -19,6 +19,7 @@ include_directories(AFTER ext/jsoncpp/include ${Boost_INCLUDE_DIRS} ${LIBXML2_IN
 link_directories(${LINK_DIRECTORIES})
 
 if(MSVC)
+set (CMAKE_CXX_FLAGS "/EHsc")
 else()
 set (CMAKE_CXX_FLAGS "-Os -std=c++11")
 endif()
