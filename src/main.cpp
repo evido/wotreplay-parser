@@ -18,18 +18,15 @@
 #include <tbb/flow_graph.h>
 #endif
 
-#ifdef BOOST_NO_EXCEPTIONS
-namespace boost {
-	template<class E> inline void throw_exception(E const & e)
-	{
-		throw e;
-	}
-}
-#endif
-
 #include <fstream>
 #include <float.h>
+
+#ifdef _MSC_VER
 #include <direct.h>
+#define chdir _chdir
+#else
+#include <unistd.h>
+#endif
 
 using namespace wotreplay;
 using namespace boost::filesystem;
