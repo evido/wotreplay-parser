@@ -46,6 +46,10 @@ Displays a heatmap of the positions of the tanks in the battle (colored by team)
 
 Displays a heatmap of the positions following user defined classes.
 
+# Download
+
+* [Win32](https://drive.google.com/open?id=0B3nvac-cSAKRbEJ0XzFTT09lN2M&authuser=0)
+
 # Build
 
 ## Dependencies

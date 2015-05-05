@@ -19,8 +19,14 @@
 #endif
 
 #include <fstream>
-
 #include <float.h>
+
+#ifdef _MSC_VER
+#include <direct.h>
+#define chdir _chdir
+#else
+#include <unistd.h>
+#endif
 
 using namespace wotreplay;
 using namespace boost::filesystem;
@@ -408,7 +414,7 @@ int main(int argc, const char * argv[]) {
     }
 
     if (vm.count("root") >  0
-            && chdir(root.c_str()) != 0) {
+            && _chdir(root.c_str()) != 0) {
         logger.writef(log_level_t::error, "Cannot change working directory to: %1%\n", root);
         std::exit(0);
     }

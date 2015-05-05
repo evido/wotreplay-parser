@@ -19,10 +19,18 @@
 #include <stdexcept>
 #include <string>
 #include <type_traits>
+
+#ifdef _MSC_VER
+#define ZLIB_WINAPI
+#endif
 #include <zlib.h>
 
 using namespace wotreplay;
 using namespace boost::filesystem;
+
+#ifndef __func__
+#define __func__ __FUNCTION__
+#endif
 
 #if DEBUG_REPLAY_FILE
 
