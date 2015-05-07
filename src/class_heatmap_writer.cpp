@@ -50,14 +50,16 @@ void class_heatmap_writer_t::finish() {
     result.resize(boost::extents[shape[0]][shape[1]][shape[2]]);
     result = base;
 
-    int class_count = classes.size();
+    const int class_count = classes.size();
 
-    uint32_t colors[class_count];
+	std::unique_ptr<uint32_t[]> colors(new uint32_t[class_count]);
     for (const auto &it : classes) {
         colors[it.second] = it.first;
     }
 
-    double min[class_count], max[class_count];
+	std::unique_ptr<double[]> min(new double[class_count]);
+	std::unique_ptr<double[]> max(new double[class_count]);
+
 
     for (int k = 0; k < class_count; k += 1) {
         std::tie(min[k], max[k]) = get_bounds(positions[k],

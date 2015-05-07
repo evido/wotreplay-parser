@@ -3,6 +3,7 @@ project (wotreplay-parser)
 
 set(Boost_USE_MULTITHREADED     ON)
 set(Boost_USE_STATIC_RUNTIME    OFF)
+set(Boost_USE_STATIC_LIBS       ON)
 set(CMAKE_MODULE_PATH           ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/ext/cmake_modules")
 set(CMAKE_FIND_FRAMEWORK        LAST)
 
@@ -17,7 +18,11 @@ include_directories(AFTER ext/jsoncpp/include ${Boost_INCLUDE_DIRS} ${LIBXML2_IN
 
 link_directories(${LINK_DIRECTORIES})
 
+if(MSVC)
+set (CMAKE_CXX_FLAGS "/EHsc")
+else()
 set (CMAKE_CXX_FLAGS "-Os -std=c++11")
+endif()
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)

@@ -19,8 +19,14 @@
 #endif
 
 #include <fstream>
-
 #include <float.h>
+
+#ifdef _MSC_VER
+#include <direct.h>
+#define chdir _chdir
+#else
+#include <unistd.h>
+#endif
 
 using namespace wotreplay;
 using namespace boost::filesystem;
