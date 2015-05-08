@@ -20,9 +20,6 @@
 #include <string>
 #include <type_traits>
 
-#ifdef _MSC_VER
-#define ZLIB_WINAPI
-#endif
 #include <zlib.h>
 
 using namespace wotreplay;

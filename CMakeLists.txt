@@ -6,6 +6,7 @@ set(Boost_USE_STATIC_RUNTIME    OFF)
 set(Boost_USE_STATIC_LIBS       ON)
 set(CMAKE_MODULE_PATH           ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/ext/cmake_modules")
 set(CMAKE_FIND_FRAMEWORK        LAST)
+set(OPENSSL_USE_STATIC          1)
 
 find_package(Boost 1.50.0 COMPONENTS filesystem program_options system regex REQUIRED)
 find_package(LibXml2 REQUIRED)
@@ -19,9 +20,12 @@ include_directories(AFTER ext/jsoncpp/include ${Boost_INCLUDE_DIRS} ${LIBXML2_IN
 link_directories(${LINK_DIRECTORIES})
 
 if(MSVC)
-set (CMAKE_CXX_FLAGS "/EHsc")
+	set (CMAKE_CXX_FLAGS "/EHsc")
+	add_definitions(-DZLIB_WINAPI)
+	add_definitions(-D__func__=__FUNCTION__)
+	add_definitions(-Dchdir=_chdir)
 else()
-set (CMAKE_CXX_FLAGS "-Os -std=c++11")
+	set (CMAKE_CXX_FLAGS "-Os -std=c++11")
 endif()
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)

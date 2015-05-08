@@ -5,10 +5,6 @@
 
 #include <unordered_map>
 
-#ifdef _MSC_VER
-#define constexpr 
-#endif
-
 using namespace wotreplay;
 using boost::algorithm::clamp;
 
@@ -32,7 +28,7 @@ heatmap_writer_t::heatmap_writer_t()
     : skip(60), bounds(std::make_pair(0.02, 0.98))
 {}
 
-constexpr unsigned char *get_color(double val) {
+unsigned char *get_color(double val) {
     return mixed_data + ((int) (val * (sizeof(mixed_data) / (sizeof(mixed_data[0])*4) - 1) + 0.5f)*4);
 }
 
@@ -136,8 +132,9 @@ void heatmap_writer_t::finish() {
 			};
 		}
 		else {
-			f = [](std:: x) { std:: x; };
+			f = [](float x) { return x; };
 		}
+
         for (int i = 0; i < image_height; i += 1) {
             for (int j = 0; j < image_width; j += 1) {
                 float a[] = {

@@ -6,7 +6,6 @@
 #include "writer.h"
 
 #include <boost/multi_array.hpp>
-#include <png.h>
 #include <stdint.h>
 #include <string>
 #include <vector>
