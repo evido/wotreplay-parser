@@ -234,28 +234,18 @@ void image_writer_t::finish() {
             }
 
             if (deaths[0][i][j] + deaths[1][i][j] > 0.f) {
-                static int offsets[][2] = {
-                    {-1, -1},
-                    {-1,  0},
-                    {-1,  1},
-                    { 0,  1},
-                    { 1,  1},
-                    { 1,  0},
-                    { 1, -1},
-                    { 0, -1},
-                    { 0,  0}
-                };
+				for (int k = 0; k < 3; k += 1) {
+					for (int l = 0; l < 3; l += 1) {
+						int x = j + k - 1;
+						int y = i + l - 1;
 
-                for (const auto &offset : offsets) {
-                    int x = j + offset[0];
-                    int y = i + offset[1];
-
-                    // draw only if within bounds
-                    if (x >= 0 && x < image_width && y >= 0  && y < image_height) {
-                        result[y][x][3] = result[y][x][0] = result[y][x][1] = 0xFF;
-                        result[y][x][2] = 0x00;
-                    }
-                }
+						// draw only if within bounds
+						if (x >= 0 && x < image_width && y >= 0 && y < image_height) {
+							result[y][x][3] = result[y][x][0] = result[y][x][1] = 0xFF;
+							result[y][x][2] = 0x00;
+						}
+					}
+				}  
             }
         }
     }
