@@ -1,7 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "../wotreplay-parser/src/parser.h"
-#include "../wotreplay-parser/src/image_writer.h"
+#include "parser.h"
+#include "image_writer.h"
 #include <fstream>
 #include <QFileDialog>
 #include <QImage>
