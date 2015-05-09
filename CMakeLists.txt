@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 2.6)
+cmake_minimum_required(VERSION 2.8.11)
 project (wotreplay-parser)
 
 set(Boost_USE_MULTITHREADED     ON)
@@ -7,6 +7,9 @@ set(Boost_USE_STATIC_LIBS       ON)
 set(CMAKE_MODULE_PATH           ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/ext/cmake_modules")
 set(CMAKE_FIND_FRAMEWORK        LAST)
 set(OPENSSL_USE_STATIC          1)
+set(CMAKE_AUTOMOC               ON)
+set(CMAKE_AUTOUIC               ON)
+set(CMAKE_INCLUDE_CURRENT_DIR   ON)
 
 find_package(Boost 1.50.0 COMPONENTS filesystem program_options system regex REQUIRED)
 find_package(LibXml2 REQUIRED)
@@ -14,6 +17,7 @@ find_package(PNG REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(TBB)
+find_package(Qt5Widgets)
 
 include_directories(AFTER ext/jsoncpp/include ${Boost_INCLUDE_DIRS} ${LIBXML2_INCLUDE_DIR} ${ZLIB_INCLUDE_DIRS} ${PNG_INCLUDE_DIRS} ${OPENSSL_INCLUDE_DIRS} ${TBB_INCLUDE_DIRS} ${INCLUDE_DIRECTORIES})
 
@@ -83,3 +87,18 @@ add_library(jsoncpp STATIC
 add_executable(wotreplay-parser src/main.cpp)
 
 target_link_libraries( wotreplay-parser ${OPENSSL_LIBRARIES} ${Boost_LIBRARIES} ${LIBXML2_LIBRARIES} ${PNG_LIBRARIES} ${ZLIB_LIBRARIES} ${TBB_LIBRARIES} wotreplay jsoncpp)
+
+if(Qt5Widgets_FOUND)
+	add_library(wotreplay-gui-widgets src/mainwindow.h
+									  src/mainwindow.cpp
+									  src/imageviewer.h
+									  src/imageviewer.cpp
+									  src/mainwindow.ui
+									  src/wotreplay-gui.pro)
+	qt5_use_modules(wotreplay-gui-widgets Widgets)
+
+	add_executable(wotreplay-gui WIN32 src/gui_main.cpp)
+	qt5_use_modules(wotreplay-gui Core Gui Widgets)
+
+	target_link_libraries( wotreplay-gui ${OPENSSL_LIBRARIES} ${Boost_LIBRARIES} ${LIBXML2_LIBRARIES} ${PNG_LIBRARIES} ${ZLIB_LIBRARIES} ${TBB_LIBRARIES} wotreplay jsoncpp wotreplay-gui-widgets Qt5::Widgets)
+endif()
