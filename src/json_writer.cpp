@@ -80,14 +80,6 @@ void json_writer_t::update(const game_t &game) {
             positionValue.append(std::get<2>(position));
         }
 
-        if (packet.has_property(property_t::hull_orientation)) {
-            auto &orientationValue = value["hull_orientation"] = Json::Value(Json::arrayValue);
-            const auto &orientation = packet.hull_orientation();
-            orientationValue.append(std::get<0>(orientation));
-            orientationValue.append(std::get<1>(orientation));
-            orientationValue.append(std::get<2>(orientation));
-        }
-
         if (packet.has_property(property_t::tank_destroyed)) {
             uint32_t target, destroyed_by;
             std::tie(target, destroyed_by) = packet.tank_destroyed();
