@@ -50,6 +50,8 @@ void json_writer_t::update(const game_t &game) {
     
     root["summary"] = summary;
 
+    const version_t &v = game.get_version();
+
     for (const auto &packet : game.get_packets()) {
         // skip empty packet
         if (!filter(packet)) continue;
@@ -87,12 +89,15 @@ void json_writer_t::update(const game_t &game) {
             value["destroyed_by"] = destroyed_by;
         }
 
-        if (packet.has_property(property_t::health)) {
-            value["health"] = packet.health();
-        }
+        // disable untill new locations can be found
+        if ((v.major == 9 && v.minor < 10) || v.major < 9) {
+            if (packet.has_property(property_t::health)) {
+                value["health"] = packet.health();
+            }
 
-        if (packet.has_property(property_t::source)) {
-            value["source"] = packet.source();
+            if (packet.has_property(property_t::source)) {
+                value["source"] = packet.source();
+            }
         }
 
         if (packet.has_property(property_t::message)) {
