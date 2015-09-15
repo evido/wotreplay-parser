@@ -23,11 +23,15 @@ include_directories(AFTER ext/jsoncpp/include ${Boost_INCLUDE_DIRS} ${LIBXML2_IN
 
 link_directories(${LINK_DIRECTORIES})
 
-if(MSVC)
+if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
 	set (CMAKE_CXX_FLAGS "/EHsc")
 	add_definitions(-DZLIB_WINAPI)
 	add_definitions(-D__func__=__FUNCTION__)
+	add_definitions(-DBOOST_ALL_NO_LIB)
+	add_definitions(-D__TBB_NO_IMPLICIT_LINKAGE)
 	add_definitions(-Dchdir=_chdir)
+	add_definitions(-DBOOST_PROGRAM_OPTIONS_DYN_LINK)
+	set(CMAKE_GENERATOR_TOOLSET "v120" CACHE STRING "Platform Toolset" FORCE) 
 else()
 	set (CMAKE_CXX_FLAGS "-Os -std=c++11")
 endif()
@@ -39,7 +43,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD "c++11")
 set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++")
 
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+if (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
   set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
 endif()
 

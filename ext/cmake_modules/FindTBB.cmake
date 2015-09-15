@@ -53,8 +53,6 @@
 # TBB_FOUND, If false, don't try to use TBB.
 # TBB_INTERFACE_VERSION, as defined in tbb/tbb_stddef.h
 
-cmake_policy(SET CMP0054 NEW)
-
 if (WIN32)
     # has em64t/vc8 em64t/vc9
     # has ia32/vc7.1 ia32/vc8 ia32/vc9
