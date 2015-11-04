@@ -65,7 +65,12 @@ void MainWindow::on_showButton_clicked()
 void MainWindow::on_browseInputButton_clicked()
 {
     QFileDialog dialog(this);
-    dialog.setNameFilter(tr("Replay Files (*.wotreplay)"));
+	QStringList filters;
+	filters
+		<< tr("World of Tanks Replays (*.wotreplay)")
+		<< tr("World of Warships Replays (*.wowsreplay)")
+		<< tr("Any files (*.*)");
+	dialog.setNameFilters(filters);
     if (dialog.exec()) {
         if (dialog.selectedFiles().length() > 0) {
             this->ui->inputTextBox->setText(dialog.selectedFiles()[0]);

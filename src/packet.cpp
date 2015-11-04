@@ -138,13 +138,6 @@ void packet_t::set_data(const slice_t &data) {
         case 0x20: {
             properties[static_cast<size_t>(property_t::clock)] = true;
             properties[static_cast<size_t>(property_t::player_id)] = true;
-            // sub type for 0x20
-            uint8_t value = get_field<uint8_t>(data.begin(), data.end(), 21);
-            properties[static_cast<size_t>(property_t::destroyed_track_id)] =
-                (value == 0xF0 || value == 0xF6);
-            // goes together with destroyed_track_id
-            properties[static_cast<size_t>(property_t::alt_track_state)] =
-                    properties[static_cast<size_t>(property_t::destroyed_track_id)];
             break;
         }
         default: {

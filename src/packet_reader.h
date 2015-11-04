@@ -2,10 +2,11 @@
 #define wotreplay_packet_reader_h
 
 #include "game.h"
-#include "packet.h"
 #include "types.h"
 
 namespace wotreplay {
+	class packet_t;
+
     /**
      * Interface that provides a set of methodes to process a buffer.
      */
@@ -33,7 +34,7 @@ namespace wotreplay {
          * @param version the game version of the replay buffer
          * @param buffer the replay buffer
          */
-        virtual void init(const version_t &version, buffer_t *buffer) = 0;
+        virtual void init(const version_t &version, buffer_t *buffer, game_title_t title) = 0;
         virtual ~packet_reader_t() {}
     };
 }
