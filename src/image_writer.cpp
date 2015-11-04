@@ -337,3 +337,8 @@ void image_writer_t::draw_basemap() {
         base.resize(boost::extents[image_width][image_height][4]);
     }
 }
+
+
+const boost::multi_array<uint8_t, 3> &image_writer_t::get_result() const { 
+	return result; 
+}

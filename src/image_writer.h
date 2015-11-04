@@ -99,6 +99,11 @@ namespace wotreplay {
          * @param no_basemap new no_basemap value
          */
         void set_no_basemap(bool no_basemap);
+		/*
+		* get result image
+		* @return image data
+		*/
+		const boost::multi_array<uint8_t, 3> &get_result() const;
         virtual void draw_basemap();
     protected:
         /**

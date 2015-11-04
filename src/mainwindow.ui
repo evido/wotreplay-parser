@@ -34,6 +34,9 @@
      </rect>
     </property>
     <layout class="QFormLayout" name="formLayout">
+     <property name="fieldGrowthPolicy">
+      <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+     </property>
      <item row="0" column="0">
       <widget class="QLabel" name="labelInput">
        <property name="text">
@@ -41,15 +44,8 @@
        </property>
       </widget>
      </item>
-     <item row="1" column="0">
-      <widget class="QLabel" name="outputLabel">
-       <property name="text">
-        <string>Output</string>
-       </property>
-      </widget>
-     </item>
      <item row="0" column="1">
-      <layout class="QHBoxLayout" name="horizontalLayout">
+      <layout class="QHBoxLayout" name="inputHorizontalLayout">
        <item>
         <widget class="QLineEdit" name="inputTextBox"/>
        </item>
@@ -74,8 +70,35 @@
        </item>
       </layout>
      </item>
+     <item row="1" column="0">
+      <widget class="QLabel" name="mapLabel">
+       <property name="text">
+        <string>Map</string>
+       </property>
+      </widget>
+     </item>
      <item row="1" column="1">
-      <layout class="QHBoxLayout" name="horizontalLayout_2">
+      <widget class="QComboBox" name="mapComboBox"/>
+     </item>
+     <item row="2" column="0">
+      <widget class="QLabel" name="modeLabel">
+       <property name="text">
+        <string>Mode</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1">
+      <widget class="QComboBox" name="modeComboBox"/>
+     </item>
+     <item row="3" column="0">
+      <widget class="QLabel" name="outputLabel">
+       <property name="text">
+        <string>Output</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="1">
+      <layout class="QHBoxLayout" name="outputHorizontalLayout">
        <item>
         <widget class="QLineEdit" name="outputTextBox"/>
        </item>
@@ -93,6 +116,72 @@
         </widget>
        </item>
       </layout>
+     </item>
+     <item row="4" column="0">
+      <widget class="QLabel" name="typeLabel">
+       <property name="text">
+        <string>Type</string>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="1">
+      <widget class="QComboBox" name="typeComboBox"/>
+     </item>
+     <item row="5" column="0">
+      <widget class="QLabel" name="boundsLabel">
+       <property name="text">
+        <string>Bounds</string>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="1">
+      <widget class="QSlider" name="lowerBoundSlider">
+       <property name="maximum">
+        <number>100</number>
+       </property>
+       <property name="value">
+        <number>2</number>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="1">
+      <widget class="QSlider" name="upperBoundSlider">
+       <property name="maximum">
+        <number>100</number>
+       </property>
+       <property name="singleStep">
+        <number>1</number>
+       </property>
+       <property name="value">
+        <number>98</number>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+     </item>
+     <item row="7" column="0">
+      <widget class="QLabel" name="overlayLabel">
+       <property name="text">
+        <string>Overlay</string>
+       </property>
+      </widget>
+     </item>
+     <item row="7" column="1">
+      <widget class="QCheckBox" name="overlayCheckBox"/>
+     </item>
+     <item row="8" column="0">
+      <widget class="QLabel" name="rulesLabel">
+       <property name="text">
+        <string>Rules</string>
+       </property>
+      </widget>
+     </item>
+     <item row="8" column="1">
+      <widget class="QPlainTextEdit" name="rulesTextEdit"/>
      </item>
     </layout>
    </widget>
