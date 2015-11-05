@@ -60,6 +60,8 @@ int create_minimaps(const po::variables_map &vm, const std::string &output, bool
 
     boost::format file_name_format("%1%/%2%_%3%_%4%.png");
 
+	init_arena_definition();
+
     image_writer_t writer;
     for (const auto &arena_entry : get_arenas()) {
         const arena_t &arena = arena_entry.second;
@@ -67,6 +69,8 @@ int create_minimaps(const po::variables_map &vm, const std::string &output, bool
             for (int team_id : { 0, 1 }) {
                 const std::string game_mode = configuration_entry.first;
                 writer.init(arena, game_mode);
+				writer.set_no_basemap(false);
+				writer.draw_basemap();
                 writer.set_recorder_team(team_id);
                 writer.set_use_fixed_teamcolors(false);
                 std::string file_name = (file_name_format % output % arena.name % game_mode % team_id).str();
