@@ -57,6 +57,9 @@ void generate_minimap(const arena_t &arena, const std::string &game_mode, int te
 
     boost::format file_name_format("%1%/%2%_%3%_%4%.png");
     std::string file_name = (file_name_format % output % arena.name % game_mode % team_id).str();
+
+    logger.writef(log_level_t::info, "Generating mini map (%0%, %1%, %2%, %3%)", output, arena.name, game_mode, team_id);
+
     try {
         writer.init(arena, game_mode);
         writer.set_no_basemap(false);
@@ -68,7 +71,7 @@ void generate_minimap(const arena_t &arena, const std::string &game_mode, int te
         writer.write(os);
     }
     catch (const std::exception &exc) {
-        logger.writef("Failed to create %0%: %1%", file_name, exc.what());
+        logger.writef(log_level_t::error, "Failed to create %0%: %1%", file_name, exc.what());
     }
 }
 
