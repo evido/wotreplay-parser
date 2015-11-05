@@ -31,7 +31,7 @@ using namespace wotreplay;
 using namespace boost::filesystem;
 namespace po = boost::program_options;
 
-void show_help(int argc, const char *argv[], po::options_description &desc) {
+void show_help(int argc, const char *argv [], po::options_description &desc) {
     std::stringstream help_message;
     help_message << desc << "\n";
     logger.write(help_message.str());
@@ -52,35 +52,44 @@ static bool is_not_empty(const packet_t &packet) {
     return false;
 }
 
+void generate_minimap(const arena_t &arena, const std::string &game_mode, int team_id, const std::string &output) {
+    image_writer_t writer;
+
+    boost::format file_name_format("%1%/%2%_%3%_%4%.png");
+    std::string file_name = (file_name_format % output % arena.name % game_mode % team_id).str();
+    try {
+        writer.init(arena, game_mode);
+        writer.set_no_basemap(false);
+        writer.draw_basemap();
+        writer.set_recorder_team(team_id);
+        writer.set_use_fixed_teamcolors(false);
+        std::ofstream os(file_name, std::ios::binary);
+        writer.finish();
+        writer.write(os);
+    }
+    catch (const std::exception &exc) {
+        logger.writef("Failed to create %0%: %1%", file_name, exc.what());
+    }
+}
+
 int create_minimaps(const po::variables_map &vm, const std::string &output, bool debug) {
-    if ( vm.count("output") == 0 ) {
+    if (vm.count("output") == 0) {
         logger.write(wotreplay::log_level_t::error, "parameter output is required to use this mode");
         return -EXIT_FAILURE;
     }
 
-    boost::format file_name_format("%1%/%2%_%3%_%4%.png");
-
-	init_arena_definition();
+    init_arena_definition();
 
     image_writer_t writer;
     for (const auto &arena_entry : get_arenas()) {
         const arena_t &arena = arena_entry.second;
         for (const auto &configuration_entry : arena.configurations) {
             for (int team_id : { 0, 1 }) {
-                const std::string game_mode = configuration_entry.first;
-                writer.init(arena, game_mode);
-				writer.set_no_basemap(false);
-				writer.draw_basemap();
-                writer.set_recorder_team(team_id);
-                writer.set_use_fixed_teamcolors(false);
-                std::string file_name = (file_name_format % output % arena.name % game_mode % team_id).str();
-                std::ofstream os(file_name, std::ios::binary);
-                writer.finish();
-                writer.write(os);
+                generate_minimap(arena, configuration_entry.first, team_id, output);
             }
         }
     }
-    
+
     return EXIT_SUCCESS;
 }
 
@@ -95,29 +104,34 @@ std::unique_ptr<writer_t> create_writer(const std::string &type, const po::varia
         image_writer.set_image_width(vm["size"].as<int>());
         image_writer.set_image_height(vm["size"].as<int>());
         image_writer.set_no_basemap(vm.count("overlay") > 0);
-    } else if (type == "json") {
+    }
+    else if (type == "json") {
         writer = std::unique_ptr<writer_t>(new json_writer_t());
         if (vm.count("supress-empty")) {
             writer->set_filter(&is_not_empty);
         }
-    } else if (type == "heatmap" || type == "team-heatmap" || type == "team-heatmap-soft") {
+    }
+    else if (type == "heatmap" || type == "team-heatmap" || type == "team-heatmap-soft") {
         writer = std::unique_ptr<writer_t>(new heatmap_writer_t());
         auto &heatmap_writer = dynamic_cast<heatmap_writer_t&>(*writer);
         heatmap_writer.skip = vm["skip"].as<double>();
         heatmap_writer.bounds = std::make_pair(vm["bounds-min"].as<double>(),
-                                               vm["bounds-max"].as<double>());
+            vm["bounds-max"].as<double>());
         if (type == "heatmap") {
             heatmap_writer.mode = heatmap_mode_t::combined;
-        } else if (type == "team-heatmap") {
+        }
+        else if (type == "team-heatmap") {
             heatmap_writer.mode = heatmap_mode_t::team;
-        } else if (type == "team-heatmap-soft") {
+        }
+        else if (type == "team-heatmap-soft") {
             heatmap_writer.mode = heatmap_mode_t::team_soft;
         }
 
         heatmap_writer.set_image_width(vm["size"].as<int>());
         heatmap_writer.set_image_height(vm["size"].as<int>());
         heatmap_writer.set_no_basemap(vm.count("overlay") > 0);
-    } else if (type == "class-heatmap") {
+    }
+    else if (type == "class-heatmap") {
         writer = std::unique_ptr<writer_t>(new class_heatmap_writer_t());
         auto &class_heatmap_writer = dynamic_cast<class_heatmap_writer_t&>(*writer);
 
@@ -129,9 +143,10 @@ std::unique_ptr<writer_t> create_writer(const std::string &type, const po::varia
         class_heatmap_writer.set_no_basemap(vm.count("overlay") > 0);
         class_heatmap_writer.skip = vm["skip"].as<double>();
         class_heatmap_writer.bounds = std::make_pair(vm["bounds-min"].as<double>(),
-                                                     vm["bounds-max"].as<double>());
+            vm["bounds-max"].as<double>());
 
-    } else {
+    }
+    else {
         logger.writef(log_level_t::error, "Invalid output type (%1%), supported types: png, json, heatmap, team-heatmap, team-heatmap-soft or class-heatmap.\n", type);
     }
 
@@ -174,7 +189,8 @@ int process_replay_directory(const po::variables_map &vm, const std::string &inp
         parser_t parser(load_data_mode_t::manual);
         try {
             parser.parse(in, *game);
-        } catch (std::exception &e) {
+        }
+        catch (std::exception &e) {
             logger.writef(log_level_t::error, "Failed to parse file (%1%): %2%\n", file_name, e.what());
             return nullptr;
         }
@@ -211,24 +227,25 @@ int process_replay_directory(const po::variables_map &vm, const std::string &inp
 
         if (it == writers.end()) {
             writers.insert(std::make_pair(key, writer.release()));
-        } else {
+        }
+        else {
             it->second->merge(*writer);
         }
     };
 
     int tokens = vm["tokens"].as<int>();
     tbb::parallel_pipeline(tokens,
-         tbb::make_filter<void, std::string>(tbb::filter::serial_in_order, f_generate_replay_paths) &
-         tbb::make_filter<std::string, game_t*>(tbb::filter::parallel, f_parse_replay) &
-         tbb::make_filter<game_t*, image_writer_t*>(tbb::filter::parallel, f_generate_image) &
-         tbb::make_filter<image_writer_t*, void>(tbb::filter::serial_out_of_order, f_merge_image)
-    );
+        tbb::make_filter<void, std::string>(tbb::filter::serial_in_order, f_generate_replay_paths) &
+        tbb::make_filter<std::string, game_t*>(tbb::filter::parallel, f_parse_replay) &
+        tbb::make_filter<game_t*, image_writer_t*>(tbb::filter::parallel, f_generate_image) &
+        tbb::make_filter<image_writer_t*, void>(tbb::filter::serial_out_of_order, f_merge_image)
+        );
 
     typedef std::map<std::tuple<std::string, std::string>, image_writer_t*>::iterator::value_type item_t;
     tbb::parallel_do(writers.begin(), writers.end(), [&output](const item_t &it) {
         path file_name = path(output) / (boost::format("%s_%s.png") %
-                                         std::get<0>(it.first) %
-                                         std::get<1>(it.first)).str();
+            std::get<0>(it.first) %
+            std::get<1>(it.first)).str();
         std::ofstream out(file_name.string(), std::ios::binary);
         it.second->finish();
         it.second->write(out);
@@ -239,7 +256,7 @@ int process_replay_directory(const po::variables_map &vm, const std::string &inp
 }
 #else
 int process_replay_directory(const po::variables_map &vm, const std::string &input, const std::string &output, const std::string &type, bool debug) {
-    if ( !(vm.count("type") > 0 && vm.count("input") > 0) ) {
+    if (!(vm.count("type") > 0 && vm.count("input") > 0)) {
         logger.write(wotreplay::log_level_t::error, "parameters type and input are required to use this mode\n");
         return -EXIT_FAILURE;
     }
@@ -263,7 +280,8 @@ int process_replay_directory(const po::variables_map &vm, const std::string &inp
 
         try {
             parser.parse(in, game);
-        } catch (std::exception &e) {
+        }
+        catch (std::exception &e) {
             logger.writef(log_level_t::error, "Failed to parse file (%1%): %2%\n", it->path().string(), e.what());
             continue;
         }
@@ -307,17 +325,17 @@ int process_replay_file(const po::variables_map &vm, const std::string &input, c
         {"class-heatmap", "_class_heatmap.png"}
     };
 
-    if ( !(vm.count("type") > 0 && vm.count("input") > 0) ) {
+    if (!(vm.count("type") > 0 && vm.count("input") > 0)) {
         logger.write(wotreplay::log_level_t::error, "parameters type and input are required to use this mode\n");
         return -EXIT_FAILURE;
     }
-    
+
     std::ifstream in(input, std::ios::binary);
     if (!in) {
         logger.writef(log_level_t::error, "Failed to open file: %1%\n", input);
         return -EXIT_FAILURE;
     }
-    
+
     parser_t parser(load_data_mode_t::on_demand);
     game_t game;
 
@@ -327,7 +345,7 @@ int process_replay_file(const po::variables_map &vm, const std::string &input, c
     boost::char_separator<char> sep(",");
     boost::tokenizer<boost::char_separator<char>> tokens(type, sep);
     bool single = std::distance(tokens.begin(), tokens.end()) == 1;
-    for(auto it = tokens.begin(); it != tokens.end(); ++it) {
+    for (auto it = tokens.begin(); it != tokens.end(); ++it) {
         std::unique_ptr<writer_t> writer = create_writer(*it, vm);
 
         if (!writer) {
@@ -348,7 +366,8 @@ int process_replay_file(const po::variables_map &vm, const std::string &input, c
                 logger.writef(log_level_t::error, "Something went wrong with opening file: %1%\n", input);
                 return -EXIT_FAILURE;
             }
-        } else {
+        }
+        else {
             out = &std::cout;
         }
 
@@ -363,7 +382,7 @@ int process_replay_file(const po::variables_map &vm, const std::string &input, c
     return EXIT_SUCCESS;
 }
 
-int main(int argc, const char * argv[]) {
+int main(int argc, const char * argv []) {
     po::options_description desc("Allowed options");
 
     std::string type, output, input, root, rules;
@@ -375,12 +394,12 @@ int main(int argc, const char * argv[]) {
 #endif
 
     desc.add_options()
-        ("type"  , po::value(&type), "select output type")
+        ("type", po::value(&type), "select output type")
         ("output", po::value(&output), "output file or directory")
-        ("input" , po::value(&input), "input file or directory")
-        ("root"  , po::value(&root), "set root directory")
-        ("help"  , "produce help message")
-        ("debug" , "enable parser debugging")
+        ("input", po::value(&input), "input file or directory")
+        ("root", po::value(&root), "set root directory")
+        ("help", "produce help message")
+        ("debug", "enable parser debugging")
         ("supress-empty", "supress empty packets from json output")
         ("create-minimaps", "create all empty minimaps in output directory")
         ("parse", "parse a replay file")
@@ -390,23 +409,25 @@ int main(int argc, const char * argv[]) {
         ("bounds-max", po::value(&bounds_max)->default_value(0.98, "0.98"), "for heatmaps, set max value to display")
         ("size", po::value(&size)->default_value(512), "output image size for image writers")
         ("rules", po::value(&rules)->default_value("#ff0000 := team = '1'; #00ff00 := team = '0'"),
-         "specify drawing rules, allowing the user to choose the colors used")
+            "specify drawing rules, allowing the user to choose the colors used")
         ("parse-rules", "parse rules only and print parsed expression")
         ("overlay", "generate overlay, don't draw basemap in output image")
 #ifdef ENABLE_TBB
         ("tokens", po::value(&tokens)->default_value(10), "number of pipeline tokens")
 #endif
-    ;
+        ;
 
     po::variables_map vm;
 
     try {
         po::store(po::parse_command_line(argc, argv, desc), vm);
         po::notify(vm);
-    } catch (std::exception &e) {
+    }
+    catch (std::exception &e) {
         show_help(argc, argv, desc);
         std::exit(-1);
-    } catch (...) {
+    }
+    catch (...) {
         logger.write(log_level_t::error, "Unknown error.\n");
         std::exit(-1);
     }
@@ -416,18 +437,20 @@ int main(int argc, const char * argv[]) {
         std::exit(0);
     }
 
-    if (vm.count("root") >  0
-            && chdir(root.c_str()) != 0) {
+    if (vm.count("root") > 0
+        && chdir(root.c_str()) != 0) {
         logger.writef(log_level_t::error, "Cannot change working directory to: %1%\n", root);
         std::exit(0);
     }
-    
+
     bool debug = vm.count("debug") > 0;
     if (debug) {
         logger.set_log_level(log_level_t::debug);
-    } else if (vm.count("quiet") > 0) {
+    }
+    else if (vm.count("quiet") > 0) {
         logger.set_log_level(log_level_t::none);
-    } else {
+    }
+    else {
         logger.set_log_level(log_level_t::warning);
     }
 
@@ -436,19 +459,22 @@ int main(int argc, const char * argv[]) {
         parse_draw_rules(vm["rules"].as<std::string>());
         std::exit(0);
     }
-    
+
     int exit_code;
     if (vm.count("parse") > 0) {
         // parse
         if (is_directory(input)) {
             exit_code = process_replay_directory(vm, input, output, type, debug);
-        } else {
+        }
+        else {
             exit_code = process_replay_file(vm, input, output, type, debug);
         }
-    } else if (vm.count("create-minimaps") > 0) {
+    }
+    else if (vm.count("create-minimaps") > 0) {
         // create all minimaps
         exit_code = create_minimaps(vm, output, debug);
-    } else {
+    }
+    else {
         logger.write(wotreplay::log_level_t::error, "Error: no mode specified\n");
         exit_code = -EXIT_FAILURE;
     }
