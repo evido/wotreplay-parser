@@ -1,4 +1,5 @@
 #include "image_writer.h"
+#include "animation_writer.h"
 #include "heatmap_writer.h"
 #include "class_heatmap_writer.h"
 #include "json_writer.h"
@@ -148,6 +149,9 @@ std::unique_ptr<writer_t> create_writer(const std::string &type, const po::varia
         class_heatmap_writer.bounds = std::make_pair(vm["bounds-min"].as<double>(),
             vm["bounds-max"].as<double>());
 
+    }
+    else if (type == "gif") {
+        writer.reset(new animation_writer_t());
     }
     else {
         logger.writef(log_level_t::error, "Invalid output type (%1%), supported types: png, json, heatmap, team-heatmap, team-heatmap-soft or class-heatmap.\n", type);

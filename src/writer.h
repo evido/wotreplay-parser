@@ -59,6 +59,21 @@ namespace wotreplay {
         virtual void set_filter(filter_t filter) = 0;
         virtual ~writer_t() {};
     };
+
+    class basic_writer_t : public writer_t {
+    public:
+        virtual void init(const arena_t &arena, const std::string &mode) {}
+        virtual void finish() {}
+        virtual void clear() {}
+        virtual void reset() {}
+        virtual void update(const game_t &game) {}
+        virtual void write(std::ostream &os) {}
+        virtual void set_filter(filter_t filter) {}
+        virtual bool is_initialized() const {
+            return false;
+        }
+        virtual ~basic_writer_t() {};
+    };
 }
 
 #endif /* defined(wotreplay_writer_h) */

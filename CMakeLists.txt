@@ -24,8 +24,10 @@ find_package(ZLIB REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(TBB)
 find_package(Qt5Widgets)
+find_package(GD)
 
-include_directories(AFTER ext/jsoncpp/include ${Boost_INCLUDE_DIRS} ${LIBXML2_INCLUDE_DIR} ${ZLIB_INCLUDE_DIRS} ${PNG_INCLUDE_DIRS} ${OPENSSL_INCLUDE_DIRS} ${TBB_INCLUDE_DIRS} ${INCLUDE_DIRECTORIES})
+
+include_directories(AFTER ext/jsoncpp/include ${Boost_INCLUDE_DIRS} ${LIBXML2_INCLUDE_DIR} ${ZLIB_INCLUDE_DIRS} ${PNG_INCLUDE_DIRS} ${OPENSSL_INCLUDE_DIRS} ${TBB_INCLUDE_DIRS} ${GD_INCLUDE_DIR} ${INCLUDE_DIRECTORIES})
 
 link_directories(${LINK_DIRECTORIES})
 
@@ -74,6 +76,7 @@ add_library(wotreplay STATIC
 			src/rule.h
 			src/class_heatmap_writer.h
 			src/tank.h
+			src/animation_writer.h
 			src/packet.cpp 
 			src/packet_reader_80.cpp 
 			src/parser.cpp 
@@ -85,7 +88,8 @@ add_library(wotreplay STATIC
 			src/heatmap_writer.cpp
 			src/rule.cpp
 			src/class_heatmap_writer.cpp
-			src/tank.cpp)
+			src/tank.cpp
+			src/animation_writer.cpp)
 
 add_library(jsoncpp STATIC 
 			ext/jsoncpp/src/jsoncpp.cpp
@@ -94,7 +98,7 @@ add_library(jsoncpp STATIC
 
 add_executable(wotreplay-parser src/main.cpp)
 
-target_link_libraries( wotreplay-parser ${OPENSSL_LIBRARIES} ${Boost_LIBRARIES} ${LIBXML2_LIBRARIES} ${PNG_LIBRARIES} ${ZLIB_LIBRARIES} ${TBB_LIBRARIES} wotreplay jsoncpp)
+target_link_libraries( wotreplay-parser ${OPENSSL_LIBRARIES} ${Boost_LIBRARIES} ${LIBXML2_LIBRARIES} ${PNG_LIBRARIES} ${ZLIB_LIBRARIES} ${TBB_LIBRARIES} ${GD_LIBRARY} wotreplay jsoncpp)
 
 if(Qt5Widgets_FOUND)
 	add_library(wotreplay-gui-widgets src/mainwindow.h
@@ -108,5 +112,5 @@ if(Qt5Widgets_FOUND)
 	add_executable(wotreplay-gui WIN32 src/gui_main.cpp)
 	qt5_use_modules(wotreplay-gui Core Gui Widgets)
 
-	target_link_libraries( wotreplay-gui ${OPENSSL_LIBRARIES} ${Boost_LIBRARIES} ${LIBXML2_LIBRARIES} ${PNG_LIBRARIES} ${ZLIB_LIBRARIES} ${TBB_LIBRARIES} wotreplay jsoncpp wotreplay-gui-widgets Qt5::Widgets)
+	target_link_libraries( wotreplay-gui ${OPENSSL_LIBRARIES} ${Boost_LIBRARIES} ${LIBXML2_LIBRARIES} ${PNG_LIBRARIES} ${ZLIB_LIBRARIES} ${TBB_LIBRARIES} ${GD_LIBRARY} wotreplay jsoncpp wotreplay-gui-widgets Qt5::Widgets)
 endif()
