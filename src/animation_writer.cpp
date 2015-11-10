@@ -27,33 +27,52 @@ int animation_writer_t::update_model(const game_t &game, float window_start, flo
     return ix;
 }
 
-gdImagePtr animation_writer_t::create_frame(const game_t &game, bool background) const {
-    gdImagePtr frame = gdImageCreateTrueColor(this->image_width, this->image_height);
+gdImagePtr animation_writer_t::create_frame(const game_t &game, gdImagePtr background) const {
+    if (!background) {
+        gdImagePtr frame = gdImageCreateTrueColor(this->image_width, this->image_height);
 
-    auto shape = base.shape();
-    for (int i = 0; i < shape[0]; i += 1) {
-        for (int j = 0; j < shape[1]; j += 1) {
-            int c = gdTrueColor(base[i][j][0], base[i][j][1], base[i][j][2]);
-            gdImageSetPixel(frame, j, i, c);
+        auto shape = base.shape();
+        for (int i = 0; i < shape[0]; i += 1) {
+            for (int j = 0; j < shape[1]; j += 1) {
+                int c = gdTrueColor(base[i][j][0], base[i][j][1], base[i][j][2]);
+                gdImageSetPixel(frame, j, i, c);
+            }
         }
+        
+        int t = gdImageColorAllocate(frame, 1, 1, 1);
+        gdImageColorTransparent(frame, t);
+
+        gdImagePtr result = gdImageCreatePaletteFromTrueColor(frame, 0, 250);
+
+        int r = gdImageColorAllocate(result, 0xFF, 0x00, 0x00);
+        int g = gdImageColorAllocate(result, 0x00, 0xFF, 0x00);
+
+        gdImageDestroy(frame);
+
+        return result;
     }
+    else {
+        gdImagePtr frame = gdImageClone(background);
+        gdImageCopy(frame, background, 0, 0, 0, 0, this->image_width, this->image_height);
+        
+        int r = gdImageColorResolve(frame, 0xFF, 0x00, 0x00);
+        int g = gdImageColorResolve(frame, 0x00, 0xFF, 0x00);
 
-    int r = gdTrueColor(0xFF, 0x00, 0x00);
-    int g = gdTrueColor(0x00, 0xFF, 0x00);
-    int recorder_team = game.get_team_id(game.get_recorder_id());
+        int recorder_team = game.get_team_id(game.get_recorder_id());
 
-    for (auto &track = tracks.begin(); track != tracks.end(); track++) {
-        const auto &positions = track->second;
-        int player_team = game.get_team_id(track->first);
-        int c = player_team == recorder_team ? g : r;
+        for (auto &track = tracks.begin(); track != tracks.end(); track++) {
+            const auto &positions = track->second;
+            int player_team = game.get_team_id(track->first);
+            int c = player_team == recorder_team ? g : r;
 
-        for (auto &pos = positions.begin(); pos != positions.end(); pos++) {
-            auto xy_pos = get_2d_coord(*pos, this->arena.bounding_box, this->image_width, this->image_height);
-            gdImageSetPixel(frame, std::get<1>(xy_pos), std::get<0>(xy_pos), c);
+            for (auto &pos = positions.begin(); pos != positions.end(); pos++) {
+                auto xy_pos = get_2d_coord(*pos, this->arena.bounding_box, this->image_width, this->image_height);
+                gdImageSetPixel(frame, std::get<1>(xy_pos), std::get<0>(xy_pos), c);
+            }
         }
-    }
 
-    return frame;
+        return frame;
+    }
 }
 
 void animation_writer_t::write(std::ostream &os) {
@@ -68,15 +87,16 @@ void animation_writer_t::update(const game_t & game)
     draw_basemap();
 
     gdImagePtr previous = NULL,
-        frame = create_frame(game, true);
+        background = create_frame(game, NULL),
+        frame = create_frame(game, background);
 
     float window_start = 0.f,
         window_size = 0.1f,
         rate = 1.f;
 
-    gdImageGifAnimBeginCtx(frame, ctx, 1, 0);
+    gdImageGifAnimBeginCtx(background, ctx, 1, 0);
 
-    gdImageGifAnimAddCtx(frame, ctx, 0, 0, 0, 10, 1, previous);
+    gdImageGifAnimAddCtx(background, ctx, 0, 0, 0, 10, gdDisposalNone, previous);
 
     previous = frame;
 
@@ -94,9 +114,9 @@ void animation_writer_t::update(const game_t & game)
             ix = this->update_model(game, window_start, window_size, ix);
         }
 
-        frame = create_frame(game, false);
+        frame = create_frame(game, background);
 
-        gdImageGifAnimAddCtx(frame, ctx, 1, 0, 0, 10, gdDisposalRestoreBackground, previous);
+        gdImageGifAnimAddCtx(frame, ctx, 0, 0, 0, 10, gdDisposalNone, previous);
 
         if (previous) gdImageDestroy(previous);
 
@@ -104,6 +124,8 @@ void animation_writer_t::update(const game_t & game)
     }
 
     if (!frame) gdImageDestroy(frame);
+
+    gdImageDestroy(background);
 
     gdImageGifAnimEndCtx(ctx);
 }
