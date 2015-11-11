@@ -97,6 +97,34 @@ int create_minimaps(const po::variables_map &vm, const std::string &output, bool
     return EXIT_SUCCESS;
 }
 
+void apply_settings(image_writer_t * const writer, const po::variables_map &vm) {
+    writer->set_image_width(vm["size"].as<int>());
+    writer->set_image_height(vm["size"].as<int>());
+    writer->set_no_basemap(vm.count("overlay") > 0);
+}
+
+void apply_settings(heatmap_writer_t * const writer, const po::variables_map &vm) {
+    writer->skip = vm["skip"].as<double>();
+    writer->bounds = std::make_pair(vm["bounds-min"].as<double>(),
+        vm["bounds-max"].as<double>());
+}
+
+void apply_settings(class_heatmap_writer_t * const writer, const po::variables_map &vm) {
+    std::vector<draw_rule_t> rules = parse_draw_rules(vm["rules"].as<std::string>());
+    writer->set_draw_rules(rules);
+}
+
+void apply_settings(animation_writer_t * const writer, const po::variables_map &vm) {
+    writer->set_model_update_rate(vm["model-update-rate"].as<int>());
+    writer->set_frame_rate(vm["frame-rate"].as<int>());
+}
+
+void apply_settings(json_writer_t * const writer, const po::variables_map &vm) {
+    if (vm.count("supress-empty")) {
+        writer->set_filter(&is_not_empty);
+    }
+}
+
 std::unique_ptr<writer_t> create_writer(const std::string &type, const po::variables_map &vm) {
     std::unique_ptr<writer_t> writer;
 
@@ -105,22 +133,17 @@ std::unique_ptr<writer_t> create_writer(const std::string &type, const po::varia
         auto &image_writer = dynamic_cast<image_writer_t&>(*writer);
         image_writer.set_show_self(true);
         image_writer.set_use_fixed_teamcolors(false);
-        image_writer.set_image_width(vm["size"].as<int>());
-        image_writer.set_image_height(vm["size"].as<int>());
-        image_writer.set_no_basemap(vm.count("overlay") > 0);
+
+        apply_settings(dynamic_cast<image_writer_t*>(writer.get()), vm);
     }
     else if (type == "json") {
         writer = std::unique_ptr<writer_t>(new json_writer_t());
-        if (vm.count("supress-empty")) {
-            writer->set_filter(&is_not_empty);
-        }
+        apply_settings(dynamic_cast<json_writer_t*>(writer.get()), vm);
     }
     else if (type == "heatmap" || type == "team-heatmap" || type == "team-heatmap-soft") {
         writer = std::unique_ptr<writer_t>(new heatmap_writer_t());
         auto &heatmap_writer = dynamic_cast<heatmap_writer_t&>(*writer);
-        heatmap_writer.skip = vm["skip"].as<double>();
-        heatmap_writer.bounds = std::make_pair(vm["bounds-min"].as<double>(),
-            vm["bounds-max"].as<double>());
+
         if (type == "heatmap") {
             heatmap_writer.mode = heatmap_mode_t::combined;
         }
@@ -131,30 +154,24 @@ std::unique_ptr<writer_t> create_writer(const std::string &type, const po::varia
             heatmap_writer.mode = heatmap_mode_t::team_soft;
         }
 
-        heatmap_writer.set_image_width(vm["size"].as<int>());
-        heatmap_writer.set_image_height(vm["size"].as<int>());
-        heatmap_writer.set_no_basemap(vm.count("overlay") > 0);
+        apply_settings(dynamic_cast<heatmap_writer_t*>(writer.get()), vm);
+        apply_settings(dynamic_cast<image_writer_t*>(writer.get()), vm);
     }
     else if (type == "class-heatmap") {
         writer = std::unique_ptr<writer_t>(new class_heatmap_writer_t());
-        auto &class_heatmap_writer = dynamic_cast<class_heatmap_writer_t&>(*writer);
 
-        std::vector<draw_rule_t> rules = parse_draw_rules(vm["rules"].as<std::string>());
-
-        class_heatmap_writer.set_draw_rules(rules);
-        class_heatmap_writer.set_image_width(vm["size"].as<int>());
-        class_heatmap_writer.set_image_height(vm["size"].as<int>());
-        class_heatmap_writer.set_no_basemap(vm.count("overlay") > 0);
-        class_heatmap_writer.skip = vm["skip"].as<double>();
-        class_heatmap_writer.bounds = std::make_pair(vm["bounds-min"].as<double>(),
-            vm["bounds-max"].as<double>());
-
+        apply_settings(dynamic_cast<class_heatmap_writer_t*>(writer.get()), vm);
+        apply_settings(dynamic_cast<heatmap_writer_t*>(writer.get()), vm);
+        apply_settings(dynamic_cast<image_writer_t*>(writer.get()), vm);
     }
     else if (type == "gif") {
         writer.reset(new animation_writer_t());
+
+        apply_settings(dynamic_cast<image_writer_t*>(writer.get()), vm);
+        apply_settings(dynamic_cast<animation_writer_t*>(writer.get()), vm);
     }
     else {
-        logger.writef(log_level_t::error, "Invalid output type (%1%), supported types: png, json, heatmap, team-heatmap, team-heatmap-soft or class-heatmap.\n", type);
+        logger.writef(log_level_t::error, "Invalid output type (%1%), supported types: png, gif, json, heatmap, team-heatmap, team-heatmap-soft or class-heatmap.\n", type);
     }
 
     return writer;
@@ -394,7 +411,7 @@ int main(int argc, const char * argv []) {
 
     std::string type, output, input, root, rules;
     double skip, bounds_min, bounds_max;
-    int size;
+    int size, frame_rate, model_rate;
 
 #ifdef ENABLE_TBB
     int tokens = 10;
@@ -419,6 +436,8 @@ int main(int argc, const char * argv []) {
             "specify drawing rules, allowing the user to choose the colors used")
         ("parse-rules", "parse rules only and print parsed expression")
         ("overlay", "generate overlay, don't draw basemap in output image")
+        ("frame-rate", po::value(&frame_rate)->default_value(10), "set gif frame rate")
+        ("model-update-rate", po::value(&model_rate)->default_value(100), "set model update rate")
 #ifdef ENABLE_TBB
         ("tokens", po::value(&tokens)->default_value(10), "number of pipeline tokens")
 #endif
