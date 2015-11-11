@@ -22,6 +22,12 @@ Displays a summary of the battle on a map, green lines are your own team, red li
 
 ![Output example of type 'png'](examples/example_png.png)
 
+## Output type GIF
+
+Displays an animation of the battle on the map.
+
+![Output example of type 'gif'](examples/example_gif.gif)
+
 ## Output type HEATMAP
 
 Displays a heatmap of the positions of the tanks in the battle (for both teams combined)
