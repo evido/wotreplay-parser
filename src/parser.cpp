@@ -272,8 +272,13 @@ void parser_t::get_data_blocks(buffer_t &buffer, std::vector<slice_t> &data_bloc
 void parser_t::read_packets(game_t &game) {
     packet_reader->init(game.version, &game.replay, game.title);
     while (packet_reader->has_next()) {
+        game.packets.reserve(500000);
         game.packets.push_back(packet_reader->next());
     }
+
+#ifndef _DEBUG
+    game.packets.shrink_to_fit();
+#endif
 }
 
 void parser_t::read_game_info(game_t& game) {
