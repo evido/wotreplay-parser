@@ -18,9 +18,9 @@ int animation_writer_t::update_model(const game_t &game, float window_start, flo
         ix += 1;
     }
 
-    for (auto &it = positions.begin(); it != positions.end(); it++) {
-        if (game.get_team_id(it->first) != -1) {
-            tracks[it->first].emplace_back(it->second);
+    for (auto &it: positions) {
+        if (game.get_team_id(it.first) != -1) {
+            tracks[it.first].emplace_back(it.second);
         }
     }
 
@@ -73,13 +73,13 @@ gdImagePtr animation_writer_t::create_frame(const game_t &game, gdImagePtr backg
     int recorder_team = game.get_team_id(game.get_recorder_id());
     int recorder_id = game.get_recorder_id();
 
-    for (auto &track = tracks.begin(); track != tracks.end(); track++) {
-        const auto &positions = track->second;
-        int player_team = game.get_team_id(track->first);
-        int c = recorder_id == track->first ? b : (player_team == recorder_team ? g : r);
+    for (auto &track : tracks) {
+        const auto &positions = track.second;
+        int player_team = game.get_team_id(track.first);
+        int c = recorder_id == track.first ? b : (player_team == recorder_team ? g : r);
 
-        for (auto &pos = positions.begin(); pos != positions.end(); pos++) {
-            auto xy_pos = get_2d_coord(*pos, this->arena.bounding_box, this->image_width, this->image_height);
+        for (auto &pos : positions) {
+            auto xy_pos = get_2d_coord(pos, this->arena.bounding_box, this->image_width, this->image_height);
             gdImageSetPixel(frame, std::get<0>(xy_pos), std::get<1>(xy_pos), c);
         }
     }
