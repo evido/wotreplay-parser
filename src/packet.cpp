@@ -26,9 +26,9 @@ float packet_t::clock() const {
 
 std::tuple<float, float, float> packet_t::position() const {
     assert(type() == 0x0A);
-    float x = get_field<float>(data.begin(), data.end(), 24);
-    float y = get_field<float>(data.begin(), data.end(), 28);
-    float z = get_field<float>(data.begin(), data.end(), 32);
+    float x = get_field<float>(data.begin(), data.end(), 20);
+    float y = get_field<float>(data.begin(), data.end(), 24);
+    float z = get_field<float>(data.begin(), data.end(), 28);
     return std::make_tuple(x,y,z);
 }
 
