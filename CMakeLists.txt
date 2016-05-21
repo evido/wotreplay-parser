@@ -98,6 +98,7 @@ add_library(jsoncpp STATIC
 
 add_executable(wotreplay-parser src/main.cpp)
 
+target_link_libraries( wotreplay ${OPENSSL_LIBRARIES} ${Boost_LIBRARIES} ${LIBXML2_LIBRARIES} ${PNG_LIBRARIES} ${ZLIB_LIBRARIES} ${TBB_LIBRARIES} ${GD_LIBRARY})
 target_link_libraries( wotreplay-parser ${OPENSSL_LIBRARIES} ${Boost_LIBRARIES} ${LIBXML2_LIBRARIES} ${PNG_LIBRARIES} ${ZLIB_LIBRARIES} ${TBB_LIBRARIES} ${GD_LIBRARY} wotreplay jsoncpp)
 
 if(Qt5Widgets_FOUND)
