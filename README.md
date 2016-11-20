@@ -48,7 +48,7 @@ Displays a heatmap of the positions following user defined classes.
 
 # Download
 
-* [Win32](https://drive.google.com/open?id=0B3nvac-cSAKRbEJ0XzFTT09lN2M&authuser=0)
+* [Win32](https://drive.google.com/file/d/0B3nvac-cSAKRb1VGT2xkcEhnbnc/view?usp=sharing)
 
 # Build
 
