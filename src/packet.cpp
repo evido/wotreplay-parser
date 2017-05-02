@@ -83,9 +83,8 @@ void packet_t::set_data(const slice_t &data) {
         case 0x07: {
             properties[static_cast<size_t>(property_t::clock)] = true;
             properties[static_cast<size_t>(property_t::player_id)] = true;
-            // properties[static_cast<size_t>(property_t::is_shot)] = true;
             properties[static_cast<size_t>(property_t::sub_type)] = true;
-            properties[static_cast<size_t>(property_t::health)] = sub_type() == 0x03;
+            properties[static_cast<size_t>(property_t::health)] = sub_type() == 0x05;
             properties[static_cast<size_t>(property_t::destroyed_track_id)] = sub_type() == 0x07;
             break;
         }

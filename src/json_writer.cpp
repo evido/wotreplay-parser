@@ -90,15 +90,12 @@ void json_writer_t::update(const game_t &game) {
         }
 
         // disable untill new locations can be found
-        if (game.get_game_title() == game_title_t::world_of_tanks && 
-            ((v.major == 9 && v.minor < 10) || v.major < 9)) {
-            if (packet.has_property(property_t::health)) {
-                value["health"] = packet.health();
-            }
+        if (packet.has_property(property_t::health)) {
+            value["health"] = packet.health();
+        }
 
-            if (packet.has_property(property_t::source)) {
-                value["source"] = packet.source();
-            }
+        if (packet.has_property(property_t::source)) {
+            value["source"] = packet.source();
         }
 
         if (packet.has_property(property_t::message)) {
