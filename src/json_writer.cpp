@@ -101,12 +101,8 @@ void json_writer_t::update(const game_t &game) {
             }
         }
 
-        if (game.get_game_title() == game_title_t::world_of_tanks &&
-            ((v.major == 9 && v.minor < 14) || v.major < 9)) {
-
-            if (packet.has_property(property_t::message)) {
-                value["message"] = packet.message();
-            }
+        if (packet.has_property(property_t::message)) {
+            value["message"] = packet.message();
         }
 
         if (packet.has_property(property_t::sub_type)) {

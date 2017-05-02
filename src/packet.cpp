@@ -130,7 +130,7 @@ void packet_t::set_data(const slice_t &data) {
             }
             break;
         }
-        case 0x1F: {
+        case 0x23: {
             properties[static_cast<size_t>(property_t::clock)] = true;
             properties[static_cast<size_t>(property_t::message)] = true;
             break;
@@ -219,8 +219,7 @@ uint32_t packet_t::length() const {
 }
 
 std::ostream& wotreplay::operator<<(std::ostream& os, const packet_t &packet) {
-    os << to_string(packet);
-    return os;
+    return os << to_string(packet);
 }
 
 std::string wotreplay::to_string(const packet_t &packet) {
