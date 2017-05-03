@@ -89,9 +89,9 @@ void packet_t::set_data(const slice_t &data) {
             break;
         }
         case 0x08: {
-            if (data.size() > 29) {
+            if (data.size() >= 28) {
                 auto signature = get_field<uint32_t>(data.begin(), data.end(), 24);
-                properties[static_cast<size_t>(property_t::tank_destroyed)] = 0x02801006 == signature;
+                properties[static_cast<size_t>(property_t::tank_destroyed)] = 0x02801306 == signature;
             }
             properties[static_cast<size_t>(property_t::clock)] = true;
             properties[static_cast<size_t>(property_t::player_id)] = true;
@@ -199,11 +199,12 @@ const slice_t &packet_t::get_data() const {
     return data;
 }
 
-std::tuple<uint32_t, uint32_t> packet_t::tank_destroyed() const {
+std::tuple<uint32_t, uint32_t, uint8_t> packet_t::tank_destroyed() const {
     assert(has_property(property_t::tank_destroyed));
     return std::make_tuple(
         get_field<uint32_t>(data.begin(), data.end(), 29),
-        get_field<uint32_t>(data.begin(), data.end(), 34)
+        get_field<uint32_t>(data.begin(), data.end(), 34),
+        get_field<uint8_t>(data.begin(), data.end(), 41)
     );
 }
 

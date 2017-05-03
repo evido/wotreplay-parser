@@ -177,7 +177,8 @@ void heatmap_writer_t::update(const wotreplay::game_t &game) {
         if (offset > 0 || !packet.has_property(property_t::position)) {
             if (packet.has_property(property_t::tank_destroyed)) {
                 uint32_t target, killer;
-                std::tie(target, killer) = packet.tank_destroyed();
+                uint8_t type;
+                std::tie(target, killer, type) = packet.tank_destroyed();
                 dead_players.insert(target);
             }
             continue;

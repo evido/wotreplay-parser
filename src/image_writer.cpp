@@ -117,7 +117,8 @@ void image_writer_t::draw_elements() {
 
 void image_writer_t::draw_death(const packet_t &packet, const game_t &game) {
     uint32_t killer, killed;
-    std::tie(killed, killer) = packet.tank_destroyed();
+    uint8_t type;
+    std::tie(killed, killer, type) = packet.tank_destroyed();
     packet_t position_packet;
     bool found = game.find_property(packet.clock(), killed, property_t::position, position_packet);
     if (found) {
@@ -159,7 +160,8 @@ void image_writer_t::update(const game_t &game) {
         }
         else if (packet.has_property(property_t::tank_destroyed)) {
             uint32_t target, killer;
-            std::tie(target, killer) = packet.tank_destroyed();
+            uint8_t type;
+            std::tie(target, killer, type) = packet.tank_destroyed();
             dead_players.insert(target);
             draw_death(packet, game);
         }

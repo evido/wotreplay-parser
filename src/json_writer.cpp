@@ -1,5 +1,7 @@
 #include "json_writer.h"
 
+#include <boost/format.hpp>
+
 using namespace wotreplay;
 
 void json_writer_t::init(const arena_t &arena, const std::string &mode) {
@@ -84,12 +86,25 @@ void json_writer_t::update(const game_t &game) {
 
         if (packet.has_property(property_t::tank_destroyed)) {
             uint32_t target, destroyed_by;
-            std::tie(target, destroyed_by) = packet.tank_destroyed();
+            uint8_t type;
+            std::tie(target, destroyed_by, type) = packet.tank_destroyed();
             value["target"] = target;
             value["destroyed_by"] = destroyed_by;
+            if (type == 1) {
+                value["type"] = "fire";
+            }
+            else if (type == 3) {
+                value["type"] = "crash";
+            }
+            else if (type == 0) {
+                value["type"] = "shell";
+            }
+            else
+            {
+                value["type"] = (boost::format("unknown (%d)") % type).str();
+            }
         }
 
-        // disable untill new locations can be found
         if (packet.has_property(property_t::health)) {
             value["health"] = packet.health();
         }
