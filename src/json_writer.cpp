@@ -90,18 +90,20 @@ void json_writer_t::update(const game_t &game) {
             std::tie(target, destroyed_by, type) = packet.tank_destroyed();
             value["target"] = target;
             value["destroyed_by"] = destroyed_by;
-            if (type == 1) {
-                value["type"] = "fire";
+            if (type == 0) {
+                value["destruction_type"] = "shell";
+            }
+            else if (type == 1) {
+                value["destruction_type"] = "fire";
+            }
+            else if (type == 2) {
+                value["destruction_type"] = "ram";
             }
             else if (type == 3) {
-                value["type"] = "crash";
+                value["destruction_type"] = "crash";
             }
-            else if (type == 0) {
-                value["type"] = "shell";
-            }
-            else
-            {
-                value["type"] = (boost::format("unknown (%d)") % type).str();
+            else  {
+                value["destruction_type"] = (boost::format("unknown (%1%)") % uint32_t(type)).str();
             }
         }
 

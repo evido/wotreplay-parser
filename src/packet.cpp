@@ -202,9 +202,9 @@ const slice_t &packet_t::get_data() const {
 std::tuple<uint32_t, uint32_t, uint8_t> packet_t::tank_destroyed() const {
     assert(has_property(property_t::tank_destroyed));
     return std::make_tuple(
-        get_field<uint32_t>(data.begin(), data.end(), 29),
-        get_field<uint32_t>(data.begin(), data.end(), 34),
-        get_field<uint8_t>(data.begin(), data.end(), 41)
+        get_field<uint32_t>(data.begin(), data.end(), 30),
+        get_field<uint32_t>(data.begin(), data.end(), 35),
+        get_field<uint8_t>(data.begin(), data.end(), 42)
     );
 }
 
