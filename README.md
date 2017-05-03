@@ -152,7 +152,7 @@ See packet [type 0x03](#type_0x03)
 
 ## Type 0x07
 
-### Sub Type 0x03
+### Sub Type 0x05
 
 This packet seems to be a health update which is sent relatively frequently, it only contains the following properties.
 
@@ -235,7 +235,7 @@ This is the most frequent type of packet, it tells the player about the position
 * `position`: the sub-type of the packet
 * `hull_orientation`: the sub-type of the packet
 
-## Type 0x1F
+## Type 0x23
 
 This packet contains a message sent to the battlelog during the game. The owner information is encoded inside the message.
 
