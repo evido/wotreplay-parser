@@ -1,5 +1,7 @@
 #include "json_writer.h"
 
+#include <boost/format.hpp>
+
 using namespace wotreplay;
 
 void json_writer_t::init(const arena_t &arena, const std::string &mode) {
@@ -50,6 +52,8 @@ void json_writer_t::update(const game_t &game) {
     
     root["summary"] = summary;
 
+    const version_t &v = game.get_version();
+
     for (const auto &packet : game.get_packets()) {
         // skip empty packet
         if (!filter(packet)) continue;
@@ -80,19 +84,27 @@ void json_writer_t::update(const game_t &game) {
             positionValue.append(std::get<2>(position));
         }
 
-        if (packet.has_property(property_t::hull_orientation)) {
-            auto &orientationValue = value["hull_orientation"] = Json::Value(Json::arrayValue);
-            const auto &orientation = packet.hull_orientation();
-            orientationValue.append(std::get<0>(orientation));
-            orientationValue.append(std::get<1>(orientation));
-            orientationValue.append(std::get<2>(orientation));
-        }
-
         if (packet.has_property(property_t::tank_destroyed)) {
             uint32_t target, destroyed_by;
-            std::tie(target, destroyed_by) = packet.tank_destroyed();
+            uint8_t type;
+            std::tie(target, destroyed_by, type) = packet.tank_destroyed();
             value["target"] = target;
             value["destroyed_by"] = destroyed_by;
+            if (type == 0) {
+                value["destruction_type"] = "shell";
+            }
+            else if (type == 1) {
+                value["destruction_type"] = "fire";
+            }
+            else if (type == 2) {
+                value["destruction_type"] = "ram";
+            }
+            else if (type == 3) {
+                value["destruction_type"] = "crash";
+            }
+            else  {
+                value["destruction_type"] = (boost::format("unknown (%1%)") % uint32_t(type)).str();
+            }
         }
 
         if (packet.has_property(property_t::health)) {

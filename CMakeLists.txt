@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 2.6)
+cmake_minimum_required(VERSION 2.8.11)
 project (wotreplay-parser)
 
 set(Boost_USE_MULTITHREADED     ON)
@@ -6,22 +6,40 @@ set(Boost_USE_STATIC_RUNTIME    OFF)
 set(Boost_USE_STATIC_LIBS       ON)
 set(CMAKE_MODULE_PATH           ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/ext/cmake_modules")
 set(CMAKE_FIND_FRAMEWORK        LAST)
+set(OPENSSL_USE_STATIC          1)
+set(CMAKE_AUTOMOC               ON)
+set(CMAKE_AUTOUIC               ON)
+set(CMAKE_INCLUDE_CURRENT_DIR   ON)
 
-find_package(Boost 1.50.0 COMPONENTS filesystem program_options system regex REQUIRED)
+if(USE_BOOST_REGEX STREQUAL 1)
+  add_definitions(-DUSE_BOOST_REGEX)
+  find_package(Boost 1.50.0 COMPONENTS filesystem program_options system regex REQUIRED)
+else()
+  find_package(Boost 1.50.0 COMPONENTS filesystem program_options system REQUIRED)
+endif()
+
 find_package(LibXml2 REQUIRED)
 find_package(PNG REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(TBB)
+find_package(Qt5Widgets)
+find_package(GD)
 
-include_directories(AFTER ext/jsoncpp/include ${Boost_INCLUDE_DIRS} ${LIBXML2_INCLUDE_DIR} ${ZLIB_INCLUDE_DIRS} ${PNG_INCLUDE_DIRS} ${OPENSSL_INCLUDE_DIRS} ${TBB_INCLUDE_DIRS} ${INCLUDE_DIRECTORIES})
+
+include_directories(AFTER ext/jsoncpp/include ${Boost_INCLUDE_DIRS} ${LIBXML2_INCLUDE_DIR} ${ZLIB_INCLUDE_DIRS} ${PNG_INCLUDE_DIRS} ${OPENSSL_INCLUDE_DIRS} ${TBB_INCLUDE_DIRS} ${GD_INCLUDE_DIR} ${INCLUDE_DIRECTORIES})
 
 link_directories(${LINK_DIRECTORIES})
 
-if(MSVC)
-set (CMAKE_CXX_FLAGS "/EHsc")
+if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
+	set (CMAKE_CXX_FLAGS "/EHsc")
+	add_definitions(-DZLIB_WINAPI)
+	add_definitions(-D__func__=__FUNCTION__)
+	add_definitions(-D__TBB_NO_IMPLICIT_LINKAGE)
+	add_definitions(-Dchdir=_chdir)
+	set(CMAKE_GENERATOR_TOOLSET "v120" CACHE STRING "Platform Toolset" FORCE) 
 else()
-set (CMAKE_CXX_FLAGS "-Os -std=c++11")
+	set (CMAKE_CXX_FLAGS "-Os -std=c++11")
 endif()
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -31,7 +49,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD "c++11")
 set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++")
 
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+if (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
   set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
 endif()
 
@@ -58,6 +76,7 @@ add_library(wotreplay STATIC
 			src/rule.h
 			src/class_heatmap_writer.h
 			src/tank.h
+			src/animation_writer.h
 			src/packet.cpp 
 			src/packet_reader_80.cpp 
 			src/parser.cpp 
@@ -69,7 +88,8 @@ add_library(wotreplay STATIC
 			src/heatmap_writer.cpp
 			src/rule.cpp
 			src/class_heatmap_writer.cpp
-			src/tank.cpp)
+			src/tank.cpp
+			src/animation_writer.cpp)
 
 add_library(jsoncpp STATIC 
 			ext/jsoncpp/src/jsoncpp.cpp
@@ -78,4 +98,20 @@ add_library(jsoncpp STATIC
 
 add_executable(wotreplay-parser src/main.cpp)
 
-target_link_libraries( wotreplay-parser ${OPENSSL_LIBRARIES} ${Boost_LIBRARIES} ${LIBXML2_LIBRARIES} ${PNG_LIBRARIES} ${ZLIB_LIBRARIES} ${TBB_LIBRARIES} wotreplay jsoncpp)
+target_link_libraries( wotreplay ${OPENSSL_LIBRARIES} ${Boost_LIBRARIES} ${LIBXML2_LIBRARIES} ${PNG_LIBRARIES} ${ZLIB_LIBRARIES} ${TBB_LIBRARIES} ${GD_LIBRARY})
+target_link_libraries( wotreplay-parser ${OPENSSL_LIBRARIES} ${Boost_LIBRARIES} ${LIBXML2_LIBRARIES} ${PNG_LIBRARIES} ${ZLIB_LIBRARIES} ${TBB_LIBRARIES} ${GD_LIBRARY} wotreplay jsoncpp)
+
+if(Qt5Widgets_FOUND)
+	add_library(wotreplay-gui-widgets src/mainwindow.h
+									  src/mainwindow.cpp
+									  src/imageviewer.h
+									  src/imageviewer.cpp
+									  src/mainwindow.ui
+									  src/wotreplay-gui.pro)
+	qt5_use_modules(wotreplay-gui-widgets Widgets)
+
+	add_executable(wotreplay-gui WIN32 src/gui_main.cpp)
+	qt5_use_modules(wotreplay-gui Core Gui Widgets)
+
+	target_link_libraries( wotreplay-gui ${OPENSSL_LIBRARIES} ${Boost_LIBRARIES} ${LIBXML2_LIBRARIES} ${PNG_LIBRARIES} ${ZLIB_LIBRARIES} ${TBB_LIBRARIES} ${GD_LIBRARY} wotreplay jsoncpp wotreplay-gui-widgets Qt5::Widgets)
+endif()

@@ -22,7 +22,7 @@ namespace wotreplay {
          * @return current drawing rules
          */
         virtual const std::vector<draw_rule_t> &get_draw_rules() const;
-        virtual void update(const game_t &game) override;
+        virtual int get_class(const game_t &game, const packet_t &packet) const override;
         virtual void finish() override;
     protected:
         std::vector<draw_rule_t> rules;

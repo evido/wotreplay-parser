@@ -248,3 +248,7 @@ int wotreplay::get_start_packet (const game_t &game, double skip) {
 const player_t &game_t::get_player(int player) const {
     return players.at(player);
 }
+
+game_title_t game_t::get_game_title() const {
+	return title;
+}

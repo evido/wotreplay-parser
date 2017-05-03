@@ -11,6 +11,11 @@
 /** @file */
 
 namespace wotreplay {
+	enum game_title_t {
+		world_of_tanks,
+		world_of_warships
+	};
+	
     /**
      * The game version of a replay file
      */
@@ -38,7 +43,7 @@ namespace wotreplay {
      * Player information
      */
     struct player_t {
-        int player_id;
+        uint32_t player_id;
         int team;
         std::string name;
         std::string tank;
@@ -124,6 +129,7 @@ namespace wotreplay {
          * @return Player information
          */
         const player_t &get_player(int player_id) const;
+		game_title_t get_game_title() const;
     private:
         std::vector<packet_t> packets;
         std::array<std::set<int>, 2> teams;
@@ -135,6 +141,7 @@ namespace wotreplay {
         uint32_t recorder_id;
         version_t version;
         std::map<int, player_t> players;
+		game_title_t title;
     };
 
     /**

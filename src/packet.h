@@ -73,7 +73,7 @@ namespace wotreplay {
         /** @return Indicates the player_id was hit. */
         bool is_shot() const;
         /** @return A tuple of with the player_id's of the target and the killer. */
-        std::tuple<uint32_t, uint32_t> tank_destroyed() const;
+        std::tuple<uint32_t, uint32_t, uint8_t> tank_destroyed() const;
         /** @return An array of the properties available in this packet. */
         const std::array<bool, static_cast<size_t>(property_t::property_nr_items)> &get_properties() const;
         /**

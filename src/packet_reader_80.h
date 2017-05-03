@@ -25,7 +25,7 @@ namespace wotreplay {
      */
     class packet_reader_80_t : public packet_reader_t {
     public:
-        virtual void init(const version_t &version, buffer_t *buffer);
+        virtual void init(const version_t &version, buffer_t *buffer, game_title_t title);
         virtual packet_t next();
         virtual bool has_next();
         virtual bool is_compatible(const version_t &version);
@@ -33,6 +33,7 @@ namespace wotreplay {
         buffer_t *buffer;
         version_t version;
         int pos, prev;
+		game_title_t title;
     };
 }
 

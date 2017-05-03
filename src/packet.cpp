@@ -26,9 +26,9 @@ float packet_t::clock() const {
 
 std::tuple<float, float, float> packet_t::position() const {
     assert(type() == 0x0A);
-    float x = get_field<float>(data.begin(), data.end(), 24);
-    float y = get_field<float>(data.begin(), data.end(), 28);
-    float z = get_field<float>(data.begin(), data.end(), 32);
+    float x = get_field<float>(data.begin(), data.end(), 20);
+    float y = get_field<float>(data.begin(), data.end(), 24);
+    float z = get_field<float>(data.begin(), data.end(), 28);
     return std::make_tuple(x,y,z);
 }
 
@@ -83,16 +83,15 @@ void packet_t::set_data(const slice_t &data) {
         case 0x07: {
             properties[static_cast<size_t>(property_t::clock)] = true;
             properties[static_cast<size_t>(property_t::player_id)] = true;
-            // properties[static_cast<size_t>(property_t::is_shot)] = true;
             properties[static_cast<size_t>(property_t::sub_type)] = true;
-            properties[static_cast<size_t>(property_t::health)] = sub_type() == 0x03;
+            properties[static_cast<size_t>(property_t::health)] = sub_type() == 0x05;
             properties[static_cast<size_t>(property_t::destroyed_track_id)] = sub_type() == 0x07;
             break;
         }
         case 0x08: {
-            if (data.size() > 29) {
+            if (data.size() >= 28) {
                 auto signature = get_field<uint32_t>(data.begin(), data.end(), 24);
-                properties[static_cast<size_t>(property_t::tank_destroyed)] = 0x02801006 == signature;
+                properties[static_cast<size_t>(property_t::tank_destroyed)] = 0x02801306 == signature;
             }
             properties[static_cast<size_t>(property_t::clock)] = true;
             properties[static_cast<size_t>(property_t::player_id)] = true;
@@ -130,7 +129,7 @@ void packet_t::set_data(const slice_t &data) {
             }
             break;
         }
-        case 0x1F: {
+        case 0x23: {
             properties[static_cast<size_t>(property_t::clock)] = true;
             properties[static_cast<size_t>(property_t::message)] = true;
             break;
@@ -138,13 +137,6 @@ void packet_t::set_data(const slice_t &data) {
         case 0x20: {
             properties[static_cast<size_t>(property_t::clock)] = true;
             properties[static_cast<size_t>(property_t::player_id)] = true;
-            // sub type for 0x20
-            uint8_t value = get_field<uint8_t>(data.begin(), data.end(), 21);
-            properties[static_cast<size_t>(property_t::destroyed_track_id)] =
-                (value == 0xF0 || value == 0xF6);
-            // goes together with destroyed_track_id
-            properties[static_cast<size_t>(property_t::alt_track_state)] =
-                    properties[static_cast<size_t>(property_t::destroyed_track_id)];
             break;
         }
         default: {
@@ -207,11 +199,12 @@ const slice_t &packet_t::get_data() const {
     return data;
 }
 
-std::tuple<uint32_t, uint32_t> packet_t::tank_destroyed() const {
+std::tuple<uint32_t, uint32_t, uint8_t> packet_t::tank_destroyed() const {
     assert(has_property(property_t::tank_destroyed));
     return std::make_tuple(
-        get_field<uint32_t>(data.begin(), data.end(), 29),
-        get_field<uint32_t>(data.begin(), data.end(), 34)
+        get_field<uint32_t>(data.begin(), data.end(), 30),
+        get_field<uint32_t>(data.begin(), data.end(), 35),
+        get_field<uint8_t>(data.begin(), data.end(), 42)
     );
 }
 
@@ -226,8 +219,7 @@ uint32_t packet_t::length() const {
 }
 
 std::ostream& wotreplay::operator<<(std::ostream& os, const packet_t &packet) {
-    os << to_string(packet);
-    return os;
+    return os << to_string(packet);
 }
 
 std::string wotreplay::to_string(const packet_t &packet) {

@@ -112,7 +112,7 @@ namespace wotreplay {
          */
         std::string operator()(std::string str);
     private:
-        std::vector<draw_rule_t> rules;
+        const std::vector<draw_rule_t> &rules;
         const game_t &game;
         packet_t const *p;
     };

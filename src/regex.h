@@ -1,7 +1,7 @@
 #ifndef wotreplay_parser_regex_h
 #define wotreplay_parser_regex_h
 
-#ifdef _LIBCPP_VERSION
+#ifndef USE_BOOST_REGEX
 #include <regex>
 
 using std::regex;

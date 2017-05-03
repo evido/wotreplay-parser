@@ -5,6 +5,7 @@
 #include <boost/fusion/include/adapt_struct.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/spirit/include/qi.hpp>
+#include <boost/spirit/include/qi_repeat.hpp>
 #include <boost/spirit/include/phoenix_core.hpp>
 #include <boost/spirit/include/phoenix_operator.hpp>
 #include <boost/spirit/include/phoenix_fusion.hpp>
@@ -95,7 +96,9 @@ struct draw_rules_grammar_t : qi::grammar<Iterator, std::vector<draw_rule_t>(), 
 
         rule  %= color >> ":=" >> expression;
 
-        color %= '#' >> qi::hex;
+        color  %= '#' > (color8 | color6);
+        color6  = qi::uint_parser<uint32_t, 16, 6, 6>()[_val = _1 << 8 | 0xFF];
+        color8 %= qi::uint_parser<uint32_t, 16, 8, 8>();
 
         expression =
             (operation[at_c<1>(_val) = _1] >> logical_operators[at_c<0>(_val) = _1]
@@ -124,6 +127,8 @@ struct draw_rules_grammar_t : qi::grammar<Iterator, std::vector<draw_rule_t>(), 
     qi::rule<Iterator, std::vector<draw_rule_t>(), ascii::space_type> rules;
     qi::rule<Iterator, draw_rule_t() , ascii::space_type> rule;
     qi::rule<Iterator, uint32_t()    , ascii::space_type> color;
+    qi::rule<Iterator, uint32_t()    , ascii::space_type> color6;
+    qi::rule<Iterator, uint32_t()    , ascii::space_type> color8;
     qi::rule<Iterator, operation_t() , ascii::space_type> expression;
     qi::rule<Iterator, operation_t() , ascii::space_type> operation;
     qi::rule<Iterator, operand_t()   , ascii::space_type> operand;
