@@ -88,15 +88,11 @@ void parser_t::parse(buffer_t &buffer, wotreplay::game_t &game) {
     game_begin.resize(data_blocks[0].size());
     std::copy(data_blocks[0].begin(), data_blocks[0].end(), game_begin.begin());
 
-    switch(data_blocks.size()) {
-        case 4: {
-            buffer_t &game_end = game.game_end;
-            game_end.resize(data_blocks[1].size());
-            std::copy(data_blocks[1].begin(), data_blocks[1].end(), game_end.begin());
-        }
-        case 3: {
-            // third block contains game summary
-        }
+    if (data_blocks.size() == 3) {
+        // third block contains game summary
+        buffer_t &game_end = game.game_end;
+        game_end.resize(data_blocks[1].size());
+        std::copy(data_blocks[1].begin(), data_blocks[1].end(), game_end.begin());
     }
 
     raw_replay.resize(data_blocks.back().size());

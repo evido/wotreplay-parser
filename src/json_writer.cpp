@@ -26,10 +26,20 @@ json_writer_t::json_writer_t()
     : filter([](const packet_t &){ return true; })
 {}
 
+void write(Json::Value &root, const std::string &key, const buffer_t &buffer) {
+    if (buffer.begin() != buffer.end()) {
+        Json::Reader reader;
+        Json::Value value;
+        std::string raw_value(buffer.begin(), buffer.end());
+        reader.parse(raw_value, value);
+        root[key] = value;
+    }
+}
+
 void json_writer_t::update(const game_t &game) {
     auto &packets = root["packets"];
 
-    bounding_box_t bounding_box = game.get_arena().bounding_box;
+    bounding_box_t bounding_box(game.get_arena().bounding_box);
 
     // copy boundary values
     Json::Value coordinate(Json::arrayValue);
@@ -43,14 +53,9 @@ void json_writer_t::update(const game_t &game) {
     
     root["recorder_id"] = game.get_recorder_id();
 
-    Json::Value summary;
-    Json::Reader reader;
-    
-    const buffer_t &buffer = game.get_game_begin();
-    std::string summary_str(buffer.begin(), buffer.end());
-    reader.parse(summary_str, summary);
-    
-    root["summary"] = summary;
+
+    ::write(root, "summary", game.get_game_begin());
+    ::write(root, "score_card", game.get_game_end());
 
     const version_t &v = game.get_version();
 
