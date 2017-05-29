@@ -74,7 +74,7 @@ void parser_t::parse(buffer_t &buffer, wotreplay::game_t &game) {
 
     if (debug) {
         for (int i = 0; i < data_blocks.size(); ++i) {
-            debug_stream_content((boost::format("out/data-block-%1%.dat") % i).str(),
+            debug_stream_content((boost::format("data-block-%1%.dat") % i).str(),
                                 data_blocks[i].begin(), data_blocks[i].end());
         }
     }
@@ -109,7 +109,7 @@ void parser_t::parse(buffer_t &buffer, wotreplay::game_t &game) {
 
     extract_replay(raw_replay, game.replay);
 
-	debug_stream_content("out/replay.dat", game.replay.begin(), game.replay.end());
+	debug_stream_content("replay.dat", game.replay.begin(), game.replay.end());
     
     // read version string
     uint32_t version_string_sz = get_field<uint32_t>(game.replay.begin(), game.replay.end(), 12);
@@ -149,7 +149,7 @@ bool parser_t::is_legacy() const {
 }
 
 void parser_t::decrypt_replay(buffer_t &replay_data, const unsigned char *key_data) {
-    debug_stream_content("out/replay-ec.dat", replay_data.begin(), replay_data.end());
+    debug_stream_content("replay-ec.dat", replay_data.begin(), replay_data.end());
     
     BF_KEY key = {{0}};
     BF_set_key(&key, 16, key_data);
