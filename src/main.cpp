@@ -349,22 +349,30 @@ int process_replay_file(const po::variables_map &vm, const std::string &input, c
         {"class-heatmap", "_class_heatmap.png"}
     };
 
-    if (!(vm.count("type") > 0 && vm.count("input") > 0)) {
-        logger.write(wotreplay::log_level_t::error, "parameters type and input are required to use this mode\n");
+    if (!(vm.count("type") > 0)) {
+        logger.write(wotreplay::log_level_t::error, "parameter type is required to use this mode\n");
         return -EXIT_FAILURE;
     }
 
-    std::ifstream in(input, std::ios::binary);
-    if (!in) {
-        logger.writef(log_level_t::error, "Failed to open file: %1%\n", input);
-        return -EXIT_FAILURE;
-    }
+    
 
     parser_t parser(load_data_mode_t::on_demand);
     game_t game;
 
     parser.set_debug(debug);
-    parser.parse(in, game);
+
+    if (input.size() > 0) {
+        std::ifstream in(input, std::ios::binary);
+        if (!in) {
+            logger.writef(log_level_t::error, "Failed to open file: %1%\n", input);
+            return -EXIT_FAILURE;
+        }
+
+        parser.parse(in, game);
+    }
+    else {
+        parser.parse(std::cin, game);
+    }
 
     boost::char_separator<char> sep(",");
     boost::tokenizer<boost::char_separator<char>> tokens(type, sep);
