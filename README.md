@@ -74,6 +74,8 @@ Displays a heatmap of the positions following user defined classes.
 
 ## Compile
 
+### Unix
+
     git clone https://github.com/evido/wotreplay-parser.git
     cmake .
     make
@@ -81,6 +83,13 @@ Displays a heatmap of the positions following user defined classes.
 You may need to specify the include directory for LibXML2 using the CMAKE variable INCLUDE_DIRECTORIES. This can be done as following.
 
     cmake -DINCLUDE_DIRECTORIES="/usr/include/libxml2" .
+
+### Win32
+
+Binaries can be built using VS2019 (using MSVC 2015 build tools).
+
+* ZLIB / PNG and GD can be found [here](ext/dependencies.zip) prebuilt
+* QT 5.9.8
 
 # Data
 
