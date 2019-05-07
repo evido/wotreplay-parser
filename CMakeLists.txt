@@ -18,7 +18,6 @@ else()
   find_package(Boost 1.50.0 COMPONENTS filesystem program_options system REQUIRED)
 endif()
 
-find_package(LibXml2 REQUIRED)
 find_package(PNG REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(OpenSSL REQUIRED)
@@ -27,7 +26,7 @@ find_package(Qt5Widgets)
 find_package(GD)
 
 
-include_directories(AFTER ext/jsoncpp/include ${Boost_INCLUDE_DIRS} ${LIBXML2_INCLUDE_DIR} ${ZLIB_INCLUDE_DIRS} ${PNG_INCLUDE_DIRS} ${OPENSSL_INCLUDE_DIRS} ${TBB_INCLUDE_DIRS} ${GD_INCLUDE_DIR} ${INCLUDE_DIRECTORIES})
+include_directories(AFTER ext/jsoncpp/include ${Boost_INCLUDE_DIRS} ${ZLIB_INCLUDE_DIRS} ${PNG_INCLUDE_DIRS} ${OPENSSL_INCLUDE_DIRS} ${TBB_INCLUDE_DIRS} ${GD_INCLUDE_DIR} ${INCLUDE_DIRECTORIES})
 
 link_directories(${LINK_DIRECTORIES})
 
@@ -37,7 +36,7 @@ if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
 	add_definitions(-D__func__=__FUNCTION__)
 	add_definitions(-D__TBB_NO_IMPLICIT_LINKAGE)
 	add_definitions(-Dchdir=_chdir)
-	set(CMAKE_GENERATOR_TOOLSET "v120" CACHE STRING "Platform Toolset" FORCE) 
+	set(CMAKE_GENERATOR_TOOLSET "v140" CACHE STRING "Platform Toolset" FORCE) 
 else()
 	set (CMAKE_CXX_FLAGS "-Os -std=c++11")
 endif()
@@ -81,7 +80,8 @@ add_library(wotreplay STATIC
 			src/packet_reader_80.cpp 
 			src/parser.cpp 
 			src/image_writer.cpp 
-			src/game.cpp src/image_util.cpp 
+			src/game.cpp 
+			src/image_util.cpp 
 			src/logger.cpp 
 			src/json_writer.cpp
 			src/arena.cpp
@@ -89,7 +89,9 @@ add_library(wotreplay STATIC
 			src/rule.cpp
 			src/class_heatmap_writer.cpp
 			src/tank.cpp
-			src/animation_writer.cpp)
+			src/animation_writer.cpp
+			src/tinyxml2.cpp
+			src/tinyxml2.h)
 
 add_library(jsoncpp STATIC 
 			ext/jsoncpp/src/jsoncpp.cpp
@@ -98,8 +100,8 @@ add_library(jsoncpp STATIC
 
 add_executable(wotreplay-parser src/main.cpp)
 
-target_link_libraries( wotreplay ${OPENSSL_LIBRARIES} ${Boost_LIBRARIES} ${LIBXML2_LIBRARIES} ${PNG_LIBRARIES} ${ZLIB_LIBRARIES} ${TBB_LIBRARIES} ${GD_LIBRARY})
-target_link_libraries( wotreplay-parser ${OPENSSL_LIBRARIES} ${Boost_LIBRARIES} ${LIBXML2_LIBRARIES} ${PNG_LIBRARIES} ${ZLIB_LIBRARIES} ${TBB_LIBRARIES} ${GD_LIBRARY} wotreplay jsoncpp)
+target_link_libraries( wotreplay ${OPENSSL_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${ZLIB_LIBRARIES} ${TBB_LIBRARIES} ${GD_LIBRARY})
+target_link_libraries( wotreplay-parser ${OPENSSL_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${ZLIB_LIBRARIES} ${TBB_LIBRARIES} ${GD_LIBRARY} wotreplay jsoncpp)
 
 if(Qt5Widgets_FOUND)
 	add_library(wotreplay-gui-widgets src/mainwindow.h
@@ -113,5 +115,5 @@ if(Qt5Widgets_FOUND)
 	add_executable(wotreplay-gui WIN32 src/gui_main.cpp)
 	qt5_use_modules(wotreplay-gui Core Gui Widgets)
 
-	target_link_libraries( wotreplay-gui ${OPENSSL_LIBRARIES} ${Boost_LIBRARIES} ${LIBXML2_LIBRARIES} ${PNG_LIBRARIES} ${ZLIB_LIBRARIES} ${TBB_LIBRARIES} ${GD_LIBRARY} wotreplay jsoncpp wotreplay-gui-widgets Qt5::Widgets)
+	target_link_libraries( wotreplay-gui ${OPENSSL_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${ZLIB_LIBRARIES} ${TBB_LIBRARIES} ${GD_LIBRARY} wotreplay jsoncpp wotreplay-gui-widgets Qt5::Widgets)
 endif()
