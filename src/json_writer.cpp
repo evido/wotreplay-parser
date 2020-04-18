@@ -114,11 +114,7 @@ void json_writer_t::update(const game_t &game) {
 
         if (packet.has_property(property_t::health)) {
             value["health"] = packet.health();
-        }
-
-        if (packet.has_property(property_t::source)) {
-            value["source"] = packet.source();
-        }
+        }        
 
         if (packet.has_property(property_t::message)) {
             value["message"] = packet.message();
@@ -127,10 +123,14 @@ void json_writer_t::update(const game_t &game) {
         if (packet.has_property(property_t::sub_type)) {
             value["sub_type"] = packet.sub_type();
         }
+        
+        // if (packet.has_property(property_t::source)) {
+        //     value["source"] = packet.source();
+        // }
 
-        if (packet.has_property(property_t::target)) {
-            value["target"] = packet.target();
-        }
+        // if (packet.has_property(property_t::target)) {
+        //     value["target"] = packet.target();
+        // }
 
         if (packet.has_property(property_t::destroyed_track_id)) {
             value["destroyed_track_id"] = packet.destroyed_track_id();
