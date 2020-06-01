@@ -131,10 +131,7 @@ void image_writer_t::draw_position(const packet_t &packet, const game_t &game, b
     uint32_t player_id = packet.player_id();
     int team_id = game.get_team_id(player_id);
     
-    if (team_id < 0) {
-        int player_team_id = game.get_team_id(game.get_recorder_id());
-        team_id = player_team_id == 0 ? 1 : 0;
-    }
+    if (team_id < 0) return;
 
     auto shape = image.shape();
     int height = static_cast<int>(shape[1]);

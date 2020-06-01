@@ -84,9 +84,13 @@ void parser_t::parse(buffer_t &buffer, wotreplay::game_t &game) {
         throw std::runtime_error(message);
     }
 
-    buffer_t &game_begin = game.game_begin;
+    buffer_t &game_begin = game.game_begin;    
     game_begin.resize(data_blocks[0].size());
     std::copy(data_blocks[0].begin(), data_blocks[0].end(), game_begin.begin());
+
+    buffer_t &player_info = game.player_info;    
+    player_info.resize(data_blocks[1].size());
+    std::copy(data_blocks[1].begin(), data_blocks[1].end(), player_info.begin());
 
     if (data_blocks.size() == 3) {
         // third block contains game summary
@@ -98,7 +102,8 @@ void parser_t::parse(buffer_t &buffer, wotreplay::game_t &game) {
     raw_replay.resize(data_blocks.back().size());
     std::copy(data_blocks.back().begin(), data_blocks.back().end(), raw_replay.begin());
         
-	read_game_info(game);
+	read_player_info(game);
+    read_arena_info(game);
 
 	auto key = encryption_keys[game.get_game_title()].data();
     decrypt_replay(raw_replay, key);
@@ -277,71 +282,79 @@ void parser_t::read_packets(game_t &game) {
 #endif
 }
 
-void parser_t::read_game_info(game_t& game) {
+void parser_t::read_arena_info(game_t& game) {
     // get game details
     Json::Value root;
     Json::Reader reader;
     std::string doc(game.game_begin.begin(), game.game_begin.end());
     reader.parse(doc, root);
 
-    auto vehicles = root["vehicles"];
-	auto player_name = root["playerName"].asString();
-
-	if (vehicles.isArray()) {
-		// world of warships
-		for (auto it = vehicles.begin(); it != vehicles.end(); ++it) {
-			player_t player;
-
-			player.player_id = (*it)["id"].asUInt();
-			player.team = (*it)["relation"].asInt();
-			player.tank = (*it)["shipId"].asString();
-
-			if (player.name == player_name) {
-				game.recorder_id = player.player_id;
-			}
-
-			if (player.player_id != 0) { // relation of player is 0
-				game.players[player.player_id] = player;
-			}			
-		}
-
-		game.game_mode = root["scenarioConfigId"].asString();
-		game.title = game_title_t::world_of_warships;
-	}
-	else {
-		// world of tanks
-		for (auto it = vehicles.begin(); it != vehicles.end(); ++it) {
-			player_t player;
-
-			player.player_id = boost::lexical_cast<int>(it.key().asString());
-			player.name = (*it)["name"].asString();
-			player.team = (*it)["team"].asInt();
-			player.tank = (*it)["vehicleType"].asString();
-			player.tank = player.tank.substr(player.tank.find(':') + 1);
-
-			if (player.name == player_name) {
-				game.recorder_id = player.player_id;
-			}
-
-			game.players[player.player_id] = player;
-			game.teams[player.team - 1].insert(player.player_id);
-		}
-
-		if (root.isMember("gameplayType")) {
-			game.game_mode = root["gameplayType"].asString();
-		}
-		else {
-			// from 8.0 this is renamed
-			game.game_mode = root["gameplayID"].asString();
-		}		
-
-		game.title = game_title_t::world_of_tanks;
-	}
+    if (root.isMember("gameplayType")) {
+        game.game_mode = root["gameplayType"].asString();
+    } else if (root.isMember("gameplayID")) {
+        // from 8.0 this is renamed
+        game.game_mode = root["gameplayID"].asString();
+    }
 
 	std::string map_name = root["mapName"].asString();
 
 	// explicit check for game version should be better
 	get_arena(map_name, game.arena, load_data_mode == load_data_mode_t::on_demand);
+}
+
+void parser_t::read_player_info(game_t& game) {
+    // get game details
+    Json::Value root;
+    Json::Reader reader;
+    std::string doc(game.player_info.begin(), game.player_info.end());
+    reader.parse(doc, root);
+
+	auto player_account_id = root[0]["personal"]["avatar"]["accountDBID"].asString();
+    auto player_name = root[0]["players"][player_account_id]["name"].asString();
+
+    auto vehicles = root[1];
+
+	// if (vehicles.isArray()) {
+	// 	// world of warships
+	// 	for (auto it = vehicles.begin(); it != vehicles.end(); ++it) {
+	// 		player_t player;
+
+	// 		player.player_id = (*it)["id"].asUInt();
+	// 		player.team = (*it)["relation"].asInt();
+	// 		player.tank = (*it)["shipId"].asString();
+
+	// 		if (player.name == player_name) {
+	// 			game.recorder_id = player.player_id;
+	// 		}
+
+	// 		if (player.player_id != 0) { // relation of player is 0
+	// 			game.players[player.player_id] = player;
+	// 		}			
+	// 	}
+
+	// 	game.game_mode = root["scenarioConfigId"].asString();
+	// 	game.title = game_title_t::world_of_warships;
+	// }
+
+    // world of tanks
+    for (auto it = vehicles.begin(); it != vehicles.end(); ++it) {
+        player_t player;
+
+        player.player_id = boost::lexical_cast<int>(it.key().asString());
+        player.name = (*it)["name"].asString();
+        player.team = (*it)["team"].asInt();
+        player.tank = (*it)["vehicleType"].asString();
+        player.tank = player.tank.substr(player.tank.find(':') + 1);
+
+        if (player.name == player_name) {
+            game.recorder_id = player.player_id;
+        }
+
+        game.players[player.player_id] = player;
+        game.teams[player.team - 1].insert(player.player_id);
+    }	
+
+    game.title = game_title_t::world_of_tanks;
 }
 
 void wotreplay::show_packet_summary(const std::vector<packet_t>& packets) {
