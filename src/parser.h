@@ -132,7 +132,8 @@ namespace wotreplay {
          * data block.
          * @param game Output variable game
          */
-        void read_game_info(game_t &game);
+        void read_arena_info(game_t &game);
+        void read_player_info(game_t &game);
         /** The legacy indicator. */
         bool legacy;
         /** The debug indicator */

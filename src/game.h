@@ -136,6 +136,7 @@ namespace wotreplay {
         std::string game_mode;
         arena_t arena;
         buffer_t game_begin;
+        buffer_t player_info;
         buffer_t game_end;
         buffer_t replay;
         uint32_t recorder_id;
