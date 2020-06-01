@@ -4,6 +4,7 @@
 #include "logger.h"
 
 #include <fstream>
+#include <iostream>
 
 using namespace wotreplay;
 
@@ -128,9 +129,12 @@ void image_writer_t::draw_death(const packet_t &packet, const game_t &game) {
 
 void image_writer_t::draw_position(const packet_t &packet, const game_t &game, boost::multi_array<float, 3> &image) {
     uint32_t player_id = packet.player_id();
-
     int team_id = game.get_team_id(player_id);
-    if (team_id < 0) return;
+    
+    if (team_id < 0) {
+        int player_team_id = game.get_team_id(game.get_recorder_id());
+        team_id = player_team_id == 0 ? 1 : 0;
+    }
 
     auto shape = image.shape();
     int height = static_cast<int>(shape[1]);
@@ -149,13 +153,11 @@ void image_writer_t::draw_position(const packet_t &packet, const game_t &game, b
 }
 
 void image_writer_t::update(const game_t &game) {
-    recorder_team = game.get_team_id(game.get_recorder_id());
-
     std::set<int> dead_players;
     for (const packet_t &packet : game.get_packets()) {
         if (!filter(packet)) continue;
-        if (packet.has_property(property_t::position)
-            && dead_players.find(packet.player_id()) == dead_players.end()) {
+        if (packet.has_property(property_t::position)) {
+            // && dead_players.find(packet.player_id()) == dead_players.end()) {
             draw_position(packet, game, this->positions);
         }
         else if (packet.has_property(property_t::tank_destroyed)) {
