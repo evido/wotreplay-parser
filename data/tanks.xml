@@ -1,0 +1,482 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tanks>
+ <tank countryid="0" countryname="ussr" tankid="0" tankname="T-34" compDescr="1" icon="R04_T-34" class="2" classname="medium" tier="5" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="0" tankname="Pz.Kpfw. IV" compDescr="17" icon="PzIV" class="2" classname="medium" tier="5" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="0" tankname="T14" compDescr="33" icon="T14" class="3" classname="heavy" tier="5" active="1"/>
+ <tank countryid="3" countryname="china" tankid="0" tankname="Type 59" compDescr="49" icon="Ch01_Type59" class="2" classname="medium" tier="8" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="0" tankname="Vickers Medium Mk. I" compDescr="81" icon="GB01_Medium_Mark_I" class="2" classname="medium" tier="1" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="1" tankname="SU-85" compDescr="257" icon="SU-85" class="4" classname="td" tier="5" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="1" tankname="Hummel" compDescr="273" icon="Hummel" class="5" classname="spg" tier="6" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="1" tankname="M3 Stuart" compDescr="289" icon="M3_Stuart" class="1" classname="light" tier="3" active="1"/>
+ <tank countryid="3" countryname="china" tankid="1" tankname="Type 62" compDescr="305" icon="Ch02_Type62" class="1" classname="light" tier="7" active="1"/>
+ <tank countryid="4" countryname="france" tankid="1" tankname="D2" compDescr="321" icon="D2" class="2" classname="medium" tier="3" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="1" tankname="Vickers Medium Mk. II" compDescr="337" icon="GB05_Vickers_Medium_Mk_II" class="2" classname="medium" tier="2" active="1"/>
+ <tank countryid="6" countryname="jp" tankid="1" tankname="Chi-Ni" compDescr="353" icon="Chi_Ni" class="2" classname="medium" tier="2" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="2" tankname="IS" compDescr="513" icon="IS" class="3" classname="heavy" tier="7" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="2" tankname="Tiger I" compDescr="529" icon="PzVI" class="3" classname="heavy" tier="7" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="2" tankname="T1 Cunningham" compDescr="545" icon="T1_Cunningham" class="1" classname="light" tier="1" active="1"/>
+ <tank countryid="3" countryname="china" tankid="2" tankname="Type 59 G" compDescr="561" icon="Ch01_Type59_Gold" class="2" classname="medium" tier="8" active="1"/>
+ <tank countryid="4" countryname="france" tankid="2" tankname="Renault FT" compDescr="577" icon="RenaultFT" class="1" classname="light" tier="1" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="2" tankname="M2" compDescr="593" icon="GB14_M2" class="1" classname="light" tier="2" active="1"/>
+ <tank countryid="6" countryname="jp" tankid="2" tankname="Renault Otsu" compDescr="609" icon="NC27" class="1" classname="light" tier="1" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="3" tankname="BT-7" compDescr="769" icon="BT-7" class="1" classname="light" tier="3" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="3" tankname="Pz.Kpfw. 35 (t)" compDescr="785" icon="Pz35t" class="1" classname="light" tier="2" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="3" tankname="M6" compDescr="801" icon="M6" class="3" classname="heavy" tier="6" active="1"/>
+ <tank countryid="3" countryname="china" tankid="3" tankname="WZ-111" compDescr="817" icon="Ch03_WZ-111" class="3" classname="heavy" tier="8" active="1"/>
+ <tank countryid="4" countryname="france" tankid="3" tankname="Renault FT 75 BS" compDescr="833" icon="RenaultBS" class="5" classname="spg" tier="2" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="3" tankname="Matilda" compDescr="849" icon="GB07_Matilda" class="2" classname="medium" tier="4" active="1"/>
+ <tank countryid="6" countryname="jp" tankid="3" tankname="Type 95 Ha-Go" compDescr="865" icon="Ha_Go" class="1" classname="light" tier="2" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="4" tankname="BT-2" compDescr="1025" icon="BT-2" class="1" classname="light" tier="2" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="4" tankname="StuG III Ausf. G" compDescr="1041" icon="StuG_40_AusfG" class="4" classname="td" tier="5" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="4" tankname="M4 Sherman" compDescr="1057" icon="M4_Sherman" class="2" classname="medium" tier="5" active="1"/>
+ <tank countryid="3" countryname="china" tankid="4" tankname="T-34-1" compDescr="1073" icon="Ch04_T34_1" class="2" classname="medium" tier="7" active="1"/>
+ <tank countryid="4" countryname="france" tankid="4" tankname="B1" compDescr="1089" icon="B1" class="3" classname="heavy" tier="4" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="4" tankname="Cromwell" compDescr="1105" icon="GB21_Cromwell" class="2" classname="medium" tier="6" active="1"/>
+ <tank countryid="6" countryname="jp" tankid="4" tankname="Type 5 Chi-Ri" compDescr="1121" icon="Chi_Ri" class="2" classname="medium" tier="7" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="5" tankname="KV" compDescr="1281" icon="KV" class="3" classname="heavy" tier="5" active="0"/>
+ <tank countryid="1" countryname="germany" tankid="5" tankname="Panther" compDescr="1297" icon="PzV" class="2" classname="medium" tier="7" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="5" tankname="M4A3E8 Sherman" compDescr="1313" icon="M4A3E8_Sherman" class="2" classname="medium" tier="6" active="1"/>
+ <tank countryid="3" countryname="china" tankid="5" tankname="Renault NC-31" compDescr="1329" icon="Ch06_Renault_NC31" class="1" classname="light" tier="1" active="1"/>
+ <tank countryid="4" countryname="france" tankid="5" tankname="Hotchkiss H35" compDescr="1345" icon="Hotchkiss_H35" class="1" classname="light" tier="2" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="5" tankname="Stuart I-IV" compDescr="1361" icon="GB15_Stuart_I" class="1" classname="light" tier="3" active="1"/>
+ <tank countryid="6" countryname="jp" tankid="5" tankname="Type 3 Chi-Nu" compDescr="1377" icon="Chi_Nu" class="2" classname="medium" tier="5" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="6" tankname="T-28" compDescr="1537" icon="T-28" class="2" classname="medium" tier="4" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="6" tankname="Jagdpanzer IV" compDescr="1553" icon="JagdPzIV" class="4" classname="td" tier="6" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="6" tankname="T20" compDescr="1569" icon="T20" class="2" classname="medium" tier="7" active="1"/>
+ <tank countryid="3" countryname="china" tankid="6" tankname="T-34-2" compDescr="1585" icon="Ch05_T34_2" class="2" classname="medium" tier="8" active="1"/>
+ <tank countryid="4" countryname="france" tankid="6" tankname="D1" compDescr="1601" icon="D1" class="1" classname="light" tier="2" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="6" tankname="Grant" compDescr="1617" icon="GB17_Grant_I" class="2" classname="medium" tier="4" active="1"/>
+ <tank countryid="6" countryname="jp" tankid="6" tankname="Type 1 Chi-He" compDescr="1633" icon="Chi_He" class="2" classname="medium" tier="4" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="7" tankname="S-51" compDescr="1793" icon="S-51" class="5" classname="spg" tier="7" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="7" tankname="Hetzer" compDescr="1809" icon="Hetzer" class="4" classname="td" tier="4" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="7" tankname="M2 Light Tank" compDescr="1825" icon="M2_lt" class="1" classname="light" tier="2" active="1"/>
+ <tank countryid="3" countryname="china" tankid="7" tankname="WZ-120" compDescr="1841" icon="Ch18_WZ-120" class="2" classname="medium" tier="9" active="1"/>
+ <tank countryid="6" countryname="jp" tankid="7" tankname="Type 4 Chi-To" compDescr="1889" icon="Chi_To" class="2" classname="medium" tier="6" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="8" tankname="A-20" compDescr="2049" icon="A-20" class="1" classname="light" tier="4" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="8" tankname="Pz.Kpfw. II" compDescr="2065" icon="PzII" class="1" classname="light" tier="2" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="8" tankname="T57" compDescr="2081" icon="T57" class="5" classname="spg" tier="2" active="1"/>
+ <tank countryid="3" countryname="china" tankid="8" tankname="WZ-111 model 1-4" compDescr="2097" icon="Ch12_111_1_2_3" class="3" classname="heavy" tier="9" active="1"/>
+ <tank countryid="4" countryname="france" tankid="8" tankname="105 leFH18B2" compDescr="2113" icon="_105_leFH18B2" class="5" classname="spg" tier="5" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="8" tankname="Crusader" compDescr="2129" icon="GB20_Crusader" class="1" classname="light" tier="5" active="1"/>
+ <tank countryid="6" countryname="jp" tankid="8" tankname="Type 97 Chi-Ha" compDescr="2145" icon="Chi_Ha" class="2" classname="medium" tier="3" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="9" tankname="SU-152" compDescr="2305" icon="SU-152" class="4" classname="td" tier="7" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="9" tankname="VK 36.01 (H)" compDescr="2321" icon="VK3601H" class="3" classname="heavy" tier="6" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="9" tankname="T23" compDescr="2337" icon="T23" class="2" classname="medium" tier="8" active="0"/>
+ <tank countryid="3" countryname="china" tankid="9" tankname="Vickers Mk. E Type B" compDescr="2353" icon="Ch07_Vickers_MkE_Type_BT26" class="1" classname="light" tier="2" active="1"/>
+ <tank countryid="4" countryname="france" tankid="9" tankname="FCM 36 Pak 40" compDescr="2369" icon="FCM_36Pak40" class="4" classname="td" tier="3" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="9" tankname="Vickers Medium Mk. III" compDescr="2385" icon="GB06_Vickers_Medium_Mk_III" class="2" classname="medium" tier="3" active="1"/>
+ <tank countryid="6" countryname="jp" tankid="9" tankname="Type 98 Ke-Ni" compDescr="2401" icon="Ke_Ni" class="1" classname="light" tier="3" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="10" tankname="T-34-85" compDescr="2561" icon="T-34-85" class="2" classname="medium" tier="6" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="10" tankname="VK 30.01 (H)" compDescr="2577" icon="VK3001H" class="3" classname="heavy" tier="5" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="10" tankname="T30" compDescr="2593" icon="T30" class="4" classname="td" tier="9" active="1"/>
+ <tank countryid="4" countryname="france" tankid="10" tankname="ARL 44" compDescr="2625" icon="ARL_44" class="3" classname="heavy" tier="6" active="1"/>
+ <tank countryid="6" countryname="jp" tankid="10" tankname="STA-1" compDescr="2657" icon="STA_1" class="2" classname="medium" tier="8" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="11" tankname="KV-85" compDescr="2817" icon="R106_KV85" class="3" classname="heavy" tier="6" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="11" tankname="Sturmpanzer I Bison" compDescr="2833" icon="Bison_I" class="5" classname="spg" tier="3" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="11" tankname="T34" compDescr="2849" icon="T34_hvy" class="3" classname="heavy" tier="8" active="1"/>
+ <tank countryid="3" countryname="china" tankid="11" tankname="110" compDescr="2865" icon="Ch11_110" class="3" classname="heavy" tier="8" active="1"/>
+ <tank countryid="4" countryname="france" tankid="11" tankname="AMX 40" compDescr="2881" icon="AMX40" class="1" classname="light" tier="4" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="11" tankname="Churchill I" compDescr="2897" icon="GB08_Churchill_I" class="3" classname="heavy" tier="5" active="1"/>
+ <tank countryid="6" countryname="jp" tankid="11" tankname="Type 5 Ke-Ho" compDescr="2913" icon="Ke_Ho" class="1" classname="light" tier="4" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="12" tankname="T-46" compDescr="3073" icon="T-46" class="1" classname="light" tier="3" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="12" tankname="Leichttraktor" compDescr="3089" icon="Ltraktor" class="1" classname="light" tier="1" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="12" tankname="M3 Lee" compDescr="3105" icon="M3_Grant" class="2" classname="medium" tier="4" active="1"/>
+ <tank countryid="3" countryname="china" tankid="12" tankname="M5A1 Stuart" compDescr="3121" icon="Ch09_M5" class="1" classname="light" tier="4" active="1"/>
+ <tank countryid="4" countryname="france" tankid="12" tankname="AMX 50 100" compDescr="3137" icon="AMX_50_100" class="3" classname="heavy" tier="8" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="12" tankname="Black Prince" compDescr="3153" icon="GB10_Black_Prince" class="3" classname="heavy" tier="7" active="1"/>
+ <tank countryid="6" countryname="jp" tankid="12" tankname="Type 97 Te-Ke" compDescr="3169" icon="Te_Ke" class="1" classname="light" tier="2" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="13" tankname="MS-1" compDescr="3329" icon="MS-1" class="1" classname="light" tier="1" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="13" tankname="Pz.Kpfw. 38 (t)" compDescr="3345" icon="Pz38t" class="1" classname="light" tier="3" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="13" tankname="T1 Heavy Tank" compDescr="3361" icon="T1_hvy" class="3" classname="heavy" tier="5" active="1"/>
+ <tank countryid="3" countryname="china" tankid="13" tankname="WZ-131" compDescr="3377" icon="Ch16_WZ_131" class="1" classname="light" tier="7" active="1"/>
+ <tank countryid="4" countryname="france" tankid="13" tankname="Lorraine 39L AM" compDescr="3393" icon="Lorraine39_L_AM" class="5" classname="spg" tier="3" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="13" tankname="Sexton II" compDescr="3409" icon="GB27_Sexton" class="5" classname="spg" tier="3" active="1"/>
+ <tank countryid="6" countryname="jp" tankid="13" tankname="Type 61" compDescr="3425" icon="Type_61" class="2" classname="medium" tier="9" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="14" tankname="SU-100" compDescr="3585" icon="SU-100" class="4" classname="td" tier="6" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="14" tankname="Panzerjager I" compDescr="3601" icon="PanzerJager_I" class="4" classname="td" tier="2" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="14" tankname="M7 Priest" compDescr="3617" icon="M7_Priest" class="5" classname="spg" tier="3" active="1"/>
+ <tank countryid="3" countryname="china" tankid="14" tankname="IS-2" compDescr="3633" icon="Ch10_IS2" class="3" classname="heavy" tier="7" active="1"/>
+ <tank countryid="4" countryname="france" tankid="14" tankname="Bat.-Chatillon 25 t" compDescr="3649" icon="Bat_Chatillon25t" class="2" classname="medium" tier="10" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="14" tankname="Sherman Firefly" compDescr="3665" icon="GB19_Sherman_Firefly" class="2" classname="medium" tier="6" active="1"/>
+ <tank countryid="6" countryname="jp" tankid="14" tankname="STB-1" compDescr="3681" icon="ST_B1" class="2" classname="medium" tier="10" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="15" tankname="SU-18" compDescr="3841" icon="SU-18" class="5" classname="spg" tier="2" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="15" tankname="Jagdpanther" compDescr="3857" icon="JagdPanther" class="4" classname="td" tier="7" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="15" tankname="T29" compDescr="3873" icon="T29" class="3" classname="heavy" tier="7" active="1"/>
+ <tank countryid="3" countryname="china" tankid="15" tankname="WZ-132" compDescr="3889" icon="Ch17_WZ131_1_WZ132" class="1" classname="light" tier="8" active="1"/>
+ <tank countryid="4" countryname="france" tankid="15" tankname="AMX 50 120" compDescr="3905" icon="AMX_50_120" class="3" classname="heavy" tier="9" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="15" tankname="Caernarvon" compDescr="3921" icon="GB11_Caernarvon" class="3" classname="heavy" tier="8" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="16" tankname="SU-14-2" compDescr="4097" icon="SU-14" class="5" classname="spg" tier="8" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="16" tankname="VK 30.02 (D)" compDescr="4113" icon="VK3002DB" class="2" classname="medium" tier="7" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="16" tankname="M41 HMC" compDescr="4129" icon="M41" class="5" classname="spg" tier="5" active="1"/>
+ <tank countryid="3" countryname="china" tankid="16" tankname="121" compDescr="4145" icon="Ch19_121" class="2" classname="medium" tier="10" active="1"/>
+ <tank countryid="4" countryname="france" tankid="16" tankname="AMX 13 105 AM mle. 50" compDescr="4161" icon="AMX_105AM" class="5" classname="spg" tier="5" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="17" tankname="T-44" compDescr="4353" icon="T-44" class="2" classname="medium" tier="8" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="17" tankname="Pz.Kpfw. III" compDescr="4369" icon="PzIII_AusfJ" class="2" classname="medium" tier="4" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="17" tankname="T32" compDescr="4385" icon="T32" class="3" classname="heavy" tier="8" active="1"/>
+ <tank countryid="3" countryname="china" tankid="17" tankname="Type 2597 Chi-Ha" compDescr="4401" icon="Ch08_Type97_Chi_Ha" class="1" classname="light" tier="3" active="1"/>
+ <tank countryid="4" countryname="france" tankid="17" tankname="Renault G1" compDescr="4417" icon="F11_Renault_G1R" class="2" classname="medium" tier="5" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="17" tankname="Conqueror" compDescr="4433" icon="GB12_Conqueror" class="3" classname="heavy" tier="9" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="18" tankname="T-26" compDescr="4609" icon="T-26" class="1" classname="light" tier="2" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="18" tankname="Sturmpanzer II" compDescr="4625" icon="Sturmpanzer_II" class="5" classname="spg" tier="4" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="18" tankname="M37" compDescr="4641" icon="M37" class="5" classname="spg" tier="4" active="1"/>
+ <tank countryid="3" countryname="china" tankid="18" tankname="Type T-34" compDescr="4657" icon="Ch21_T34" class="2" classname="medium" tier="5" active="1"/>
+ <tank countryid="4" countryname="france" tankid="18" tankname="AMX 13 F3 AM" compDescr="4673" icon="AMX_13F3AM" class="5" classname="spg" tier="6" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="18" tankname="Churchill VII" compDescr="4689" icon="GB09_Churchill_VII" class="3" classname="heavy" tier="6" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="19" tankname="SU-5" compDescr="4865" icon="SU-5" class="5" classname="spg" tier="4" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="19" tankname="Pz.Kpfw. III Ausf. A" compDescr="4881" icon="PzIII_A" class="1" classname="light" tier="3" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="19" tankname="M2 Medium Tank" compDescr="4897" icon="M2_med" class="2" classname="medium" tier="3" active="1"/>
+ <tank countryid="3" countryname="china" tankid="19" tankname="59-16" compDescr="4913" icon="Ch15_59_16" class="1" classname="light" tier="6" active="1"/>
+ <tank countryid="4" countryname="france" tankid="19" tankname="AMX 13 90" compDescr="4929" icon="AMX_13_90" class="1" classname="light" tier="8" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="19" tankname="Valentine" compDescr="4945" icon="GB04_Valentine" class="1" classname="light" tier="4" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="20" tankname="AT-1" compDescr="5121" icon="AT-1" class="4" classname="td" tier="2" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="20" tankname="Tiger II" compDescr="5137" icon="PzVIB_Tiger_II" class="3" classname="heavy" tier="8" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="20" tankname="M5 Stuart" compDescr="5153" icon="M5_Stuart" class="1" classname="light" tier="4" active="1"/>
+ <tank countryid="3" countryname="china" tankid="20" tankname="Type 58" compDescr="5169" icon="Ch20_Type58" class="2" classname="medium" tier="6" active="1"/>
+ <tank countryid="4" countryname="france" tankid="20" tankname="AMX 13 75" compDescr="5185" icon="AMX_13_75" class="1" classname="light" tier="7" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="20" tankname="Cruiser Mk. I" compDescr="5201" icon="GB03_Cruiser_Mk_I" class="1" classname="light" tier="2" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="21" tankname="IS-3" compDescr="5377" icon="IS-3" class="3" classname="heavy" tier="8" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="21" tankname="VK 16.02 Leopard" compDescr="5393" icon="VK1602" class="1" classname="light" tier="5" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="21" tankname="M7" compDescr="5409" icon="M7_med" class="2" classname="medium" tier="5" active="1"/>
+ <tank countryid="3" countryname="china" tankid="21" tankname="113" compDescr="5425" icon="Ch22_113" class="3" classname="heavy" tier="10" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="21" tankname="Comet" compDescr="5457" icon="GB22_Comet" class="2" classname="medium" tier="7" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="22" tankname="SU-8" compDescr="5633" icon="SU-8" class="5" classname="spg" tier="6" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="22" tankname="Grille" compDescr="5649" icon="Grille" class="5" classname="spg" tier="5" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="22" tankname="T2 Medium Tank" compDescr="5665" icon="T2_med" class="2" classname="medium" tier="2" active="1"/>
+ <tank countryid="4" countryname="france" tankid="22" tankname="Lorraine 40 t" compDescr="5697" icon="Lorraine40t" class="2" classname="medium" tier="9" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="22" tankname="Centurion Mk. 7/1" compDescr="5713" icon="GB24_Centurion_Mk3" class="2" classname="medium" tier="9" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="23" tankname="KV-3" compDescr="5889" icon="KV-3" class="3" classname="heavy" tier="7" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="23" tankname="Wespe" compDescr="5905" icon="Wespe" class="5" classname="spg" tier="3" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="23" tankname="M26 Pershing" compDescr="5921" icon="A35_Pershing" class="2" classname="medium" tier="8" active="1"/>
+ <tank countryid="4" countryname="france" tankid="23" tankname="AMX 38" compDescr="5953" icon="AMX38" class="1" classname="light" tier="3" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="23" tankname="Centurion Mk. I" compDescr="5969" icon="GB23_Centurion" class="2" classname="medium" tier="8" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="24" tankname="IS-4" compDescr="6145" icon="R90_IS_4M" class="3" classname="heavy" tier="10" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="24" tankname="Pz.Kpfw. II Luchs" compDescr="6161" icon="PzII_Luchs" class="1" classname="light" tier="4" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="24" tankname="T18" compDescr="6177" icon="T18" class="4" classname="td" tier="2" active="1"/>
+ <tank countryid="4" countryname="france" tankid="24" tankname="AMX 50 B" compDescr="6209" icon="F10_AMX_50B" class="3" classname="heavy" tier="10" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="24" tankname="FV215b" compDescr="6225" icon="GB13_FV215b" class="3" classname="heavy" tier="10" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="25" tankname="SU-76" compDescr="6401" icon="SU-76" class="4" classname="td" tier="3" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="25" tankname="Pz.Kpfw. III/IV" compDescr="6417" icon="PzIII_IV" class="2" classname="medium" tier="5" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="25" tankname="T82" compDescr="6433" icon="T82" class="4" classname="td" tier="3" active="1"/>
+ <tank countryid="4" countryname="france" tankid="25" tankname="AMX 12 t" compDescr="6465" icon="AMX_12t" class="1" classname="light" tier="6" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="25" tankname="Covenanter" compDescr="6481" icon="GB60_Covenanter" class="1" classname="light" tier="4" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="26" tankname="T-43" compDescr="6657" icon="T-43" class="2" classname="medium" tier="7" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="26" tankname="Marder II" compDescr="6673" icon="G20_Marder_II" class="4" classname="td" tier="3" active="1"/>
+ <tank countryid="4" countryname="france" tankid="26" tankname="BDR G1 B" compDescr="6721" icon="BDR_G1B" class="3" classname="heavy" tier="5" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="27" tankname="SU-85B" compDescr="6913" icon="GAZ-74b" class="4" classname="td" tier="4" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="27" tankname="Maus" compDescr="6929" icon="Maus" class="3" classname="heavy" tier="10" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="27" tankname="M10 Wolverine" compDescr="6945" icon="M10_Wolverine" class="4" classname="td" tier="5" active="1"/>
+ <tank countryid="4" countryname="france" tankid="27" tankname="AMX M4 mle. 45" compDescr="6977" icon="AMX_M4_1945" class="3" classname="heavy" tier="7" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="27" tankname="Cruiser Mk. II" compDescr="6993" icon="GB69_Cruiser_Mk_II" class="1" classname="light" tier="3" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="28" tankname="IS-7" compDescr="7169" icon="IS-7" class="3" classname="heavy" tier="10" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="28" tankname="VK 30.01 (P)" compDescr="7185" icon="VK3001P" class="2" classname="medium" tier="6" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="28" tankname="M36 Jackson" compDescr="7201" icon="M36_Slagger" class="4" classname="td" tier="6" active="1"/>
+ <tank countryid="4" countryname="france" tankid="28" tankname="Lorraine 155 mle. 50" compDescr="7233" icon="Lorraine155_50" class="5" classname="spg" tier="7" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="28" tankname="FV4202" compDescr="7249" icon="GB70_FV4202_105" class="2" classname="medium" tier="10" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="29" tankname="ISU-152" compDescr="7425" icon="ISU-152" class="4" classname="td" tier="8" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="29" tankname="VK 45.02 (P) Ausf. B" compDescr="7441" icon="VK4502P" class="3" classname="heavy" tier="9" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="29" tankname="M40/M43" compDescr="7457" icon="M40M43" class="5" classname="spg" tier="8" active="1"/>
+ <tank countryid="4" countryname="france" tankid="29" tankname="Lorraine 155 mle. 51" compDescr="7489" icon="Lorraine155_51" class="5" classname="spg" tier="8" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="29" tankname="Cruiser Mk. IV" compDescr="7505" icon="GB59_Cruiser_Mk_IV" class="1" classname="light" tier="3" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="30" tankname="SU-26" compDescr="7681" icon="SU-26" class="5" classname="spg" tier="3" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="30" tankname="Ferdinand" compDescr="7697" icon="Ferdinand" class="4" classname="td" tier="8" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="30" tankname="T40" compDescr="7713" icon="T40" class="4" classname="td" tier="4" active="1"/>
+ <tank countryid="4" countryname="france" tankid="30" tankname="Renault FT AC" compDescr="7745" icon="RenaultFT_AC" class="4" classname="td" tier="2" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="30" tankname="Cruiser Mk. III" compDescr="7761" icon="GB58_Cruiser_Mk_III" class="1" classname="light" tier="2" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="31" tankname="T-54" compDescr="7937" icon="T-54" class="2" classname="medium" tier="9" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="31" tankname="Jagdtiger" compDescr="7953" icon="JagdTiger" class="4" classname="td" tier="9" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="31" tankname="M12" compDescr="7969" icon="M12" class="5" classname="spg" tier="7" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="31" tankname="Valentine AT" compDescr="8017" icon="GB42_Valentine_AT" class="4" classname="td" tier="3" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="32" tankname="Object 704" compDescr="8193" icon="R53_Object_704" class="4" classname="td" tier="9" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="32" tankname="Pz.Kpfw. 38 (t) n.A." compDescr="8209" icon="Pz38_NA" class="1" classname="light" tier="4" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="32" tankname="T28" compDescr="8225" icon="T28" class="4" classname="td" tier="8" active="1"/>
+ <tank countryid="4" countryname="france" tankid="32" tankname="Renault UE 57" compDescr="8257" icon="RenaultUE57" class="4" classname="td" tier="3" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="32" tankname="Universal Carrier 2-pdr" compDescr="8273" icon="GB39_Universal_CarrierQF2" class="4" classname="td" tier="2" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="33" tankname="212A" compDescr="8449" icon="Object_212" class="5" classname="spg" tier="9" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="33" tankname="Panther II" compDescr="8465" icon="Panther_II" class="2" classname="medium" tier="8" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="33" tankname="T92" compDescr="8481" icon="T92" class="5" classname="spg" tier="10" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="33" tankname="AT 15" compDescr="8529" icon="GB72_AT15" class="4" classname="td" tier="8" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="34" tankname="Object 261" compDescr="8705" icon="Object_261" class="5" classname="spg" tier="10" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="34" tankname="G.W. Tiger" compDescr="8721" icon="G_Tiger" class="5" classname="spg" tier="9" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="34" tankname="T95" compDescr="8737" icon="T95" class="4" classname="td" tier="9" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="34" tankname="AT 2" compDescr="8785" icon="GB73_AT2" class="4" classname="td" tier="5" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="35" tankname="KV-13" compDescr="8961" icon="KV-13" class="2" classname="medium" tier="7" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="35" tankname="G.W. Panther" compDescr="8977" icon="G_Panther" class="5" classname="spg" tier="7" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="35" tankname="M46 Patton" compDescr="8993" icon="M46_Patton" class="2" classname="medium" tier="9" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="35" tankname="Alecto" compDescr="9041" icon="GB57_Alecto" class="4" classname="td" tier="4" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="36" tankname="IS-6" compDescr="9217" icon="Object252" class="3" classname="heavy" tier="8" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="36" tankname="G.W. E 100" compDescr="9233" icon="G_E" class="5" classname="spg" tier="10" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="36" tankname="T25 AT" compDescr="9249" icon="T25_AT" class="4" classname="td" tier="7" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="36" tankname="FV215b (183)" compDescr="9297" icon="GB48_FV215b_183" class="4" classname="td" tier="10" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="37" tankname="T-50" compDescr="9473" icon="T-50" class="1" classname="light" tier="4" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="37" tankname="E 100" compDescr="9489" icon="E-100" class="3" classname="heavy" tier="10" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="37" tankname="M103" compDescr="9505" icon="M103" class="3" classname="heavy" tier="9" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="37" tankname="AT 8" compDescr="9553" icon="GB74_AT8" class="4" classname="td" tier="6" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="38" tankname="T-50-2" compDescr="9729" icon="T_50_2" class="1" classname="light" tier="5" active="0"/>
+ <tank countryid="1" countryname="germany" tankid="38" tankname="E 75" compDescr="9745" icon="E-75" class="3" classname="heavy" tier="9" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="38" tankname="M24 Chaffee" compDescr="9761" icon="M24_Chaffee" class="1" classname="light" tier="5" active="1"/>
+ <tank countryid="4" countryname="france" tankid="38" tankname="Somua SAu 40" compDescr="9793" icon="Somua_Sau_40" class="4" classname="td" tier="4" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="38" tankname="Churchill Gun Carrier" compDescr="9809" icon="GB40_Gun_Carrier_Churchill" class="4" classname="td" tier="6" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="39" tankname="SU-101" compDescr="9985" icon="SU-101" class="4" classname="td" tier="8" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="39" tankname="VK 28.01" compDescr="10001" icon="VK2801" class="1" classname="light" tier="6" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="39" tankname="M4A3E2 Sherman Jumbo" compDescr="10017" icon="Sherman_Jumbo" class="2" classname="medium" tier="6" active="1"/>
+ <tank countryid="4" countryname="france" tankid="39" tankname="S35 CA" compDescr="10049" icon="S_35CA" class="4" classname="td" tier="5" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="39" tankname="AT 7" compDescr="10065" icon="GB75_AT7" class="4" classname="td" tier="7" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="40" tankname="SU-100M1" compDescr="10241" icon="SU100M1" class="4" classname="td" tier="7" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="40" tankname="E 50" compDescr="10257" icon="E-50" class="2" classname="medium" tier="9" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="40" tankname="M8A1" compDescr="10273" icon="M8A1" class="4" classname="td" tier="4" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="41" tankname="KV-2" compDescr="10497" icon="KV2" class="3" classname="heavy" tier="6" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="41" tankname="VK 45.02 (P) Ausf. A" compDescr="10513" icon="VK4502A" class="3" classname="heavy" tier="8" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="41" tankname="T67" compDescr="10529" icon="T67" class="4" classname="td" tier="5" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="41" tankname="Loyd Gun Carriage" compDescr="10577" icon="GB25_Loyd_Carrier" class="5" classname="spg" tier="2" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="42" tankname="ST-I" compDescr="10753" icon="ST_I" class="3" classname="heavy" tier="9" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="42" tankname="Tiger (P)" compDescr="10769" icon="PzVI_Tiger_P" class="3" classname="heavy" tier="7" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="42" tankname="T110E5" compDescr="10785" icon="T110" class="3" classname="heavy" tier="10" active="1"/>
+ <tank countryid="4" countryname="france" tankid="42" tankname="AMX AC mle. 46" compDescr="10817" icon="AMX_AC_Mle1946" class="4" classname="td" tier="7" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="42" tankname="Birch Gun" compDescr="10833" icon="GB26_Birch_Gun" class="5" classname="spg" tier="4" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="43" tankname="KV-4" compDescr="11009" icon="KV4" class="3" classname="heavy" tier="8" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="43" tankname="Sturer Emil" compDescr="11025" icon="Sturer_Emil" class="4" classname="td" tier="7" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="43" tankname="T25/2" compDescr="11041" icon="T25_2" class="4" classname="td" tier="7" active="1"/>
+ <tank countryid="4" countryname="france" tankid="43" tankname="AMX 50 Foch" compDescr="11073" icon="AMX50_Foch" class="4" classname="td" tier="9" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="43" tankname="Bishop" compDescr="11089" icon="GB28_Bishop" class="5" classname="spg" tier="5" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="44" tankname="T-150" compDescr="11265" icon="T150" class="3" classname="heavy" tier="6" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="44" tankname="Marder 38T" compDescr="11281" icon="Marder_III" class="4" classname="td" tier="4" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="44" tankname="T28 Prototype" compDescr="11297" icon="T28_Prototype" class="4" classname="td" tier="8" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="44" tankname="Crusader 5.5-in. SP" compDescr="11345" icon="GB29_Crusader_5inch" class="5" classname="spg" tier="7" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="45" tankname="IS-8" compDescr="11521" icon="IS8" class="3" classname="heavy" tier="9" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="45" tankname="Jagdpanther II" compDescr="11537" icon="JagdPantherII" class="4" classname="td" tier="8" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="45" tankname="M18 Hellcat" compDescr="11553" icon="M18_Hellcat" class="4" classname="td" tier="6" active="1"/>
+ <tank countryid="4" countryname="france" tankid="45" tankname="ARL V39" compDescr="11585" icon="ARL_V39" class="4" classname="td" tier="6" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="45" tankname="FV3805" compDescr="11601" icon="GB30_FV3805" class="5" classname="spg" tier="9" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="46" tankname="KV-1" compDescr="11777" icon="KV1" class="3" classname="heavy" tier="5" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="46" tankname="Nashorn" compDescr="11793" icon="Nashorn" class="4" classname="td" tier="6" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="46" tankname="T23E3" compDescr="11809" icon="T23E3" class="2" classname="medium" tier="7" active="1"/>
+ <tank countryid="4" countryname="france" tankid="46" tankname="Bat.-Chatillon 155 58" compDescr="11841" icon="Bat_Chatillon155_58" class="5" classname="spg" tier="10" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="46" tankname="FV304" compDescr="11857" icon="GB77_FV304" class="5" classname="spg" tier="6" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="47" tankname="SU-122-54" compDescr="12033" icon="SU122_54" class="4" classname="td" tier="9" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="47" tankname="Jagdpanzer E 100" compDescr="12049" icon="JagdPz_E100" class="4" classname="td" tier="10" active="1"/>
+ <tank countryid="4" countryname="france" tankid="47" tankname="AMX AC mle. 48" compDescr="12097" icon="AMX_AC_Mle1948" class="4" classname="td" tier="8" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="47" tankname="FV207" compDescr="12113" icon="GB79_FV206" class="5" classname="spg" tier="8" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="48" tankname="A-43" compDescr="12289" icon="A43" class="2" classname="medium" tier="6" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="48" tankname="E 50 Ausf. M" compDescr="12305" icon="E50_Ausf_M" class="2" classname="medium" tier="10" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="48" tankname="Conqueror Gun Carriage" compDescr="12369" icon="GB31_Conqueror_Gun" class="5" classname="spg" tier="10" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="49" tankname="A-44" compDescr="12545" icon="A44" class="2" classname="medium" tier="7" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="49" tankname="Pz.Kpfw. I Ausf. C" compDescr="12561" icon="PzI_ausf_C" class="1" classname="light" tier="3" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="49" tankname="M4 Improved" compDescr="12577" icon="A78_M4_Improved" class="2" classname="medium" tier="5" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="50" tankname="Pz.Kpfw. I" compDescr="12817" icon="PzI" class="1" classname="light" tier="2" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="50" tankname="Sherman III" compDescr="12881" icon="GB50_Sherman_III" class="2" classname="medium" tier="5" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="51" tankname="Pz.Kpfw. II Ausf. G" compDescr="13073" icon="Pz_II_AusfG" class="1" classname="light" tier="3" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="51" tankname="T110E4" compDescr="13089" icon="T110E4" class="4" classname="td" tier="10" active="1"/>
+ <tank countryid="4" countryname="france" tankid="51" tankname="Somua S35" compDescr="13121" icon="F44_Somua_S35" class="2" classname="medium" tier="3" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="51" tankname="FV4004 Conway" compDescr="13137" icon="GB81_FV4004" class="4" classname="td" tier="9" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="52" tankname="Object 416" compDescr="13313" icon="Object416" class="2" classname="medium" tier="8" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="52" tankname="Durchbruchswagen 2" compDescr="13329" icon="DW_II" class="3" classname="heavy" tier="4" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="52" tankname="T26E4 SuperPershing" compDescr="13345" icon="A80_T26_E4_SuperPershing" class="2" classname="medium" tier="8" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="52" tankname="Archer" compDescr="13393" icon="GB44_Archer" class="4" classname="td" tier="5" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="53" tankname="Object 268" compDescr="13569" icon="Object268" class="4" classname="td" tier="10" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="53" tankname="VK 20.01 (D)" compDescr="13585" icon="VK2001DB" class="2" classname="medium" tier="4" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="54" tankname="T-62A" compDescr="13825" icon="T62A" class="2" classname="medium" tier="10" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="54" tankname="Indien-Panzer" compDescr="13841" icon="Indien_Panzer" class="2" classname="medium" tier="8" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="54" tankname="T110E3" compDescr="13857" icon="T110E3" class="4" classname="td" tier="10" active="1"/>
+ <tank countryid="4" countryname="france" tankid="54" tankname="AMX 50 Foch (155)" compDescr="13889" icon="AMX_50Fosh_155" class="4" classname="td" tier="10" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="54" tankname="FV4005 Stage II" compDescr="13905" icon="GB83_FV4005" class="4" classname="td" tier="10" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="55" tankname="VK 30.01 (D)" compDescr="14097" icon="VK3002DB_V1" class="2" classname="medium" tier="6" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="55" tankname="M48A1 Patton" compDescr="14113" icon="M48A1" class="2" classname="medium" tier="10" active="1"/>
+ <tank countryid="4" countryname="france" tankid="55" tankname="AMX ELC bis" compDescr="14145" icon="ELC_AMX" class="1" classname="light" tier="5" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="55" tankname="Challenger" compDescr="14161" icon="GB41_Challenger" class="4" classname="td" tier="7" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="56" tankname="Object 263" compDescr="14337" icon="Object263" class="4" classname="td" tier="10" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="56" tankname="Aufklarungspanzer Panther" compDescr="14353" icon="Auf_Panther" class="1" classname="light" tier="7" active="1"/>
+ <tank countryid="4" countryname="france" tankid="56" tankname="Bat.-Chatillon 155 55" compDescr="14401" icon="Bat_Chatillon155_55" class="5" classname="spg" tier="9" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="56" tankname="Achilles" compDescr="14417" icon="GB45_Achilles_IIC" class="4" classname="td" tier="6" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="57" tankname="Leopard 1" compDescr="14609" icon="Leopard1" class="2" classname="medium" tier="10" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="57" tankname="T69" compDescr="14625" icon="T69" class="2" classname="medium" tier="8" active="1"/>
+ <tank countryid="4" countryname="france" tankid="57" tankname="AMX 105 AM mle. 47" compDescr="14657" icon="AMX_Ob_Am105" class="5" classname="spg" tier="4" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="57" tankname="Charioteer" compDescr="14673" icon="GB80_Charioteer" class="4" classname="td" tier="8" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="58" tankname="Leopard Prototyp A" compDescr="14865" icon="Pro_Ag_A" class="2" classname="medium" tier="9" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="58" tankname="T57 Heavy Tank" compDescr="14881" icon="T57_58" class="3" classname="heavy" tier="10" active="1"/>
+ <tank countryid="4" countryname="france" tankid="58" tankname="SARL 42" compDescr="14913" icon="F70_SARL42" class="2" classname="medium" tier="4" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="59" tankname="T-70" compDescr="15105" icon="T-70" class="1" classname="light" tier="3" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="59" tankname="G.Pz. Mk. VI (e)" compDescr="15121" icon="GW_Mk_VIe" class="5" classname="spg" tier="2" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="59" tankname="T21" compDescr="15137" icon="T21" class="1" classname="light" tier="6" active="1"/>
+ <tank countryid="4" countryname="france" tankid="59" tankname="FCM 36" compDescr="15169" icon="F50_FCM36_20t" class="1" classname="light" tier="2" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="60" tankname="T-60" compDescr="15361" icon="T-60" class="1" classname="light" tier="2" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="60" tankname="G.W. Tiger (P)" compDescr="15377" icon="GW_Tiger_P" class="5" classname="spg" tier="8" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="60" tankname="T54E1" compDescr="15393" icon="T54E1" class="2" classname="medium" tier="9" active="1"/>
+ <tank countryid="4" countryname="france" tankid="60" tankname="AMX 30 B" compDescr="15425" icon="F72_AMX_30" class="2" classname="medium" tier="10" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="61" tankname="Object 907" compDescr="15617" icon="Object_907" class="2" classname="medium" tier="10" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="61" tankname="Pz.Sfl. IVb" compDescr="15633" icon="Pz_Sfl_IVb" class="5" classname="spg" tier="4" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="61" tankname="T71" compDescr="15649" icon="T71" class="1" classname="light" tier="7" active="1"/>
+ <tank countryid="4" countryname="france" tankid="61" tankname="AMX 30 1er prototype" compDescr="15681" icon="F71_AMX_30_prototype" class="2" classname="medium" tier="9" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="62" tankname="T-80" compDescr="15873" icon="T80" class="1" classname="light" tier="4" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="62" tankname="VK 30.02 (M)" compDescr="15889" icon="VK3002M" class="2" classname="medium" tier="6" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="62" tankname="M60" compDescr="15905" icon="M60" class="2" classname="medium" tier="10" active="1"/>
+ <tank countryid="4" countryname="france" tankid="62" tankname="Renault R35" compDescr="15937" icon="F49_RenaultR35" class="1" classname="light" tier="2" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="63" tankname="SU-14-1" compDescr="16129" icon="SU14_1" class="5" classname="spg" tier="7" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="63" tankname="Pz.Sfl. IVc" compDescr="16145" icon="Pz_Sfl_IVc" class="4" classname="td" tier="5" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="63" tankname="M53/M55" compDescr="16161" icon="M53_55" class="5" classname="spg" tier="9" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="64" tankname="SU-122A" compDescr="16385" icon="SU122A" class="5" classname="spg" tier="5" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="64" tankname="Waffentrager auf Pz. IV" compDescr="16401" icon="Waffentrager_IV" class="4" classname="td" tier="9" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="64" tankname="M44" compDescr="16417" icon="M44" class="5" classname="spg" tier="6" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="65" tankname="MT-25" compDescr="16641" icon="MT25" class="1" classname="light" tier="6" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="65" tankname="Rhm.-Borsig Waffentrager" compDescr="16657" icon="RhB_Waffentrager" class="4" classname="td" tier="8" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="65" tankname="T37" compDescr="16673" icon="A94_T37" class="1" classname="light" tier="6" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="66" tankname="Object 140" compDescr="16897" icon="Object_140" class="2" classname="medium" tier="10" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="66" tankname="Waffentrager auf E 100" compDescr="16913" icon="Waffentrager_E100" class="4" classname="td" tier="10" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="67" tankname="Object 430" compDescr="17153" icon="Object_430" class="2" classname="medium" tier="10" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="67" tankname="Pz.Kpfw. IV Ausf. A" compDescr="17169" icon="Pz_IV_AusfA" class="2" classname="medium" tier="3" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="68" tankname="Pz.Kpfw. IV Ausf. D" compDescr="17425" icon="Pz_IV_AusfD" class="2" classname="medium" tier="4" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="69" tankname="Object 430 Version II" compDescr="17665" icon="R104_Object_430_II" class="2" classname="medium" tier="9" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="70" tankname="StuG III Ausf. B" compDescr="17937" icon="G101_StuG_III" class="4" classname="td" tier="4" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="70" tankname="M41 Walker Bulldog" compDescr="17953" icon="M41_Bulldog" class="1" classname="light" tier="7" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="71" tankname="T-54 ltwt." compDescr="18177" icon="R109_T54S" class="1" classname="light" tier="8" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="71" tankname="Pz.Kpfw. IV Ausf. H" compDescr="18193" icon="Pz_IV_AusfH" class="2" classname="medium" tier="5" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="71" tankname="T49" compDescr="18209" icon="T49" class="1" classname="light" tier="8" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="72" tankname="LTTB" compDescr="18433" icon="R107_LTB" class="1" classname="light" tier="7" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="72" tankname="Spahpanzer Ru 251" compDescr="18449" icon="G103_RU_251" class="1" classname="light" tier="8" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="73" tankname="KV-1S" compDescr="18689" icon="KV-1s" class="3" classname="heavy" tier="5" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="151" tankname="ISU-152 IGR" compDescr="38657" icon="ISU-152_IGR" class="4" classname="td" tier="8" active="0"/>
+ <tank countryid="1" countryname="germany" tankid="151" tankname="8,8 cm Pak 43 Jagdtiger IGR" compDescr="38673" icon="JagdTiger_SdKfz_185_IGR" class="4" classname="td" tier="8" active="0"/>
+ <tank countryid="2" countryname="usa" tankid="151" tankname="T71 IGR" compDescr="38689" icon="T71_IGR" class="1" classname="light" tier="7" active="0"/>
+ <tank countryid="3" countryname="china" tankid="151" tankname="WZ-132 IGR" compDescr="38705" icon="Ch17_WZ131_1_WZ132_IGR" class="1" classname="light" tier="8" active="0"/>
+ <tank countryid="4" countryname="france" tankid="151" tankname="AMX AC mle. 48 IGR" compDescr="38721" icon="AMX_AC_Mle1948_IGR" class="4" classname="td" tier="8" active="0"/>
+ <tank countryid="5" countryname="uk" tankid="151" tankname="Centurion Mk. I IGR" compDescr="38737" icon="GB23_Centurion_IGR" class="2" classname="medium" tier="8" active="0"/>
+ <tank countryid="6" countryname="jp" tankid="151" tankname="STA-1 IGR" compDescr="38753" icon="STA_1_IGR" class="2" classname="medium" tier="8" active="0"/>
+ <tank countryid="0" countryname="ussr" tankid="152" tankname="T-44 IGR" compDescr="38913" icon="T-44_IGR" class="2" classname="medium" tier="8" active="0"/>
+ <tank countryid="1" countryname="germany" tankid="152" tankname="Panther II IGR" compDescr="38929" icon="Panther_II_IGR" class="2" classname="medium" tier="8" active="0"/>
+ <tank countryid="2" countryname="usa" tankid="152" tankname="T69 IGR" compDescr="38945" icon="T69_IGR" class="2" classname="medium" tier="8" active="0"/>
+ <tank countryid="3" countryname="china" tankid="152" tankname="110 IGR" compDescr="38961" icon="Ch11_110_IGR" class="3" classname="heavy" tier="8" active="0"/>
+ <tank countryid="4" countryname="france" tankid="152" tankname="AMX 13 90 IGR" compDescr="38977" icon="AMX_13_90_IGR" class="1" classname="light" tier="8" active="0"/>
+ <tank countryid="5" countryname="uk" tankid="152" tankname="Caernarvon IGR" compDescr="38993" icon="GB11_Caernarvon_IGR" class="3" classname="heavy" tier="8" active="0"/>
+ <tank countryid="6" countryname="jp" tankid="152" tankname="Type 5 Chi-Ri IGR" compDescr="39009" icon="Chi_Ri_IGR" class="2" classname="medium" tier="7" active="0"/>
+ <tank countryid="0" countryname="ussr" tankid="153" tankname="IS-3 IGR" compDescr="39169" icon="IS-3_IGR" class="3" classname="heavy" tier="8" active="0"/>
+ <tank countryid="1" countryname="germany" tankid="153" tankname="Tiger II IGR" compDescr="39185" icon="PzVIB_Tiger_II_IGR" class="3" classname="heavy" tier="8" active="0"/>
+ <tank countryid="2" countryname="usa" tankid="153" tankname="T34 IGR" compDescr="39201" icon="T34_hvy_IGR" class="3" classname="heavy" tier="8" active="0"/>
+ <tank countryid="3" countryname="china" tankid="153" tankname="121 IGR" compDescr="39217" icon="Ch19_121_IGR" class="2" classname="medium" tier="10" active="0"/>
+ <tank countryid="4" countryname="france" tankid="153" tankname="AMX 50 100 IGR" compDescr="39233" icon="AMX_50_100_IGR" class="3" classname="heavy" tier="8" active="0"/>
+ <tank countryid="5" countryname="uk" tankid="153" tankname="Cromwell IGR" compDescr="39249" icon="GB21_Cromwell_IGR" class="2" classname="medium" tier="6" active="0"/>
+ <tank countryid="6" countryname="jp" tankid="153" tankname="STB-1 IGR" compDescr="39265" icon="ST_B1_IGR" class="2" classname="medium" tier="10" active="0"/>
+ <tank countryid="0" countryname="ussr" tankid="154" tankname="KV-85 IGR" compDescr="39425" icon="R106_KV85_IGR" class="3" classname="heavy" tier="6" active="0"/>
+ <tank countryid="1" countryname="germany" tankid="154" tankname="Tiger I IGR" compDescr="39441" icon="PzVI_IGR" class="3" classname="heavy" tier="7" active="0"/>
+ <tank countryid="2" countryname="usa" tankid="154" tankname="M4A3E2 Sherman Jumbo IGR" compDescr="39457" icon="Sherman_Jumbo_IGR" class="2" classname="medium" tier="6" active="0"/>
+ <tank countryid="4" countryname="france" tankid="154" tankname="105 leFH18B2 IGR" compDescr="39489" icon="_105_leFH18B2_IGR" class="5" classname="spg" tier="5" active="0"/>
+ <tank countryid="5" countryname="uk" tankid="154" tankname="FV304 IGR" compDescr="39505" icon="GB77_FV304_IGR" class="5" classname="spg" tier="6" active="0"/>
+ <tank countryid="0" countryname="ussr" tankid="155" tankname="KV-2 IGR" compDescr="39681" icon="KV2_IGR" class="3" classname="heavy" tier="6" active="0"/>
+ <tank countryid="1" countryname="germany" tankid="155" tankname="StuG III Ausf. G IGR" compDescr="39697" icon="StuG_40_AusfG_IGR" class="4" classname="td" tier="5" active="0"/>
+ <tank countryid="2" countryname="usa" tankid="155" tankname="T67 IGR" compDescr="39713" icon="T67_IGR" class="4" classname="td" tier="5" active="0"/>
+ <tank countryid="4" countryname="france" tankid="155" tankname="S35 CA IGR" compDescr="39745" icon="S_35CA_IGR" class="4" classname="td" tier="5" active="0"/>
+ <tank countryid="5" countryname="uk" tankid="155" tankname="AT 15 IGR" compDescr="39761" icon="GB72_AT15_IGR" class="4" classname="td" tier="8" active="0"/>
+ <tank countryid="0" countryname="ussr" tankid="156" tankname="SU-152 IGR" compDescr="39937" icon="SU-152_IGR" class="4" classname="td" tier="7" active="0"/>
+ <tank countryid="1" countryname="germany" tankid="156" tankname="E 25 IGR" compDescr="39953" icon="E-25_IGR" class="4" classname="td" tier="7" active="0"/>
+ <tank countryid="2" countryname="usa" tankid="156" tankname="M26 Pershing IGR" compDescr="39969" icon="A35_Pershing_IGR" class="2" classname="medium" tier="8" active="0"/>
+ <tank countryid="4" countryname="france" tankid="156" tankname="ELC AMX IGR" compDescr="40001" icon="ELC_AMX_IGR" class="1" classname="light" tier="5" active="0"/>
+ <tank countryid="5" countryname="uk" tankid="156" tankname="Churchill I IGR" compDescr="40017" icon="GB08_Churchill_I_IGR" class="3" classname="heavy" tier="5" active="0"/>
+ <tank countryid="0" countryname="ussr" tankid="157" tankname="KV-5 IGR" compDescr="40193" icon="KV-5_IGR" class="3" classname="heavy" tier="8" active="0"/>
+ <tank countryid="1" countryname="germany" tankid="157" tankname="Panther IGR" compDescr="40209" icon="PzV_IGR" class="2" classname="medium" tier="7" active="0"/>
+ <tank countryid="2" countryname="usa" tankid="157" tankname="T29 IGR" compDescr="40225" icon="T29_IGR" class="3" classname="heavy" tier="7" active="0"/>
+ <tank countryid="4" countryname="france" tankid="157" tankname="Bat.-Chatillon 25 t IGR" compDescr="40257" icon="Bat_Chatillon25t_IGR" class="2" classname="medium" tier="10" active="0"/>
+ <tank countryid="5" countryname="uk" tankid="157" tankname="FV215b IGR" compDescr="40273" icon="GB13_FV215b_IGR" class="3" classname="heavy" tier="10" active="0"/>
+ <tank countryid="0" countryname="ussr" tankid="158" tankname="Valentine II IGR" compDescr="40449" icon="Valentine_LL_IGR" class="1" classname="light" tier="4" active="0"/>
+ <tank countryid="1" countryname="germany" tankid="158" tankname="Ferdinand IGR" compDescr="40465" icon="Ferdinand_IGR" class="4" classname="td" tier="8" active="0"/>
+ <tank countryid="2" countryname="usa" tankid="158" tankname="M4 Sherman IGR" compDescr="40481" icon="M4_Sherman_IGR" class="2" classname="medium" tier="5" active="0"/>
+ <tank countryid="0" countryname="ussr" tankid="159" tankname="IS-7 IGR" compDescr="40705" icon="IS-7_IGR" class="3" classname="heavy" tier="10" active="0"/>
+ <tank countryid="1" countryname="germany" tankid="159" tankname="Maus IGR" compDescr="40721" icon="Maus_IGR" class="3" classname="heavy" tier="10" active="0"/>
+ <tank countryid="2" countryname="usa" tankid="159" tankname="M48A1 Patton IGR" compDescr="40737" icon="M48A1_IGR" class="2" classname="medium" tier="10" active="0"/>
+ <tank countryid="0" countryname="ussr" tankid="200" tankname="KV-220 Beta-Test" compDescr="51201" icon="KV-220" class="3" classname="heavy" tier="5" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="201" tankname="Matilda IV" compDescr="51457" icon="Matilda_II_LL" class="2" classname="medium" tier="5" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="201" tankname="Pz.Kpfw. V/IV" compDescr="51473" icon="PzV_PzIV" class="2" classname="medium" tier="6" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="201" tankname="T2 Light Tank" compDescr="51489" icon="T2_lt" class="1" classname="light" tier="2" active="1"/>
+ <tank countryid="6" countryname="jp" tankid="201" tankname="Type 3 Chi-Nu Kai" compDescr="51553" icon="Chi_Nu_Kai" class="2" classname="medium" tier="5" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="202" tankname="Churchill III" compDescr="51713" icon="Churchill_LL" class="3" classname="heavy" tier="5" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="202" tankname="Pz.Kpfw. II Ausf. J" compDescr="51729" icon="PzII_J" class="1" classname="light" tier="3" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="202" tankname="Ram II" compDescr="51745" icon="Ram-II" class="2" classname="medium" tier="5" active="1"/>
+ <tank countryid="6" countryname="jp" tankid="202" tankname="Type 98 Ke-Ni Otsu" compDescr="51809" icon="Ke_Ni_B" class="1" classname="light" tier="3" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="203" tankname="Pz.Kpfw. S35 739 (f)" compDescr="51985" icon="S35_captured" class="2" classname="medium" tier="3" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="203" tankname="MTLS-1G14" compDescr="52001" icon="MTLS-1G14" class="1" classname="light" tier="3" active="1"/>
+ <tank countryid="6" countryname="jp" tankid="203" tankname="STA-2" compDescr="52065" icon="J18_STA_2_3" class="2" classname="medium" tier="8" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="204" tankname="BT-SV" compDescr="52225" icon="BT-SV" class="1" classname="light" tier="3" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="204" tankname="Pz.Kpfw. B2 740 (f)" compDescr="52241" icon="B-1bis_captured" class="3" classname="heavy" tier="4" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="204" tankname="M4A2E4 Sherman" compDescr="52257" icon="M4A2E4" class="2" classname="medium" tier="5" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="205" tankname="Valentine II" compDescr="52481" icon="Valentine_LL" class="1" classname="light" tier="4" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="205" tankname="Pz.Kpfw. 38H 735 (f)" compDescr="52497" icon="H39_captured" class="1" classname="light" tier="2" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="205" tankname="M6A2E1" compDescr="52513" icon="M6A2E1" class="3" classname="heavy" tier="8" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="205" tankname="Tortoise" compDescr="52561" icon="GB32_Tortoise" class="4" classname="td" tier="9" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="206" tankname="M3 Light" compDescr="52737" icon="M3_Stuart_LL" class="1" classname="light" tier="3" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="206" tankname="M22 Locust" compDescr="52769" icon="M22_Locust" class="1" classname="light" tier="3" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="207" tankname="A-32" compDescr="52993" icon="A-32" class="2" classname="medium" tier="4" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="208" tankname="KV-5" compDescr="53249" icon="KV-5" class="3" classname="heavy" tier="8" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="209" tankname="T-127" compDescr="53505" icon="T-127" class="1" classname="light" tier="3" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="209" tankname="T1E6" compDescr="53537" icon="T1_E6" class="1" classname="light" tier="2" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="209" tankname="Matilda Black Prince" compDescr="53585" icon="GB68_Matilda_Black_Prince" class="2" classname="medium" tier="5" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="210" tankname="SU-85I" compDescr="53761" icon="SU_85I" class="4" classname="td" tier="5" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="210" tankname="T95E2" compDescr="53793" icon="T95_E2" class="2" classname="medium" tier="8" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="210" tankname="TOG II*" compDescr="53841" icon="GB63_TOG_II" class="3" classname="heavy" tier="6" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="211" tankname="KV-220" compDescr="54017" icon="KV-220_action" class="3" classname="heavy" tier="5" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="211" tankname="Pz.Kpfw. V/IV Alpha" compDescr="54033" icon="PzV_PzIV_ausf_Alfa" class="2" classname="medium" tier="6" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="211" tankname="Sexton_I" compDescr="54049" icon="Sexton_I" class="5" classname="spg" tier="3" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="211" tankname="AT 15A" compDescr="54097" icon="GB71_AT_15A" class="4" classname="td" tier="7" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="212" tankname="SU-76I" compDescr="54273" icon="SU76I" class="4" classname="td" tier="3" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="212" tankname="Lowe" compDescr="54289" icon="Lowe" class="3" classname="heavy" tier="8" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="212" tankname="M4A3E8 Sherman" compDescr="54305" icon="M4A3E8_Sherman_training" class="2" classname="medium" tier="6" active="0"/>
+ <tank countryid="5" countryname="uk" tankid="212" tankname="Excelsior" compDescr="54353" icon="GB51_Excelsior" class="3" classname="heavy" tier="5" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="213" tankname="Tetrarch" compDescr="54529" icon="Tetrarch_LL" class="1" classname="light" tier="2" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="213" tankname="T-25" compDescr="54545" icon="T-25" class="2" classname="medium" tier="5" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="213" tankname="Sexton I" compDescr="54609" icon="GB78_Sexton_I" class="5" classname="spg" tier="3" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="214" tankname="SU-100Y" compDescr="54785" icon="SU100Y" class="4" classname="td" tier="6" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="214" tankname="T-15" compDescr="54801" icon="T-15" class="1" classname="light" tier="3" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="214" tankname="Light Mk. VIC" compDescr="54865" icon="GB76_Mk_VIC" class="1" classname="light" tier="2" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="215" tankname="Pz.Kpfw. IV hydrostat." compDescr="55057" icon="PzIV_Hydro" class="2" classname="medium" tier="5" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="215" tankname="T7 Combat Car" compDescr="55073" icon="T7_Combat_Car" class="1" classname="light" tier="2" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="215" tankname="FV201 (A45)" compDescr="55121" icon="GB52_A45" class="3" classname="heavy" tier="7" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="216" tankname="SU-122-44" compDescr="55297" icon="SU122_44" class="4" classname="td" tier="7" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="216" tankname="8,8 cm Pak 43 Jagdtiger" compDescr="55313" icon="JagdTiger_SdKfz_185" class="4" classname="td" tier="8" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="217" tankname="E 25" compDescr="55569" icon="E-25" class="4" classname="td" tier="7" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="217" tankname="FV4202 (P)" compDescr="55633" icon="GB70_N_FV4202_105" class="2" classname="medium" tier="8" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="218" tankname="T95E6" compDescr="55841" icon="T95_E6" class="2" classname="medium" tier="10" active="1"/>
+ <tank countryid="5" countryname="uk" tankid="218" tankname="Cromwell B" compDescr="55889" icon="GB85_Cromwell_Berlin" class="2" classname="medium" tier="6" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="219" tankname="M4A3E8 Fury" compDescr="56097" icon="A104_M4A3E8A" class="2" classname="medium" tier="6" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="220" tankname="T-34-85" compDescr="56321" icon="T-34-85_training" class="2" classname="medium" tier="6" active="0"/>
+ <tank countryid="2" countryname="usa" tankid="220" tankname="M56 Scorpion" compDescr="56353" icon="A101_M56" class="4" classname="td" tier="7" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="221" tankname="LTP" compDescr="56577" icon="LTP" class="1" classname="light" tier="3" active="1"/>
+ <tank countryid="2" countryname="usa" tankid="221" tankname="T28 Concept" compDescr="56609" icon="A102_T28_concept" class="4" classname="td" tier="7" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="222" tankname="T-44-122" compDescr="56833" icon="T44_122" class="2" classname="medium" tier="7" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="223" tankname="T-44-85" compDescr="57089" icon="T44_85" class="2" classname="medium" tier="7" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="223" tankname="Dicker Max" compDescr="57105" icon="DickerMax" class="4" classname="td" tier="6" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="224" tankname="Pz.Kpfw. IV Schmalturm" compDescr="57361" icon="PzIV_schmalturm" class="2" classname="medium" tier="6" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="225" tankname="Panther/M10" compDescr="57617" icon="Panther_M10" class="2" classname="medium" tier="7" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="226" tankname="T-62A SPORT" compDescr="57857" icon="T62A_sport" class="2" classname="medium" tier="1" active="0"/>
+ <tank countryid="1" countryname="germany" tankid="226" tankname="Pz.Kpfw. III" compDescr="57873" icon="PzIII_training" class="2" classname="medium" tier="4" active="0"/>
+ <tank countryid="0" countryname="ussr" tankid="227" tankname="T-34-85M" compDescr="58113" icon="R108_T34_85M" class="2" classname="medium" tier="6" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="227" tankname="Tiger II" compDescr="58129" icon="PzVIB_Tiger_II_training" class="3" classname="heavy" tier="8" active="0"/>
+ <tank countryid="0" countryname="ussr" tankid="228" tankname="Object 260" compDescr="58369" icon="R110_Object_260" class="3" classname="heavy" tier="10" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="228" tankname="Panther" compDescr="58385" icon="PzV_training" class="2" classname="medium" tier="7" active="0"/>
+ <tank countryid="0" countryname="ussr" tankid="229" tankname="ISU-130" compDescr="58625" icon="R111_ISU130" class="4" classname="td" tier="8" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="229" tankname="VK 72.01 (K)" compDescr="58641" icon="VK7201" class="3" classname="heavy" tier="10" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="230" tankname="IS-5 (Object 730)" compDescr="58881" icon="R113_Object_730" class="3" classname="heavy" tier="8" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="231" tankname="IS-2" compDescr="59137" icon="R71_IS_2B" class="3" classname="heavy" tier="7" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="232" tankname="T-34-85 Rudy" compDescr="59393" icon="R117_T34_85_Rudy" class="2" classname="medium" tier="6" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="233" tankname="ISU-122S" compDescr="59649" icon="R116_ISU122C_Berlin" class="4" classname="td" tier="7" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="233" tankname="Grosstraktor - Krupp" compDescr="59665" icon="G100_Gtraktor_Krupp" class="2" classname="medium" tier="3" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="234" tankname="T-54 first prototype" compDescr="59905" icon="R112_T54_45" class="2" classname="medium" tier="8" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="234" tankname="Karl" compDescr="59921" icon="Karl" class="5" classname="spg" tier="1" active="0"/>
+ <tank countryid="0" countryname="ussr" tankid="235" tankname="Object 244" compDescr="60161" icon="R114_Object_244" class="3" classname="heavy" tier="6" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="235" tankname="Panther mit 8,8 cm L/71" compDescr="60177" icon="G106_PzKpfwPanther_AusfF" class="2" classname="medium" tier="8" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="236" tankname="Pz.Kpfw. II Ausf. D" compDescr="60433" icon="G108_PzKpfwII_AusfD" class="1" classname="light" tier="2" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="237" tankname="StuG IV" compDescr="60689" icon="G104_Stug_IV" class="4" classname="td" tier="5" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="238" tankname="T 55A" compDescr="60945" icon="G105_T-55_NVA_DDR" class="2" classname="medium" tier="9" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="239" tankname="Tiger I L/56" compDescr="61201" icon="G04_PzVI_Tiger_IA" class="3" classname="heavy" tier="7" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="240" tankname="Pz.Kpfw. III Ausf. K" compDescr="61457" icon="G107_PzKpfwIII_AusfK" class="2" classname="medium" tier="5" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="241" tankname="Krupp-Steyr Waffentrager" compDescr="61713" icon="G109_Steyr_WT" class="4" classname="td" tier="7" active="1"/>
+ <tank countryid="4" countryname="france" tankid="247" tankname="AMX 13 57 GF" compDescr="63297" icon="F69_AMX13_57_100_GrandFinal" class="1" classname="light" tier="7" active="1"/>
+ <tank countryid="4" countryname="france" tankid="248" tankname="AMX Chasseur de chars" compDescr="63553" icon="F68_AMX_Chasseur_de_char_46" class="2" classname="medium" tier="8" active="1"/>
+ <tank countryid="4" countryname="france" tankid="249" tankname="AMX 13 57" compDescr="63809" icon="F69_AMX13_57_100" class="1" classname="light" tier="7" active="1"/>
+ <tank countryid="3" countryname="china" tankid="250" tankname="T-34-3" compDescr="64049" icon="Ch14_T34_3" class="2" classname="medium" tier="8" active="1"/>
+ <tank countryid="4" countryname="france" tankid="250" tankname="FCM 50 t" compDescr="64065" icon="FCM_50t" class="3" classname="heavy" tier="8" active="1"/>
+ <tank countryid="3" countryname="china" tankid="251" tankname="T-34-1" compDescr="64305" icon="Ch04_T34_1_training" class="2" classname="medium" tier="7" active="0"/>
+ <tank countryid="3" countryname="china" tankid="252" tankname="112" compDescr="64561" icon="Ch23_112" class="3" classname="heavy" tier="8" active="1"/>
+ <tank countryid="0" countryname="ussr" tankid="253" tankname="Arctic Fox" compDescr="64769" icon="R00_T_50_2" class="1" classname="light" tier="1" active="0"/>
+ <tank countryid="2" countryname="usa" tankid="253" tankname="Mammoth" compDescr="64801" icon="A00_T110E5" class="3" classname="heavy" tier="1" active="0"/>
+ <tank countryid="3" countryname="china" tankid="253" tankname="Type 64" compDescr="64817" icon="Ch24_Type64" class="1" classname="light" tier="6" active="1"/>
+ <tank countryid="1" countryname="germany" tankid="254" tankname="Env_Artillery" compDescr="65041" icon="Env_Artillery" class="5" classname="spg" tier="1" active="0"/>
+ <tank countryid="4" countryname="france" tankid="254" tankname="Polar Bear" compDescr="65089" icon="F00_AMX_50Foch_155" class="4" classname="td" tier="1" active="0"/>
+ <tank countryid="0" countryname="ussr" tankid="255" tankname="Spectator" compDescr="65281" icon="Observer" class="1" classname="light" tier="1" active="0"/>
+ <tank countryid="2" countryname="usa" tankid="255" tankname="M24 Chaffee Sport" compDescr="65313" icon="M24_Chaffee_GT" class="1" classname="light" tier="1" active="0"/>
+</tanks>
