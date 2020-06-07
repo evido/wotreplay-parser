@@ -1,9 +1,9 @@
 # ls /Volumes/World\ of\ Tanks/res/packages/*.pkg | sed -n 's/.*\/\([0-9][0-9]*_.*\).pkg$/maps\/images\/\1.png/p' | xargs
 WOT_INSTALL_PATH ?= /media/windows/Games/World_of_Tanks
-MAPS = $(shell ls $(WOT_INSTALL_PATH)/res/packages/*.pkg | sed -n 's/.*\/\([0-9][0-9]*_.*\).pkg$$/maps\/images\/\1.png/p')
+MAPS = $(shell ls $(WOT_INSTALL_PATH)/res/packages/*.pkg | sed -n 's@.*/\([0-9][0-9]*_.*\).pkg$$@maps/images/\1.png  maps/definitions/\1.xml@p')
 SIZE ?= 512
 
-.PRECIOUS: maps/definitions/%.xml
+.PRECIOUS: maps/definitions/%.xml map/images/%.png
 
 default: minimaps
 
@@ -13,7 +13,7 @@ clean:
 	@rm -rf maps
 	@rm -f convert-xml
 
-%.pkg: maps/definitions/%.xml
+%.pkg:
 	@cp "$(WOT_INSTALL_PATH)/res/packages/$@" ./
 
 spaces/%/mmap.dds: %.pkg
