@@ -1,0 +1,9 @@
+#include "version.h"
+
+using namespace wotreplay;
+
+const std::string Version::GIT_SHA1 = "@GIT_SHA1@";
+const std::string Version::GIT_DATE = "@GIT_DATE@";
+const std::string Version::GIT_COMMIT_SUBJECT = "@GIT_COMMIT_SUBJECT@";
+const std::string Version::BUILD_DATE = "@BUILD_DATE@";
+const std::string Version::BUILD_VERSION = "@BUILD_VERSION@";

@@ -24,6 +24,7 @@ find_package(OpenSSL REQUIRED)
 find_package(TBB)
 find_package(Qt5Widgets)
 find_package(GD)
+find_package(Git)
 
 
 include_directories(AFTER ext/jsoncpp/include ${Boost_INCLUDE_DIRS} ${ZLIB_INCLUDE_DIRS} ${PNG_INCLUDE_DIRS} ${OPENSSL_INCLUDE_DIRS} ${TBB_INCLUDE_DIRS} ${GD_INCLUDE_DIR} ${INCLUDE_DIRECTORIES})
@@ -98,7 +99,49 @@ add_library(jsoncpp STATIC
 			ext/jsoncpp/include/json/json.h
 			ext/jsoncpp/include/json/json-forwards.h)
 
-add_executable(wotreplay-parser src/main.cpp)
+set(ENV{TZ} utc)
+# the commit's SHA1, and whether the building workspace was dirty or not
+execute_process(COMMAND
+  "${GIT_EXECUTABLE}" describe --match=NeVeRmAtCh --always --abbrev=40 --dirty
+  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+  OUTPUT_VARIABLE GIT_SHA1
+  ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+# the date of the commit
+execute_process(COMMAND
+  "${GIT_EXECUTABLE}" log -1 --format=%ad --date=local
+  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+  OUTPUT_VARIABLE GIT_DATE
+  ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+# the subject of the commit
+execute_process(COMMAND
+  "${GIT_EXECUTABLE}" log -1 --format=%s
+  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+  OUTPUT_VARIABLE GIT_COMMIT_SUBJECT
+  ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+# the subject of the commit
+execute_process(COMMAND
+  "date" -u +%a\ %b\ %-d\ %H:%M:%S\ %Y
+  OUTPUT_VARIABLE BUILD_DATE
+  ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+
+# the subject of the commit
+execute_process(COMMAND
+  "date" -u +%Y%m%d.%H%M%S
+  OUTPUT_VARIABLE BUILD_VERSION
+  ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+
+unset(ENV{TZ})
+
+# generate version.cpp
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/version.cpp.in" "${CMAKE_CURRENT_BINARY_DIR}/src/version.cpp" @ONLY)
+
+
+add_executable(wotreplay-parser src/main.cpp "${CMAKE_CURRENT_BINARY_DIR}/src/version.cpp" src/version.h)
 
 target_link_libraries( wotreplay ${OPENSSL_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${ZLIB_LIBRARIES} ${TBB_LIBRARIES} ${GD_LIBRARY})
 target_link_libraries( wotreplay-parser ${OPENSSL_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${ZLIB_LIBRARIES} ${TBB_LIBRARIES} ${GD_LIBRARY} wotreplay jsoncpp)

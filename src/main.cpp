@@ -7,6 +7,7 @@
 #include "parser.h"
 #include "regex.h"
 #include "tank.h"
+#include "version.h"
 
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
@@ -36,6 +37,15 @@ void show_help(int argc, const char *argv [], po::options_description &desc) {
     std::stringstream help_message;
     help_message << desc << "\n";
     logger.write(help_message.str());
+}
+
+void show_version() {
+    std::stringstream version_message;
+    version_message << "wotreplay-parser " << Version::BUILD_VERSION << "\n"
+        << "Commit SHA1: " << Version::GIT_SHA1 << "\n"
+        << "Commit date: " << Version::GIT_DATE << "\n"
+        << "Build date: " << Version::BUILD_DATE << "\n";
+    logger.write(version_message.str());
 }
 
 static bool is_not_empty(const packet_t &packet) {
@@ -438,6 +448,7 @@ int main(int argc, const char * argv []) {
         ("overlay", "generate overlay, don't draw basemap in output image")
         ("frame-rate", po::value(&frame_rate)->default_value(10), "set gif frame rate")
         ("model-update-rate", po::value(&model_rate)->default_value(100), "set model update rate")
+        ("version", "display version")
 #ifdef ENABLE_TBB
         ("tokens", po::value(&tokens)->default_value(10), "number of pipeline tokens")
 #endif
@@ -460,6 +471,11 @@ int main(int argc, const char * argv []) {
 
     if (vm.count("help") > 0) {
         show_help(argc, argv, desc);
+        std::exit(0);
+    }
+
+    if (vm.count("version") > 0) {
+        show_version();
         std::exit(0);
     }
 
