@@ -151,6 +151,8 @@ void image_writer_t::draw_position(const packet_t &packet, const game_t &game, b
 
 void image_writer_t::update(const game_t &game) {
     std::set<int> dead_players;
+    recorder_team = game.get_team_id(game.get_recorder_id());
+    
     for (const packet_t &packet : game.get_packets()) {
         if (!filter(packet)) continue;
         if (packet.has_property(property_t::position)) {
