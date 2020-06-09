@@ -99,7 +99,6 @@ add_library(jsoncpp STATIC
 			ext/jsoncpp/include/json/json.h
 			ext/jsoncpp/include/json/json-forwards.h)
 
-set(ENV{TZ} utc)
 # the commit's SHA1, and whether the building workspace was dirty or not
 execute_process(COMMAND
   "${GIT_EXECUTABLE}" describe --match=NeVeRmAtCh --always --abbrev=40 --dirty
@@ -127,21 +126,14 @@ execute_process(COMMAND
   OUTPUT_VARIABLE BUILD_DATE
   ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-
-# the subject of the commit
-execute_process(COMMAND
-  "date" -u +%Y%m%d.%H%M%S
-  OUTPUT_VARIABLE BUILD_VERSION
-  ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
-
-
-unset(ENV{TZ})
+string(TIMESTAMP BUILD_DATE "%a %b %d %H:%M:%S %Y" UTC)
+string(TIMESTAMP BUILD_VERSION %Y%m%d.%H%M%S UTC)
 
 # generate version.cpp
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/version.cpp.in" "${CMAKE_CURRENT_BINARY_DIR}/src/version.cpp" @ONLY)
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/version.cpp.in" "${CMAKE_CURRENT_SOURCE_DIR}/src/version.cpp" @ONLY)
 
 
-add_executable(wotreplay-parser src/main.cpp "${CMAKE_CURRENT_BINARY_DIR}/src/version.cpp" src/version.h)
+add_executable(wotreplay-parser src/main.cpp "${CMAKE_CURRENT_SOURCE_DIR}/src/version.cpp" src/version.h)
 
 target_link_libraries( wotreplay ${OPENSSL_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${ZLIB_LIBRARIES} ${TBB_LIBRARIES} ${GD_LIBRARY})
 target_link_libraries( wotreplay-parser ${OPENSSL_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${ZLIB_LIBRARIES} ${TBB_LIBRARIES} ${GD_LIBRARY} wotreplay jsoncpp)
