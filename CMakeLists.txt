@@ -27,7 +27,7 @@ find_package(GD)
 find_package(Git)
 
 
-include_directories(AFTER ext/jsoncpp/include ${Boost_INCLUDE_DIRS} ${ZLIB_INCLUDE_DIRS} ${PNG_INCLUDE_DIRS} ${OPENSSL_INCLUDE_DIRS} ${TBB_INCLUDE_DIRS} ${GD_INCLUDE_DIR} ${INCLUDE_DIRECTORIES})
+include_directories(AFTER src ext/jsoncpp/include ${Boost_INCLUDE_DIRS} ${ZLIB_INCLUDE_DIRS} ${PNG_INCLUDE_DIRS} ${OPENSSL_INCLUDE_DIRS} ${TBB_INCLUDE_DIRS} ${GD_INCLUDE_DIR} ${INCLUDE_DIRECTORIES})
 
 link_directories(${LINK_DIRECTORIES})
 
@@ -147,8 +147,13 @@ if(Qt5Widgets_FOUND)
 									  src/wotreplay-gui.pro)
 	qt5_use_modules(wotreplay-gui-widgets Widgets)
 
-	add_executable(wotreplay-gui WIN32 src/gui_main.cpp)
+	if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
+	    add_executable(wotreplay-gui WIN32 src/gui_main.cpp)
+    else()
+        add_executable(wotreplay-gui src/gui_main.cpp)
+    endif()
+
 	qt5_use_modules(wotreplay-gui Core Gui Widgets)
 
-	target_link_libraries( wotreplay-gui ${OPENSSL_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${ZLIB_LIBRARIES} ${TBB_LIBRARIES} ${GD_LIBRARY} wotreplay jsoncpp wotreplay-gui-widgets Qt5::Widgets)
+	target_link_libraries( wotreplay-gui ${OPENSSL_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${ZLIB_LIBRARIES} ${TBB_LIBRARIES} ${GD_LIBRARY} wotreplay-gui-widgets wotreplay jsoncpp Qt5::Widgets)
 endif()
