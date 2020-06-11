@@ -99,6 +99,8 @@ add_library(jsoncpp STATIC
 			ext/jsoncpp/include/json/json.h
 			ext/jsoncpp/include/json/json-forwards.h)
 
+set(ENV{TZ} utc)
+
 # the commit's SHA1, and whether the building workspace was dirty or not
 execute_process(COMMAND
   "${GIT_EXECUTABLE}" describe --match=NeVeRmAtCh --always --abbrev=40 --dirty
@@ -120,14 +122,15 @@ execute_process(COMMAND
   OUTPUT_VARIABLE GIT_COMMIT_SUBJECT
   ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-# the subject of the commit
 execute_process(COMMAND
-  "date" -u +%a\ %b\ %-d\ %H:%M:%S\ %Y
-  OUTPUT_VARIABLE BUILD_DATE
+  "${GIT_EXECUTABLE}" log -1 --format=%ad --date=format-local:%Y%m%d.%H%M%S 
+  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+  OUTPUT_VARIABLE BUILD_VERSION
   ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
 
 string(TIMESTAMP BUILD_DATE "%a %b %d %H:%M:%S %Y" UTC)
-string(TIMESTAMP BUILD_VERSION %Y%m%d.%H%M%S UTC)
+
+unset(ENV{TZ})
 
 # generate version.cpp
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/version.cpp.in" "${CMAKE_CURRENT_SOURCE_DIR}/src/version.cpp" @ONLY)
