@@ -5,6 +5,8 @@
 #include "packet.h"
 #include "writer.h"
 
+#include "wotreplay_export.h"
+
 #include <boost/multi_array.hpp>
 #include <stdint.h>
 #include <string>
@@ -14,7 +16,7 @@ namespace wotreplay {
     /** 
      * wotreplay::image_writer_t draws an image from wotreplay::packet_t on a minimap 
      */
-    class image_writer_t : public writer_t {
+    class WOTREPLAY_EXPORT image_writer_t : public writer_t {
     public:
         /** default constructor */
         image_writer_t();

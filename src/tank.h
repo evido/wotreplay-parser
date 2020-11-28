@@ -1,6 +1,8 @@
 #ifndef wotreplay_tank_def_h
 #define wotreplay_tank_def_h
 
+#include "wotreplay_export.h"
+
 #include <map>
 #include <string>
 
@@ -10,7 +12,7 @@ namespace wotreplay {
     /**
      * tank information
      */
-    struct tank_t {
+    struct WOTREPLAY_EXPORT tank_t {
         int country_id;
         std::string country_name;
         int tank_id;

@@ -4,12 +4,14 @@
 #include "heatmap_writer.h"
 #include "rule.h"
 
+#include "wotreplay_export.h"
+
 namespace wotreplay {
 
     /**
      * wotreplay::class_heatmap_writer_t draws a heatmap using draw rules
      */
-    class class_heatmap_writer_t : public heatmap_writer_t {
+    class WOTREPLAY_EXPORT class_heatmap_writer_t : public heatmap_writer_t {
     public:
         virtual void init(const arena_t &arena, const std::string &mode) override;
         /**

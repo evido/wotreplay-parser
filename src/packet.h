@@ -3,6 +3,8 @@
 
 #include "types.h"
 
+#include "wotreplay_export.h"
+
 #include <algorithm>
 #include <array>
 #include <stdint.h>
@@ -16,7 +18,7 @@ namespace wotreplay {
      * @enum wotreplay::property_t
      * @brief A list of detectable properties in packets of a wot:replay_file.
      */
-    enum property_t {
+    enum WOTREPLAY_EXPORT property_t {
         clock = 0,
         health,
         is_shot,
@@ -41,7 +43,7 @@ namespace wotreplay {
      * class provides easy accessor methods to determine the properties of packet,
      * and the corresponding values of these properties.
      */
-    class packet_t {
+    class WOTREPLAY_EXPORT packet_t {
     public:
         /** 
          * Constructor for a default (empty) packet. 

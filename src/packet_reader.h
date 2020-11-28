@@ -4,13 +4,15 @@
 #include "game.h"
 #include "types.h"
 
+#include "wotreplay_export.h"
+
 namespace wotreplay {
 	class packet_t;
 
     /**
      * Interface that provides a set of methodes to process a buffer.
      */
-    class packet_reader_t {
+    class WOTREPLAY_EXPORT packet_reader_t {
     public:
         /**
          * Reads the next packet from the buffer, expects that there is a new packet

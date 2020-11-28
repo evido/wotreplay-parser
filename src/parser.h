@@ -1,16 +1,18 @@
 #ifndef wotreplay_parser_h
 #define wotreplay_parser_h
 
-#include <boost/filesystem.hpp>
-#include <iostream>
-#include <set>
-#include <vector>
-
 #include "arena.h"
 #include "game.h"
 #include "packet.h"
 #include "packet_reader.h"
 #include "types.h"
+
+#include "wotreplay_export.h"
+
+#include <boost/filesystem.hpp>
+#include <iostream>
+#include <set>
+#include <vector>
 
 /** @file */
 
@@ -19,14 +21,14 @@ namespace wotreplay {
      * @enum wotreplay::load_data_mode_t
      * @brief Options to modify data loading behaviour of the parser
      */
-    enum load_data_mode_t {
+    enum WOTREPLAY_EXPORT load_data_mode_t {
         manual,
         on_demand,
         bulk
     };
     
     /** wotreplay::parser_t is a class responsible for parsing a World of Tanks replay file.  */
-    class parser_t {
+    class WOTREPLAY_EXPORT parser_t {
         /**
          * @brief Validate the inner workings of the class parser
          * Validate the inner workings of the class parser by:

@@ -6,11 +6,13 @@
 #include "packet.h"
 #include "writer.h"
 
+#include "wotreplay_export.h"
+
 namespace wotreplay {
     /**
      * Output WOT game as a json structure.
      */
-    class json_writer_t : public writer_t {
+    class WOTREPLAY_EXPORT json_writer_t : public writer_t {
     public:
         /** default constructor */
         json_writer_t();

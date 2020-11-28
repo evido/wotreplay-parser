@@ -1,12 +1,14 @@
 #ifndef wotreplay_logger_h
 #define wotreplay_logger_h
 
+#include "wotreplay_export.h"
+
 #include <boost/format.hpp>
 #include <iosfwd>
 #include <string>
 
 namespace wotreplay {
-    enum log_level_t {
+    enum WOTREPLAY_EXPORT log_level_t {
         none,
         error,
         warning,
@@ -17,7 +19,7 @@ namespace wotreplay {
     /**
      * basic logger class
      */
-    class logger_t {
+    class WOTREPLAY_EXPORT logger_t {
     public:
         /**
          * Create new instance of logger, logger will write to the given output stream
@@ -85,7 +87,7 @@ namespace wotreplay {
         log_level_t level = log_level_t::warning;
     };
 
-    extern logger_t logger;
+    WOTREPLAY_EXPORT extern logger_t logger;
 }
 
 #endif /* defined(wotreplay_logger_h) */

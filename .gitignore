@@ -12,3 +12,7 @@ CMakeCache.txt
 cmake_install.cmake
 build
 test
+
+src/build-*
+src/*.vc*
+src/*.pro.user

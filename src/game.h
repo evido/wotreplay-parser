@@ -5,13 +5,15 @@
 #include "packet.h"
 #include "types.h"
 
+#include "wotreplay_export.h"
+
 #include <set>
 #include <vector>
 
 /** @file */
 
 namespace wotreplay {
-	enum game_title_t {
+	enum WOTREPLAY_EXPORT game_title_t {
 		world_of_tanks,
 		world_of_warships
 	};
@@ -19,7 +21,7 @@ namespace wotreplay {
     /**
      * The game version of a replay file
      */
-    struct version_t {
+    struct WOTREPLAY_EXPORT version_t {
         version_t() = default;
         /**
          * @param version_string the string representation of the game version
@@ -42,7 +44,7 @@ namespace wotreplay {
     /**
      * Player information
      */
-    struct player_t {
+    struct WOTREPLAY_EXPORT player_t {
         uint32_t player_id;
         int team;
         std::string name;
@@ -53,7 +55,7 @@ namespace wotreplay {
      * An object wrapping the properties of the game with the actions
      * by the players in the game represented by a list of packets.
      */
-    class game_t {
+    class WOTREPLAY_EXPORT game_t {
         friend class parser_t;
     public:
         /**

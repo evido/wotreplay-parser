@@ -1,6 +1,8 @@
 #include "game.h"
 #include "packet.h"
 
+#include "wotreplay_export.h"
+
 #include <boost/variant.hpp>
 
 #include <memory>
@@ -10,7 +12,7 @@
 
 namespace wotreplay {
     /** operator types */
-    enum operator_t {
+    enum WOTREPLAY_EXPORT operator_t {
         NOT_EQUAL,
         EQUAL,
         GREATER_THAN_OR_EQUAL,
@@ -22,7 +24,7 @@ namespace wotreplay {
     };
 
     /** symbol types */
-    enum symbol_t {
+    enum WOTREPLAY_EXPORT symbol_t {
         PLAYER,
         CLOCK,
         TEAM,
@@ -33,22 +35,22 @@ namespace wotreplay {
         TANK_COUNTRY
     };
 
-    struct operation_t;
+    struct WOTREPLAY_EXPORT operation_t;
 
     /** null value */
-    struct nil_t {};
+    struct WOTREPLAY_EXPORT nil_t {};
 
-    typedef boost::variant<nil_t, std::string, symbol_t, boost::recursive_wrapper<operation_t>> operand_t;
+    typedef WOTREPLAY_EXPORT boost::variant<nil_t, std::string, symbol_t, boost::recursive_wrapper<operation_t>> operand_t;
 
     /** operation type */
-    struct operation_t {
+    struct WOTREPLAY_EXPORT operation_t {
         operator_t op;
         operand_t left;
         operand_t right;
     };
 
     /** draw rule */
-    struct draw_rule_t {
+    struct WOTREPLAY_EXPORT draw_rule_t {
         /** color to use for matching packets */
         uint32_t color;
         /** condition to match packets against */
@@ -60,19 +62,19 @@ namespace wotreplay {
      * Parse drawing rules from expression
      * @param param expr expression string
      */
-    std::vector<draw_rule_t> parse_draw_rules(const std::string &expr);
+    std::vector<draw_rule_t> WOTREPLAY_EXPORT parse_draw_rules(const std::string &expr);
 
     /**
      * @fn void print(const std::vector<draw_rule_t>& rules)
      * Print drawing rules
      * @param rules drawing rules
      */
-    void print(const std::vector<draw_rule_t>& rules);
+    void WOTREPLAY_EXPORT print(const std::vector<draw_rule_t>& rules);
 
     /**
      * evaluate packet against the drawing rules
      */
-    class virtual_machine_t {
+    class WOTREPLAY_EXPORT virtual_machine_t {
     public:
         typedef std::string result_type;
         virtual_machine_t(const game_t &game, const std::vector<draw_rule_t> &rules);

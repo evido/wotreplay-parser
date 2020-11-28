@@ -4,11 +4,14 @@
 
 #include "image_writer.h"
 
+#include "wotreplay_export.h"
+
 #include <deque>
 #include <gd.h>
 
+
 namespace wotreplay {
-    class animation_writer_t : public image_writer_t {
+    class WOTREPLAY_EXPORT animation_writer_t : public image_writer_t {
     public:
         virtual void write(std::ostream &os);
         virtual void update(const game_t &game);

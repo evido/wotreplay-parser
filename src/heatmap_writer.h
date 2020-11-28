@@ -3,10 +3,12 @@
 
 #include "image_writer.h"
 
+#include "wotreplay_export.h"
+
 /** @file */
 
 namespace wotreplay {
-    enum heatmap_mode_t {
+    enum WOTREPLAY_EXPORT heatmap_mode_t {
         combined,
         team,
         team_soft
@@ -15,7 +17,7 @@ namespace wotreplay {
     /**
      * wotreplay::heatmap_writer_t draws a heatmap from wotreplay::packet_t on a minimap
      */
-    class heatmap_writer_t : public image_writer_t {
+    class WOTREPLAY_EXPORT heatmap_writer_t : public image_writer_t {
     public:
         heatmap_writer_t();
         virtual void update(const game_t &game) override;

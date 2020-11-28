@@ -14,6 +14,8 @@
 #include <tuple>
 #include <vector>
 
+#include "wotreplay_export.h"
+
 /** @file */
 
 namespace wotreplay {
@@ -21,7 +23,7 @@ namespace wotreplay {
      * define a bounding box of an arena by its bottom left
      * and upper right corner
      */
-    struct bounding_box_t {
+    struct WOTREPLAY_EXPORT bounding_box_t {
         /** bottom left corner of the bounding box */
         std::tuple<float, float> bottom_left;
         /** upper right corner of the bounding box */
@@ -32,7 +34,7 @@ namespace wotreplay {
      * Configuration of the arena, defines the positions of the 
      * spawn points, control poins and base points
      */
-    struct arena_configuration_t {
+    struct WOTREPLAY_EXPORT arena_configuration_t {
         /** control point in ctf mode */
         std::tuple<float, float> control_point;
         /** spawn points for the teams */
@@ -47,7 +49,7 @@ namespace wotreplay {
      * arena definition, provides a description of the arena size
      * and its available game modes
      */
-    struct arena_t {
+    struct WOTREPLAY_EXPORT arena_t {
         /** maps available game modes to configuration */
         std::map<std::string, arena_configuration_t> configurations;
         /** arena name */
@@ -71,12 +73,12 @@ namespace wotreplay {
      * Get the complete list of available arena definitions
      * @return arena definition map
      */
-    const std::map<std::string, arena_t> &get_arenas();
+    WOTREPLAY_EXPORT const std::map<std::string, arena_t> &get_arenas();
 
     /**
      * Init arena defintion.
      */
-    void init_arena_definition();
+    WOTREPLAY_EXPORT void init_arena_definition();
 }
 
 #endif /* defined(wotreplay_arena_def_h) */

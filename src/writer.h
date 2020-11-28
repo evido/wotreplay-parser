@@ -4,17 +4,19 @@
 #include "arena.h"
 #include "game.h"
 
+#include "wotreplay_export.h"
+
 #include <iosfwd>
 #include <functional>
 
 namespace wotreplay {
-    typedef std::function<bool(const packet_t&)> filter_t;
+    typedef WOTREPLAY_EXPORT std::function<bool(const packet_t&)> filter_t;
 
     /**
      * writer_t describes the interfaces for all classes with the ability to create an
      * output from game_t objects.
      */
-    class writer_t {
+    class WOTREPLAY_EXPORT writer_t {
     public:
         /**
          * Initializes the object.
