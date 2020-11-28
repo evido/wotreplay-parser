@@ -42,8 +42,9 @@ else()
 	set (CMAKE_CXX_FLAGS "-Os -std=c++11")
 endif()
 
+set(BUILD_SHARED_LIBS				TRUE)
 set(CMAKE_CXX_VISIBILITY_PRESET     hidden)
-set(CMAKE_VISIBILITY_INLINES_HIDDEN YES)
+set(CMAKE_VISIBILITY_INLINES_HIDDEN TRUE)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY  ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY  ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY  ${CMAKE_BINARY_DIR}/bin)
@@ -79,6 +80,7 @@ add_library(wotreplay SHARED
 			src/class_heatmap_writer.h
 			src/tank.h
 			src/animation_writer.h
+			src/wotreplay_c.h
 			src/packet.cpp 
 			src/packet_reader_80.cpp 
 			src/parser.cpp 
@@ -94,7 +96,8 @@ add_library(wotreplay SHARED
 			src/tank.cpp
 			src/animation_writer.cpp
 			src/tinyxml2.cpp
-			src/tinyxml2.h)
+			src/tinyxml2.h
+			src/wotreplay_c.cpp)
 
 add_library(jsoncpp STATIC
 			ext/jsoncpp/src/jsoncpp.cpp
@@ -102,7 +105,11 @@ add_library(jsoncpp STATIC
 			ext/jsoncpp/include/json/json-forwards.h)
 
 include(GenerateExportHeader)
-generate_export_header(wotreplay)
+generate_export_header(wotreplay						
+						BASE_NAME wotreplay
+						EXPORT_MACRO_NAME WOTREPLAY_EXPORT
+						EXPORT_FILE_NAME wotreplay_export.h
+						STATIC_DEFINE SHARED_EXPORTS_BUILT_AS_STATIC)
 
 set(ENV{TZ} utc)
 
@@ -146,7 +153,8 @@ target_link_libraries(wotreplay ${OPENSSL_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LI
 target_link_libraries(wotreplay-parser ${OPENSSL_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${ZLIB_LIBRARIES} ${TBB_LIBRARIES} ${GD_LIBRARY} wotreplay)
 
 if(Qt5Widgets_FOUND)
-	add_library(wotreplay-gui-widgets src/mainwindow.h
+	add_library(wotreplay-gui-widgets STATIC
+									  src/mainwindow.h
 									  src/mainwindow.cpp
 									  src/imageviewer.h
 									  src/imageviewer.cpp
