@@ -1,5 +1,10 @@
 #include "image_writer.h"
+
+#ifdef ENABLE_GD
 #include "animation_writer.h"
+#endif
+
+#include "image_writer.h"
 #include "heatmap_writer.h"
 #include "class_heatmap_writer.h"
 #include "json_writer.h"
@@ -124,10 +129,12 @@ void apply_settings(class_heatmap_writer_t * const writer, const po::variables_m
     writer->set_draw_rules(rules);
 }
 
+#ifdef ENABLE_GD
 void apply_settings(animation_writer_t * const writer, const po::variables_map &vm) {
     writer->set_model_update_rate(vm["model-update-rate"].as<int>());
     writer->set_frame_rate(vm["frame-rate"].as<int>());
 }
+#endif
 
 void apply_settings(json_writer_t * const writer, const po::variables_map &vm) {
     if (vm.count("supress-empty")) {
@@ -174,12 +181,14 @@ std::unique_ptr<writer_t> create_writer(const std::string &type, const po::varia
         apply_settings(dynamic_cast<heatmap_writer_t*>(writer.get()), vm);
         apply_settings(dynamic_cast<image_writer_t*>(writer.get()), vm);
     }
+#ifdef GD_ENABLE
     else if (type == "gif") {
         writer.reset(new animation_writer_t());
 
         apply_settings(dynamic_cast<image_writer_t*>(writer.get()), vm);
         apply_settings(dynamic_cast<animation_writer_t*>(writer.get()), vm);
     }
+#endif
     else {
         logger.writef(log_level_t::error, "Invalid output type (%1%), supported types: png, gif, json, heatmap, team-heatmap, team-heatmap-soft or class-heatmap.\n", type);
     }
