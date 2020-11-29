@@ -17,7 +17,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR   ON)
 find_package(Boost 
              1.71.0 
              REQUIRED
-             COMPONENTS filesystem program_options system)
+             COMPONENTS system filesystem program_options)
 
 find_package(PNG REQUIRED)
 find_package(ZLIB REQUIRED)
@@ -47,7 +47,7 @@ if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
 	add_definitions(-Dchdir=_chdir)
 	ADD_DEFINITIONS(-DBOOST_ALL_NO_LIB)
 else()
-    set (CMAKE_CXX_FLAGS "-O -std=c++17 -fPIC -DBOOST_NO_SCOPED_ENUMS")
+    set (CMAKE_CXX_FLAGS "-Os -std=c++17 -fPIC")
 endif()
 
 set(BUILD_SHARED_LIBS				TRUE)
