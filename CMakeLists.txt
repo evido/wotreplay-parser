@@ -1,9 +1,12 @@
-cmake_minimum_required(VERSION 2.8.11)
+cmake_minimum_required(VERSION 3.6)
+
 project (wotreplay-parser)
 
 set(Boost_USE_MULTITHREADED     ON)
+set(Boost_USE_DEBUG_LIBS        OFF)
+set(Boost_USE_RELEASE_LIBS      ON)
 set(Boost_USE_STATIC_RUNTIME    OFF)
-set(Boost_USE_STATIC_LIBS       ON)
+set(Boost_USE_STATIC_LIBS       OFF)
 set(CMAKE_MODULE_PATH           ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/ext/cmake_modules")
 set(CMAKE_FIND_FRAMEWORK        LAST)
 set(OPENSSL_USE_STATIC          1)
@@ -11,12 +14,10 @@ set(CMAKE_AUTOMOC               ON)
 set(CMAKE_AUTOUIC               ON)
 set(CMAKE_INCLUDE_CURRENT_DIR   ON)
 
-if(USE_BOOST_REGEX STREQUAL 1)
-  add_definitions(-DUSE_BOOST_REGEX)
-  find_package(Boost 1.50.0 COMPONENTS filesystem program_options system regex REQUIRED)
-else()
-  find_package(Boost 1.50.0 COMPONENTS filesystem program_options system REQUIRED)
-endif()
+find_package(Boost 
+             1.71.0 
+             REQUIRED
+             COMPONENTS filesystem program_options system)
 
 find_package(PNG REQUIRED)
 find_package(ZLIB REQUIRED)
@@ -25,7 +26,6 @@ find_package(TBB)
 find_package(Qt5Widgets)
 find_package(GD)
 find_package(Git)
-
 
 include_directories(AFTER src ext/jsoncpp/include ${Boost_INCLUDE_DIRS} ${ZLIB_INCLUDE_DIRS} ${PNG_INCLUDE_DIRS} ${OPENSSL_INCLUDE_DIR} ${INCLUDE_DIRECTORIES})
 
@@ -46,14 +46,11 @@ if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
 	add_definitions(-D__TBB_NO_IMPLICIT_LINKAGE)
 	add_definitions(-Dchdir=_chdir)
 	ADD_DEFINITIONS(-DBOOST_ALL_NO_LIB)
-	# set(CMAKE_GENERATOR_TOOLSET "v140" CACHE STRING "Platform Toolset" FORCE) 
 else()
-	set (CMAKE_CXX_FLAGS "-Os -std=c++11")
+    set (CMAKE_CXX_FLAGS "-O -std=c++17 -fPIC -DBOOST_NO_SCOPED_ENUMS")
 endif()
 
 set(BUILD_SHARED_LIBS				TRUE)
-set(CMAKE_CXX_VISIBILITY_PRESET     hidden)
-set(CMAKE_VISIBILITY_INLINES_HIDDEN TRUE)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY  ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY  ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY  ${CMAKE_BINARY_DIR}/bin)
@@ -115,7 +112,9 @@ endif()
 add_library(wotreplay SHARED
 			${WOTREPLAY_SOURCES})
 
-
+set_target_properties(wotreplay PROPERTIES 
+                      CMAKE_CXX_VISIBILITY_PRESET     hidden
+                      CMAKE_VISIBILITY_INLINES_HIDDEN TRUE)
 
 add_library(jsoncpp STATIC
 			ext/jsoncpp/src/jsoncpp.cpp
@@ -200,5 +199,5 @@ if(Qt5Widgets_FOUND)
 
 	qt5_use_modules(wotreplay-gui Core Gui Widgets)
 
-	target_link_libraries( wotreplay-gui ${LINK_LIBRARIES} wotreplay-gui-widgets wotreplay Qt5::Widgets)
+    target_link_libraries(wotreplay-gui wotreplay-gui-widgets wotreplay Qt5::Widgets ${LINK_LIBRARIES}) 
 endif()

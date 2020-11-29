@@ -12,7 +12,7 @@
 
 namespace wotreplay {
     /** operator types */
-    enum WOTREPLAY_EXPORT operator_t {
+    enum operator_t {
         NOT_EQUAL,
         EQUAL,
         GREATER_THAN_OR_EQUAL,
@@ -24,7 +24,7 @@ namespace wotreplay {
     };
 
     /** symbol types */
-    enum WOTREPLAY_EXPORT symbol_t {
+    enum symbol_t {
         PLAYER,
         CLOCK,
         TEAM,
@@ -35,12 +35,12 @@ namespace wotreplay {
         TANK_COUNTRY
     };
 
-    struct WOTREPLAY_EXPORT operation_t;
+    struct operation_t;
 
     /** null value */
     struct WOTREPLAY_EXPORT nil_t {};
 
-    typedef WOTREPLAY_EXPORT boost::variant<nil_t, std::string, symbol_t, boost::recursive_wrapper<operation_t>> operand_t;
+    typedef boost::variant<nil_t, std::string, symbol_t, boost::recursive_wrapper<operation_t>> operand_t;
 
     /** operation type */
     struct WOTREPLAY_EXPORT operation_t {

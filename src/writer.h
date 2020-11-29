@@ -10,7 +10,7 @@
 #include <functional>
 
 namespace wotreplay {
-    typedef WOTREPLAY_EXPORT std::function<bool(const packet_t&)> filter_t;
+    typedef std::function<bool(const packet_t&)> filter_t;
 
     /**
      * writer_t describes the interfaces for all classes with the ability to create an
