@@ -77,6 +77,7 @@ Displays a heatmap of the positions following user defined classes.
 ### Unix
 
     git clone https://github.com/evido/wotreplay-parser.git
+    cd wotreplay-parser
     cmake .
     make
 
