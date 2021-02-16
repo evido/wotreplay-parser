@@ -85,6 +85,12 @@ You may need to specify the include directory for LibXML2 using the CMAKE variab
 
     cmake -DINCLUDE_DIRECTORIES="/usr/include/libxml2" .
 
+### Debian like Linux
+You may need to install the following packages in order to compile successfully (tested ok on an Ubuntu 20.04 install):
+
+    sudo apt-get install build-essential libboost-all-dev git cmake libpng-dev libcrypt-dev libssl-dev libgd-dev libtbb-dev
+
+
 ### Win32
 
 Binaries can be built using VS2019 (using MSVC 2015 build tools).
