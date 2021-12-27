@@ -25,8 +25,12 @@
 
 #ifdef _MSC_VER
 #include <direct.h>
+#define EX_OK 0
+#define EX_USAGE 64
+#define EX_SOFTWARE 70
 #else
 #include <unistd.h>
+#include <sysexits.h>
 #endif // ifdef _MSC_VER
 
 using namespace wotreplay;
@@ -89,7 +93,7 @@ void generate_minimap(const arena_t &arena, const std::string &game_mode, int te
 int create_minimaps(const po::variables_map &vm, const std::string &output, bool debug) {
     if (vm.count("output") == 0) {
         logger.write(wotreplay::log_level_t::error, "parameter output is required to use this mode");
-        return -EXIT_FAILURE;
+        return EX_USAGE;
     }
 
     init_arena_definition();
@@ -104,7 +108,7 @@ int create_minimaps(const po::variables_map &vm, const std::string &output, bool
         }
     }
 
-    return EXIT_SUCCESS;
+    return EX_OK;
 }
 
 void apply_settings(image_writer_t * const writer, const po::variables_map &vm) {
@@ -286,13 +290,13 @@ int process_replay_directory(const po::variables_map &vm, const std::string &inp
         delete it.second;
     });
 
-    return EXIT_SUCCESS;
+    return EX_OK;
 }
 #else
 int process_replay_directory(const po::variables_map &vm, const std::string &input, const std::string &output, const std::string &type, bool debug) {
     if (!(vm.count("type") > 0 && vm.count("input") > 0)) {
         logger.write(wotreplay::log_level_t::error, "parameters type and input are required to use this mode\n");
-        return -EXIT_FAILURE;
+        return EX_USAGE;
     }
 
     parser_t parser(load_data_mode_t::bulk);
@@ -307,7 +311,7 @@ int process_replay_directory(const po::variables_map &vm, const std::string &inp
         std::ifstream in(it->path().string(), std::ios::binary);
         if (!in) {
             logger.writef(log_level_t::error, "Failed to open file: %1%\n", it->path().string());
-            return -EXIT_FAILURE;
+            return EX_SOFTWARE;
         }
 
         game_t game;
@@ -341,11 +345,15 @@ int process_replay_directory(const po::variables_map &vm, const std::string &inp
     for (auto it = writers.begin(); it != writers.end(); ++it) {
         path file_name = path(output) / (boost::format("%s.png") % it->first).str();
         std::ofstream out(file_name.string(), std::ios::binary);
+        if (!out) {
+            logger.writef(log_level_t::error, "Something went wrong with opening file: %1%\n", file_name);
+            return EX_SOFTWARE;
+        }
         it->second->finish();
         it->second->write(out);
     }
 
-    return EXIT_SUCCESS;
+    return EX_OK;
 }
 #endif
 
@@ -361,13 +369,13 @@ int process_replay_file(const po::variables_map &vm, const std::string &input, c
 
     if (!(vm.count("type") > 0 && vm.count("input") > 0)) {
         logger.write(wotreplay::log_level_t::error, "parameters type and input are required to use this mode\n");
-        return -EXIT_FAILURE;
+        return EX_USAGE;
     }
 
     std::ifstream in(input, std::ios::binary);
     if (!in) {
         logger.writef(log_level_t::error, "Failed to open file: %1%\n", input);
-        return -EXIT_FAILURE;
+        return EX_SOFTWARE;
     }
 
     parser_t parser(load_data_mode_t::on_demand);
@@ -383,7 +391,7 @@ int process_replay_file(const po::variables_map &vm, const std::string &input, c
         std::unique_ptr<writer_t> writer = create_writer(*it, vm);
 
         if (!writer) {
-            return -EXIT_FAILURE;
+            return EX_SOFTWARE;
         }
 
         writer->init(game.get_arena(), game.get_game_mode());
@@ -396,9 +404,9 @@ int process_replay_file(const po::variables_map &vm, const std::string &input, c
             auto file_name = single ? output : output + suffixes[*it];
             out = new std::ofstream(file_name, std::ios::binary);
 
-            if (!out) {
+            if (!*out) {
                 logger.writef(log_level_t::error, "Something went wrong with opening file: %1%\n", input);
-                return -EXIT_FAILURE;
+                return EX_SOFTWARE;
             }
         }
         else {
@@ -413,7 +421,7 @@ int process_replay_file(const po::variables_map &vm, const std::string &input, c
         }
     }
 
-    return EXIT_SUCCESS;
+    return EX_OK;
 }
 
 int main(int argc, const char * argv []) {
@@ -518,10 +526,10 @@ int main(int argc, const char * argv []) {
     }
     else {
         logger.write(wotreplay::log_level_t::error, "Error: no mode specified\n");
-        exit_code = -EXIT_FAILURE;
+        exit_code = EX_USAGE;
     }
 
-    if (exit_code < 0) {
+    if (exit_code == EX_USAGE) {
         show_help(argc, argv, desc);
     }
 
