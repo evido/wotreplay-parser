@@ -27,7 +27,7 @@ find_package(GD)
 find_package(Git)
 
 
-include_directories(AFTER src ext/jsoncpp/include ${Boost_INCLUDE_DIRS} ${ZLIB_INCLUDE_DIRS} ${PNG_INCLUDE_DIRS} ${OPENSSL_INCLUDE_DIRS} ${TBB_INCLUDE_DIRS} ${GD_INCLUDE_DIR} ${INCLUDE_DIRECTORIES})
+include_directories(AFTER src ext/jsoncpp/include ${Boost_INCLUDE_DIRS} ${ZLIB_INCLUDE_DIRS} ${PNG_INCLUDE_DIRS} ${OPENSSL_INCLUDE_DIR} ${TBB_INCLUDE_DIRS} ${GD_INCLUDE_DIR} ${INCLUDE_DIRECTORIES})
 
 link_directories(${LINK_DIRECTORIES})
 
