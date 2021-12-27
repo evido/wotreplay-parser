@@ -25,7 +25,7 @@ namespace wotreplay {
         virtual bool is_initialized() const override;
         virtual void init(const arena_t &arena, const std::string &mode) override;
         virtual void clear() override;
-        virtual void set_filter(filter_t filter);
+        virtual void set_filter(filter_t filter) override;
         /**
          * Set if the recording player should be drawn on the map in a seperate color.
          * @param show_self Show the recording player ?
