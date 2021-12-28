@@ -110,6 +110,8 @@ void parser_t::parse(buffer_t &buffer, wotreplay::game_t &game) {
     uint32_t decompressed_size = *reinterpret_cast<const uint32_t *>(&raw_replay[0]);
     uint32_t compressed_size = *reinterpret_cast<const uint32_t *>(&raw_replay[4]);
     decrypt_replay(raw_replay.data() + 8, raw_replay.data() + raw_replay.size(), key);
+
+    game.replay.resize(decompressed_size, 0);
     extract_replay(raw_replay.data() + 8, raw_replay.data() + 8 + compressed_size, game.replay);
 
 	debug_stream_content("replay.dat", game.replay.begin(), game.replay.end());
@@ -208,6 +210,7 @@ void parser_t::extract_replay(const unsigned char* begin, const unsigned char* e
     }
     
     const int chunk = 1024 * 1024;
+    int p = 0;
     std::unique_ptr<unsigned char[]> out(new unsigned char[chunk]);
     
     do {
@@ -225,8 +228,8 @@ void parser_t::extract_replay(const unsigned char* begin, const unsigned char* e
         }
         
         int have = chunk - strm.avail_out;
-        replay.resize(replay.size() + have);
-        std::copy_n(out.get(), have, replay.end() - have);
+        std::copy_n(out.get(), have, &replay[p]);
+        p += have;
     } while (strm.avail_out == 0);
 
     (void)inflateEnd(&strm);
