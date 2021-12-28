@@ -8,7 +8,7 @@
 
 class CipherContext {
 public:
-    CipherContext(const unsigned char* key_data, int key_size, const unsigned char* iv);
+    CipherContext(const char* cipher_name, const unsigned char* key_data, int key_size, const unsigned char* iv);
     int update(unsigned char* out, int* out_len, const unsigned char* in, int in_len);
     int finalize(unsigned char* out, int* out_len);
     ~CipherContext();

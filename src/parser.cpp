@@ -165,7 +165,7 @@ void parser_t::decrypt_replay(buffer_t &replay_data, const unsigned char *key_da
                   decrypted[block_size] = {0};
 
     unsigned char iv[key_size] = {0};
-    CipherContext cipherContext(key_data, key_size, iv);
+    CipherContext cipherContext("BF-ECB", key_data, key_size, iv);
 
     
     uint32_t pin = 0;
