@@ -77,9 +77,11 @@ add_library(wotreplay STATIC
 			src/class_heatmap_writer.h
 			src/tank.h
 			src/animation_writer.h
+            src/cipher_context.h
 			src/packet.cpp 
 			src/packet_reader_80.cpp 
 			src/parser.cpp 
+            src/cipher_context.cpp
 			src/image_writer.cpp 
 			src/game.cpp 
 			src/image_util.cpp 

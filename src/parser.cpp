@@ -1,6 +1,7 @@
 #include "json/json.h"
 
 #include "arena.h"
+#include "cipher_context.h"
 #include "logger.h"
 #include "packet_reader.h"
 #include "packet_reader_80.h"
@@ -13,7 +14,6 @@
 #include <fstream>
 #include <map>
 #include <memory>
-#include <openssl/blowfish.h>
 #include <ostream>
 #include <sstream>
 #include <stdexcept>
@@ -152,10 +152,8 @@ bool parser_t::is_legacy() const {
 void parser_t::decrypt_replay(buffer_t &replay_data, const unsigned char *key_data) {
     debug_stream_content("replay-ec.dat", replay_data.begin(), replay_data.end());
     
-    BF_KEY key = {{0}};
-    BF_set_key(&key, 16, key_data);
-    
     const int block_size = 8;
+    const int key_size = 16;
     
     size_t padding_size = (block_size - (replay_data.size() % block_size));
     if (padding_size != 0) {
@@ -165,12 +163,29 @@ void parser_t::decrypt_replay(buffer_t &replay_data, const unsigned char *key_da
     
     unsigned char previous[block_size] = {0},
                   decrypted[block_size] = {0};
-    for (auto it = replay_data.begin(); it != replay_data.end(); it += block_size) {
-        BF_ecb_encrypt(reinterpret_cast<unsigned char*>(&(*it)), decrypted, &key, BF_DECRYPT);
-        std::transform(previous, previous + block_size, decrypted, decrypted, std::bit_xor<unsigned char>());
+
+    unsigned char iv[key_size] = {0};
+    CipherContext cipherContext(key_data, key_size, iv);
+
+    
+    uint32_t pin = 0;
+    uint32_t pout = 0;
+    int decrypted_len;
+    while (pin < replay_data.size()) {
+        cipherContext.update(decrypted, &decrypted_len, &replay_data[pin], block_size);
+
+        std::transform(previous, previous + decrypted_len, decrypted, decrypted, std::bit_xor<unsigned char>());
         std::copy_n(decrypted, block_size, previous);
-        std::copy_n(decrypted, block_size, reinterpret_cast<unsigned char*>(&(*it)));
+        std::copy_n(decrypted, block_size, &replay_data[pout]);
+
+        pin += block_size;
+        pout += decrypted_len;
     }
+
+    cipherContext.finalize(decrypted, &decrypted_len);
+    std::transform(previous, previous + decrypted_len, decrypted, decrypted, std::bit_xor<unsigned char>());
+    std::copy_n(decrypted, block_size, &replay_data[pout]);
+
     
     if (padding_size != 0) {
         size_t original_size = replay_data.size() - padding_size;
@@ -187,7 +202,7 @@ uint32_t parser_t::get_data_block_count(const buffer_t &buffer) const {
 } 
 
 void parser_t::extract_replay(buffer_t &compressed_replay, buffer_t &replay) {
-    debug_stream_content("out/replay-c.dat", compressed_replay.begin(), compressed_replay.end());
+    debug_stream_content("replay-c.dat", compressed_replay.begin(), compressed_replay.end());
 
     z_stream strm = { 
         reinterpret_cast<unsigned char*>(&(compressed_replay[0])),
@@ -203,7 +218,7 @@ void parser_t::extract_replay(buffer_t &compressed_replay, buffer_t &replay) {
         throw std::runtime_error(msg.str());
     }
     
-    const int chunk = 10*1024*1024;
+    const int chunk = 1024;
     std::unique_ptr<unsigned char[]> out(new unsigned char[chunk]);
     
     do {
