@@ -103,17 +103,19 @@ namespace wotreplay {
          * -# Decrypt a block with the given key
          * -# XOR the block with the previous (decrypted) block
          * -# Go back to step 2, until there are no more blocks.
-         * @param buffer A buffer_t containing the contents of the data block 'replay'.
+         * @param begin start of buffer to decrypt
+         * @param end end of buffer to decrypt
          * @param key The blowfish key used for decryption.
          */
-        void decrypt_replay(buffer_t &buffer, const unsigned char* key);
+        void decrypt_replay(unsigned char* begin, unsigned char* end, const unsigned char* key);
         /**
          * This method performs an extraction (using zlib) of the given replay. The resulting
          * data is copied to a new buffer.
-         * @param compressed_replay The buffer containing the compressed replay
+         * @param begin start of buffer to inflate
+         * @param end end of buffer to inflate
          * @param replay The output variable that will contain the decompressed replay after the execution of this method.
          */
-        void extract_replay(buffer_t &compressed_replay, buffer_t &replay);
+        void extract_replay(const unsigned char* begin, const unsigned char* end, buffer_t &replay);
         /**
          * Helper method to read a single packet from a begin and end iterator.
          * @param begin iterator to denote the beginning of the packet.

@@ -106,9 +106,11 @@ void parser_t::parse(buffer_t &buffer, wotreplay::game_t &game) {
     read_arena_info(game);
 
 	auto key = encryption_keys[game.get_game_title()].data();
-    decrypt_replay(raw_replay, key);
 
-    extract_replay(raw_replay, game.replay);
+    uint32_t decompressed_size = *reinterpret_cast<const uint32_t *>(&raw_replay[0]);
+    uint32_t compressed_size = *reinterpret_cast<const uint32_t *>(&raw_replay[4]);
+    decrypt_replay(raw_replay.data() + 8, raw_replay.data() + raw_replay.size(), key);
+    extract_replay(raw_replay.data() + 8, raw_replay.data() + 8 + compressed_size, game.replay);
 
 	debug_stream_content("replay.dat", game.replay.begin(), game.replay.end());
     
@@ -149,34 +151,27 @@ bool parser_t::is_legacy() const {
     return legacy;
 }
 
-void parser_t::decrypt_replay(buffer_t &replay_data, const unsigned char *key_data) {
-    debug_stream_content("replay-ec.dat", replay_data.begin(), replay_data.end());
+void parser_t::decrypt_replay(unsigned char *begin, unsigned char *end, const unsigned char *key_data) {
+    debug_stream_content("replay-ec.dat", begin, end);
     
     const int block_size = 8;
     const int key_size = 16;
+    const unsigned char iv[key_size] = {0};
     
-    size_t padding_size = (block_size - (replay_data.size() % block_size));
-    if (padding_size != 0) {
-        size_t required_size = replay_data.size() + padding_size;
-        replay_data.resize(required_size, 0);
-    }
-    
-    unsigned char previous[block_size] = {0},
-                  decrypted[block_size] = {0};
+    unsigned char previous[block_size] = {0};
+    unsigned char decrypted[block_size] = {0};
 
-    unsigned char iv[key_size] = {0};
     CipherContext cipherContext("BF-ECB", key_data, key_size, iv);
 
-    
     uint32_t pin = 0;
     uint32_t pout = 0;
     int decrypted_len;
-    while (pin < replay_data.size()) {
-        cipherContext.update(decrypted, &decrypted_len, &replay_data[pin], block_size);
+    while (pin < (end - begin)) {
+        cipherContext.update(decrypted, &decrypted_len, begin + pin, block_size);
 
         std::transform(previous, previous + decrypted_len, decrypted, decrypted, std::bit_xor<unsigned char>());
         std::copy_n(decrypted, block_size, previous);
-        std::copy_n(decrypted, block_size, &replay_data[pout]);
+        std::copy_n(decrypted, block_size, begin + pout);
 
         pin += block_size;
         pout += decrypted_len;
@@ -184,13 +179,7 @@ void parser_t::decrypt_replay(buffer_t &replay_data, const unsigned char *key_da
 
     cipherContext.finalize(decrypted, &decrypted_len);
     std::transform(previous, previous + decrypted_len, decrypted, decrypted, std::bit_xor<unsigned char>());
-    std::copy_n(decrypted, block_size, &replay_data[pout]);
-
-    
-    if (padding_size != 0) {
-        size_t original_size = replay_data.size() - padding_size;
-        replay_data.resize(original_size, 0);
-    }
+    std::copy_n(decrypted, block_size, begin + pout);
 }
 
 uint32_t parser_t::get_data_block_count(const buffer_t &buffer) const {
@@ -201,12 +190,12 @@ uint32_t parser_t::get_data_block_count(const buffer_t &buffer) const {
     return *db_cnt;
 } 
 
-void parser_t::extract_replay(buffer_t &compressed_replay, buffer_t &replay) {
-    debug_stream_content("replay-c.dat", compressed_replay.begin(), compressed_replay.end());
+void parser_t::extract_replay(const unsigned char* begin, const unsigned char* end, buffer_t &replay) {
+    debug_stream_content("replay-c.dat", begin, end);
 
     z_stream strm = { 
-        reinterpret_cast<unsigned char*>(&(compressed_replay[0])),
-        static_cast<uInt>(compressed_replay.size())
+        const_cast<unsigned char*>(begin),
+        static_cast<uInt>(end - begin)
     };
     
     int ret = inflateInit(&strm);
@@ -218,7 +207,7 @@ void parser_t::extract_replay(buffer_t &compressed_replay, buffer_t &replay) {
         throw std::runtime_error(msg.str());
     }
     
-    const int chunk = 1024;
+    const int chunk = 1024 * 1024;
     std::unique_ptr<unsigned char[]> out(new unsigned char[chunk]);
     
     do {
@@ -239,7 +228,7 @@ void parser_t::extract_replay(buffer_t &compressed_replay, buffer_t &replay) {
         replay.resize(replay.size() + have);
         std::copy_n(out.get(), have, replay.end() - have);
     } while (strm.avail_out == 0);
-    
+
     (void)inflateEnd(&strm);
     
     if ( ret != Z_STREAM_END ) {
@@ -249,6 +238,7 @@ void parser_t::extract_replay(buffer_t &compressed_replay, buffer_t &replay) {
         throw std::runtime_error(msg.str());
     }
 }
+
 
 void parser_t::get_data_blocks(buffer_t &buffer, std::vector<slice_t> &data_blocks) const {
     if (buffer.size() == 0) {
@@ -281,8 +271,12 @@ void parser_t::get_data_blocks(buffer_t &buffer, std::vector<slice_t> &data_bloc
     }
     
     // last slice contains encrypted / compressed game replay, seperated by 8 bytes with unknown content
-    auto &last_data_block = data_blocks.back();
-    data_blocks.emplace_back(last_data_block.end() + 8, buffer.end());
+    // uint32_t decompressed_size = *reinterpret_cast<const uint32_t *>(&buffer[data_block_sz_offset]);
+    uint32_t compressed_size = *reinterpret_cast<const uint32_t *>(&buffer[data_block_sz_offset + 4]);
+
+    auto start = data_block_sz_offset;
+    auto end = start + 8 + ((compressed_size + 7) / 8)*8;
+    data_blocks.emplace_back(buffer.begin() + start, buffer.begin() + end);
 }
 
 void parser_t::read_packets(game_t &game) {
