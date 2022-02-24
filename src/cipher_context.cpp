@@ -1,16 +1,33 @@
+#include <openssl/opensslv.h>
 #include <openssl/err.h>
 #include <string>
 
 #include "cipher_context.h"
 
-CipherContext::CipherContext(const char* cipher_name, const unsigned char* key_data, int key_size, const unsigned char* iv)
-    : legacy_provider(nullptr), default_provider(nullptr), ossl_ctx(nullptr), cipher(nullptr), ctx(nullptr)
+CipherContext::CipherContext(
+        const char* cipher_name,
+        const unsigned char* key_data,
+        int key_size,
+        const unsigned char* iv
+    ) :
+#if OPENSSL_VERSION_MAJOR >= 3
+        legacy_provider(nullptr),
+        default_provider(nullptr),
+        ossl_ctx(nullptr),
+#endif
+        cipher(nullptr),
+        ctx(nullptr)
 {
+
+#if OPENSSL_VERSION_MAJOR >= 3
     OPENSSL_assert(ossl_ctx = OSSL_LIB_CTX_new());
     OPENSSL_assert(legacy_provider = OSSL_PROVIDER_load(ossl_ctx, "legacy"));
     OPENSSL_assert(default_provider = OSSL_PROVIDER_load(ossl_ctx, "default"));
-
     OPENSSL_assert(cipher = EVP_CIPHER_fetch(ossl_ctx, cipher_name, nullptr));
+#else
+    cipher = EVP_get_cipherbyname(cipher_name);
+#endif
+
 
     OPENSSL_assert(ctx = EVP_CIPHER_CTX_new());
     OPENSSL_assert(EVP_CipherInit_ex(ctx, cipher, nullptr, nullptr, nullptr, 0) == 1);
@@ -36,9 +53,12 @@ CipherContext::~CipherContext() {
     ERR_print_errors_fp(stderr);
 
     EVP_CIPHER_CTX_free(ctx);
+
+#if OPENSSL_VERSION_MAJOR >= 3
     EVP_CIPHER_free(cipher);
     OSSL_PROVIDER_unload(legacy_provider);
     OSSL_PROVIDER_unload(default_provider);
     OSSL_LIB_CTX_free(ossl_ctx);
+#endif
 }
 
