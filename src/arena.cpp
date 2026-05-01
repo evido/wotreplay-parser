@@ -17,7 +17,7 @@ using namespace tinyxml2;
 static std::string get_arena_xml_content(const boost::filesystem::path& path) {
 	std::ifstream is(path.string());
 	std::string content((std::istreambuf_iterator<char>(is)), std::istreambuf_iterator<char>());
-	std::string base_file_name = path.leaf().string();
+	std::string base_file_name = path.filename().string();
 	size_t pos;
 	while ((pos = content.find(base_file_name)) != -1) {
 		content.replace(pos, base_file_name.length(), "arena");

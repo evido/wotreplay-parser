@@ -89,40 +89,40 @@ void json_writer_t::update(const game_t &game) {
             positionValue.append(std::get<2>(position));
         }
 
-        if (packet.has_property(property_t::tank_destroyed)) {
-            uint32_t target, destroyed_by;
-            uint8_t type;
-            std::tie(target, destroyed_by, type) = packet.tank_destroyed();
-            value["target"] = target;
-            value["destroyed_by"] = destroyed_by;
-            if (type == 0) {
-                value["destruction_type"] = "shell";
-            }
-            else if (type == 1) {
-                value["destruction_type"] = "fire";
-            }
-            else if (type == 2) {
-                value["destruction_type"] = "ram";
-            }
-            else if (type == 3) {
-                value["destruction_type"] = "crash";
-            }
-            else  {
-                value["destruction_type"] = (boost::format("unknown (%1%)") % uint32_t(type)).str();
-            }
-        }
+        // if (packet.has_property(property_t::tank_destroyed)) {
+        //     uint32_t target, destroyed_by;
+        //     uint8_t type;
+        //     std::tie(target, destroyed_by, type) = packet.tank_destroyed();
+        //     value["target"] = target;
+        //     value["destroyed_by"] = destroyed_by;
+        //     if (type == 0) {
+        //         value["destruction_type"] = "shell";
+        //     }
+        //     else if (type == 1) {
+        //         value["destruction_type"] = "fire";
+        //     }
+        //     else if (type == 2) {
+        //         value["destruction_type"] = "ram";
+        //     }
+        //     else if (type == 3) {
+        //         value["destruction_type"] = "crash";
+        //     }
+        //     else  {
+        //         value["destruction_type"] = (boost::format("unknown (%1%)") % uint32_t(type)).str();
+        //     }
+        // }
 
-        if (packet.has_property(property_t::health)) {
-            value["health"] = packet.health();
-        }        
+        // if (packet.has_property(property_t::health)) {
+        //     value["health"] = packet.health();
+        // }        
 
-        if (packet.has_property(property_t::message)) {
-            value["message"] = packet.message();
-        }
+        // if (packet.has_property(property_t::message)) {
+        //     value["message"] = packet.message();
+        // }
 
-        if (packet.has_property(property_t::sub_type)) {
-            value["sub_type"] = packet.sub_type();
-        }
+        // if (packet.has_property(property_t::sub_type)) {
+        //     value["sub_type"] = packet.sub_type();
+        // }
         
         // if (packet.has_property(property_t::source)) {
         //     value["source"] = packet.source();
@@ -132,13 +132,13 @@ void json_writer_t::update(const game_t &game) {
         //     value["target"] = packet.target();
         // }
 
-        if (packet.has_property(property_t::destroyed_track_id)) {
-            value["destroyed_track_id"] = packet.destroyed_track_id();
-        }
+        // if (packet.has_property(property_t::destroyed_track_id)) {
+        //     value["destroyed_track_id"] = packet.destroyed_track_id();
+        // }
 
-        if (packet.has_property(property_t::alt_track_state)) {
-            value["alt_track_state"] = packet.alt_track_state();
-        }
+        // if (packet.has_property(property_t::alt_track_state)) {
+        //     value["alt_track_state"] = packet.alt_track_state();
+        // }
     }
 }
 

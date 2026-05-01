@@ -357,7 +357,7 @@ int process_replay_directory(const po::variables_map &vm, const std::string &inp
 }
 #endif
 
-int process_replay_file(const po::variables_map &vm, const std::string &input, const std::string &output, const std::string &type, bool debug) {
+int process_replay_file(const po::variables_map &vm, const std::string &input, const std::string &output, const std::string &type, bool debug, int raw_offset) {
     static std::map<std::string, std::string> suffixes = {
         {"png", ".png"},
         {"json", ".json"},
@@ -382,6 +382,7 @@ int process_replay_file(const po::variables_map &vm, const std::string &input, c
     game_t game;
 
     parser.set_debug(debug);
+    parser.set_raw_offset(raw_offset);
     parser.parse(in, game);
 
     boost::char_separator<char> sep(",");
@@ -429,7 +430,7 @@ int main(int argc, const char * argv []) {
 
     std::string type, output, input, root, rules;
     double skip, bounds_min, bounds_max;
-    int size, frame_rate, model_rate;
+    int size, frame_rate, model_rate, raw_offset;
 
 #ifdef ENABLE_TBB
     int tokens = 10;
@@ -457,6 +458,7 @@ int main(int argc, const char * argv []) {
         ("frame-rate", po::value(&frame_rate)->default_value(10), "set gif frame rate")
         ("model-update-rate", po::value(&model_rate)->default_value(100), "set model update rate")
         ("version", "display version")
+        ("raw-offset", po::value(&raw_offset)->default_value(-1), "raw offset")
 #ifdef ENABLE_TBB
         ("tokens", po::value(&tokens)->default_value(10), "number of pipeline tokens")
 #endif
@@ -517,7 +519,7 @@ int main(int argc, const char * argv []) {
             exit_code = process_replay_directory(vm, input, output, type, debug);
         }
         else {
-            exit_code = process_replay_file(vm, input, output, type, debug);
+            exit_code = process_replay_file(vm, input, output, type, debug, raw_offset);
         }
     }
     else if (vm.count("create-minimaps") > 0) {

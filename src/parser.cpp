@@ -66,61 +66,63 @@ void parser_t::parse(std::istream &is, wotreplay::game_t &game) {
 }
 
 void parser_t::parse(buffer_t &buffer, wotreplay::game_t &game) {
-    // determine number of data blocks
-    std::vector<slice_t> data_blocks;
-    buffer_t raw_replay;
-    
-    get_data_blocks(buffer, data_blocks);
+    if (this->raw_offset < 0) {
+        // determine number of data blocks
+        std::vector<slice_t> data_blocks;
+        buffer_t raw_replay;
+        
+        get_data_blocks(buffer, data_blocks);
 
-    if (debug) {
-        for (int i = 0; i < data_blocks.size(); ++i) {
-            debug_stream_content((boost::format("data-block-%1%.dat") % i).str(),
-                                data_blocks[i].begin(), data_blocks[i].end());
+        if (debug) {
+            for (int i = 0; i < data_blocks.size(); ++i) {
+                debug_stream_content((boost::format("data-block-%1%.dat") % i).str(),
+                                    data_blocks[i].begin(), data_blocks[i].end());
+            }
         }
-    }
+            
+        if (data_blocks.size() < 2) {
+            std::string message((boost::format("Unexpected number of data blocks (%1%).") % data_blocks.size()).str());
+            throw std::runtime_error(message);
+        }
+
+        buffer_t &game_begin = game.game_begin;    
+        game_begin.resize(data_blocks[0].size());
+        std::copy(data_blocks[0].begin(), data_blocks[0].end(), game_begin.begin());
+
+        buffer_t &player_info = game.player_info;    
+        player_info.resize(data_blocks[1].size());
+        std::copy(data_blocks[1].begin(), data_blocks[1].end(), player_info.begin());
+
+        if (data_blocks.size() == 3) {
+            // third block contains game summary
+            buffer_t &game_end = game.game_end;
+            game_end.resize(data_blocks[1].size());
+            std::copy(data_blocks[1].begin(), data_blocks[1].end(), game_end.begin());
+        }
+
+        raw_replay.resize(data_blocks.back().size());
+        std::copy(data_blocks.back().begin(), data_blocks.back().end(), raw_replay.begin());
+            
+	    read_player_info(game);
+        read_arena_info(game);
+
+	    auto key = encryption_keys[game.get_game_title()].data();
+
+        uint32_t decompressed_size = *reinterpret_cast<const uint32_t *>(&raw_replay[0]);
+        uint32_t compressed_size = *reinterpret_cast<const uint32_t *>(&raw_replay[4]);
+        decrypt_replay(raw_replay.data() + 8, raw_replay.data() + raw_replay.size(), key);
+
+        game.replay.resize(decompressed_size, 0);
+        extract_replay(raw_replay.data() + 8, raw_replay.data() + 8 + compressed_size, game.replay);
+	    debug_stream_content("replay.dat", game.replay.begin(), game.replay.end());
         
-    if (data_blocks.size() < 2) {
-        std::string message((boost::format("Unexpected number of data blocks (%1%).") % data_blocks.size()).str());
-        throw std::runtime_error(message);
+        uint32_t version_string_sz = get_field<uint32_t>(game.replay.begin(), game.replay.end(), 12);
+        std::string version(game.replay.begin() + 16, game.replay.begin() + 16 + version_string_sz);
+        game.version = version;
+    } else {
+        game.replay = buffer;
     }
 
-    buffer_t &game_begin = game.game_begin;    
-    game_begin.resize(data_blocks[0].size());
-    std::copy(data_blocks[0].begin(), data_blocks[0].end(), game_begin.begin());
-
-    buffer_t &player_info = game.player_info;    
-    player_info.resize(data_blocks[1].size());
-    std::copy(data_blocks[1].begin(), data_blocks[1].end(), player_info.begin());
-
-    if (data_blocks.size() == 3) {
-        // third block contains game summary
-        buffer_t &game_end = game.game_end;
-        game_end.resize(data_blocks[1].size());
-        std::copy(data_blocks[1].begin(), data_blocks[1].end(), game_end.begin());
-    }
-
-    raw_replay.resize(data_blocks.back().size());
-    std::copy(data_blocks.back().begin(), data_blocks.back().end(), raw_replay.begin());
-        
-	read_player_info(game);
-    read_arena_info(game);
-
-	auto key = encryption_keys[game.get_game_title()].data();
-
-    uint32_t decompressed_size = *reinterpret_cast<const uint32_t *>(&raw_replay[0]);
-    uint32_t compressed_size = *reinterpret_cast<const uint32_t *>(&raw_replay[4]);
-    decrypt_replay(raw_replay.data() + 8, raw_replay.data() + raw_replay.size(), key);
-
-    game.replay.resize(decompressed_size, 0);
-    extract_replay(raw_replay.data() + 8, raw_replay.data() + 8 + compressed_size, game.replay);
-
-	debug_stream_content("replay.dat", game.replay.begin(), game.replay.end());
-    
-    // read version string
-    uint32_t version_string_sz = get_field<uint32_t>(game.replay.begin(), game.replay.end(), 12);
-    std::string version(game.replay.begin() + 16, game.replay.begin() + 16 + version_string_sz);
-    game.version = version_t(version);
-    
     if (!this->setup(game.version)) {
         logger.writef(log_level_t::warning, "Warning: Replay version (%1%) not marked as compatible.\n", game.version.text);
     }
@@ -135,6 +137,10 @@ void parser_t::parse(buffer_t &buffer, wotreplay::game_t &game) {
 bool parser_t::setup(const version_t &version) {
     this->packet_reader = std::unique_ptr<packet_reader_t>(new packet_reader_80_t());
     return packet_reader->is_compatible(version);
+}
+
+void parser_t::set_raw_offset(int raw_offset) {
+    this->raw_offset = raw_offset;
 }
 
 void parser_t::set_debug(bool debug) {
@@ -196,7 +202,7 @@ void parser_t::extract_replay(const unsigned char* begin, const unsigned char* e
     debug_stream_content("replay-c.dat", begin, end);
 
     z_stream strm = { 
-        const_cast<unsigned char*>(begin),
+        const_cast<z_const Bytef*>(begin),
         static_cast<uInt>(end - begin)
     };
     
@@ -284,6 +290,7 @@ void parser_t::get_data_blocks(buffer_t &buffer, std::vector<slice_t> &data_bloc
 
 void parser_t::read_packets(game_t &game) {
     packet_reader->init(game.version, &game.replay, game.title);
+    ((packet_reader_80_t*) this->packet_reader.get())->pos = this->raw_offset;
     while (packet_reader->has_next()) {
         game.packets.reserve(500000);
         game.packets.push_back(packet_reader->next());

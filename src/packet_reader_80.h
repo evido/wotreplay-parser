@@ -29,10 +29,11 @@ namespace wotreplay {
         virtual packet_t next();
         virtual bool has_next();
         virtual bool is_compatible(const version_t &version);
+        int pos;
     private:
         buffer_t *buffer;
         version_t version;
-        int pos, prev;
+        int prev;
 		game_title_t title;
     };
 }

@@ -8,7 +8,7 @@ using namespace wotreplay;
 void packet_reader_80_t::init(const version_t &version, buffer_t *buffer, game_title_t title) {
     this->buffer = buffer;
     this->version = version;
-    this->pos = 0;
+    this->pos = 0x00;
 	this->title = title;
 }
 

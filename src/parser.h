@@ -72,6 +72,7 @@ namespace wotreplay {
          * Load supporting game data (optional)
          */
         void load_data();
+        void set_raw_offset(int raw_offset);
     private:
         /**
          * Configures parser configuration using the version string.
@@ -146,6 +147,7 @@ namespace wotreplay {
         std::unique_ptr<packet_reader_t> packet_reader;
         /** Load data mode */
         load_data_mode_t load_data_mode;
+        int raw_offset;
     };
 
     template <typename iterator>
