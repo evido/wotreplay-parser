@@ -1,4 +1,6 @@
 #include "json_writer.h"
+#include "packet.h"
+#include "logger.h"
 
 #include <boost/format.hpp>
 
@@ -87,6 +89,11 @@ void json_writer_t::update(const game_t &game) {
             positionValue.append(std::get<0>(position));
             positionValue.append(std::get<1>(position));
             positionValue.append(std::get<2>(position));
+        }
+
+        if (packet.has_property(property_t::map_name)) {
+            value["map_name"] = packet.map_name();
+            logger.writef("%1%\n", packet.map_name());
         }
 
         // if (packet.has_property(property_t::tank_destroyed)) {

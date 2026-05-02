@@ -2,11 +2,13 @@
 
 #include <boost/format.hpp>
 #include <sstream>
+#include <cassert>
 
 using namespace wotreplay;
 
-packet_t::packet_t(const slice_t &data) {
+packet_t::packet_t(const slice_t &data, bool blitz_packet) {
     this->set_data(data);
+    this->blitz_packet = blitz_packet;
 }
 
 uint32_t packet_t::type() const {
@@ -25,11 +27,21 @@ float packet_t::clock() const {
 }
 
 std::tuple<float, float, float> packet_t::position() const {
-    assert(type() == 0x0A);
-    float x = get_field<float>(data.begin(), data.end(), 20);
-    float y = get_field<float>(data.begin(), data.end(), 24);
-    float z = get_field<float>(data.begin(), data.end(), 28);
-    return std::make_tuple(x,y,z);
+    assert(has_property(property_t::position));
+
+    if (this->blitz_packet) {
+        float x = get_field<float>(data.begin(), data.end(), 24);
+        float y = get_field<float>(data.begin(), data.end(), 28);
+        float z = get_field<float>(data.begin(), data.end(), 32);
+
+        return std::make_tuple(x,y,z);
+    } else {
+        float x = get_field<float>(data.begin(), data.end(), 20);
+        float y = get_field<float>(data.begin(), data.end(), 24);
+        float z = get_field<float>(data.begin(), data.end(), 28);
+
+        return std::make_tuple(x,y,z);
+    }
 }
 
 std::tuple<float, float, float> packet_t::hull_orientation() const {
@@ -79,6 +91,12 @@ void packet_t::set_data(const slice_t &data) {
             properties[static_cast<size_t>(property_t::hull_orientation)] = true;
             properties[static_cast<size_t>(property_t::clock)] = true;
             properties[static_cast<size_t>(property_t::player_id)] = true;
+            break;
+        case 0x0b:
+            // position 30 looks like some payload length
+            properties[static_cast<size_t>(property_t::map_name)] = data[30] > 1;
+            // pass check
+            properties[static_cast<size_t>(property_t::clock)] = true;
             break;
         case 0x07: {
             properties[static_cast<size_t>(property_t::clock)] = true;
@@ -172,6 +190,17 @@ uint8_t packet_t::alt_track_state() const {
     return get_field<uint8_t>(data.begin(), data.end(), 21);
 }
 
+std::string packet_t::map_name() const {
+    assert(has_property(property_t::map_name));
+
+    std::string packet_data(data.begin(), data.end());
+    auto pos = packet_data.rfind("\x80\x3f");
+
+    assert(pos != std::string::npos);
+
+    return packet_data.substr(pos + 2);
+}
+
 uint32_t packet_t::source() const {
     assert(has_property(property_t::source));
     int pos;
@@ -224,8 +253,11 @@ std::ostream& wotreplay::operator<<(std::ostream& os, const packet_t &packet) {
 
 std::string wotreplay::to_string(const packet_t &packet) {
     std::stringstream result;
+
+    result << "[ ";
     for (auto val : packet.get_data()) {
-        result << (boost::format("0x%1$02X ") % (uint32_t) val).str();
+        result << (boost::format("%1$02X ") % (uint32_t) val).str();
     }
+    result << "]";
     return result.str();
 }

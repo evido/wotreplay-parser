@@ -41,7 +41,7 @@ namespace wotreplay {
          * @param load_data_mode set data loading behavior
          * @param debug enable debug mode
          */
-        parser_t(load_data_mode_t load_data_mode = load_data_mode_t::bulk, bool debug = false);
+        parser_t(std::unique_ptr<packet_reader_t> &&packet_reader, load_data_mode_t load_data_mode = load_data_mode_t::bulk, bool debug = false);
         /**
          * Indicates if the parsed file is a legacy (< 0.7.2) replay file. This means 'game begin', 'game end' will be missing.
          * @return \c true if file is in a legacy format \c false if the file is in the 'new' format.
@@ -61,25 +61,19 @@ namespace wotreplay {
          * @param is The inputstream containing the replay file.
          * @param game The output variable containing the parsed contents of the replay file.
          */
-        void parse(std::istream &is, game_t &game);
+        void parse(std::istream &is, game_t &game, bool raw);
         /**
          * Parses the replay file from the contents in the buffer.
          * @param buffer Buffer containing the complete contents of the replay file.
          * @param game The output variable containing the parsed contents of the replay file.
          */
-        void parse(buffer_t &buffer, wotreplay::game_t &game);
+        void parse(buffer_t &buffer, game_t &game, bool raw);
         /**
          * Load supporting game data (optional)
          */
         void load_data();
         void set_raw_offset(int raw_offset);
     private:
-        /**
-         * Configures parser configuration using the version string.
-         * @param version the version string
-         * @return Returns if the method was able to configure the parser to match the version
-         */
-        bool setup(const version_t &version);
         /**
          * Indicates if the passed buffer_t contains a legacy (< 0.7.2) replay file. 
          * @return \c true if file is in a legacy format \c false if the file is in the 'new' format.

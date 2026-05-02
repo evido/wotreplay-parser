@@ -10,7 +10,7 @@ int animation_writer_t::update_model(const game_t &game, float window_start, flo
 
     float window_end = window_start + window_size;
 
-    while (ix < packets.size() && packets[ix].clock() <= window_end) {
+    while (ix < packets.size() && (!packets[ix].has_property(property_t::clock) || packets[ix].clock() <= window_end)) {
         if (packets[ix].has_property(property_t::position)) {
             positions[packets[ix].player_id()] = packets[ix].position();
         }
@@ -19,9 +19,7 @@ int animation_writer_t::update_model(const game_t &game, float window_start, flo
     }
 
     for (auto &it: positions) {
-        if (game.get_team_id(it.first) != -1) {
-            tracks[it.first].emplace_back(it.second);
-        }
+        tracks[it.first].emplace_back(it.second);
     }
 
     return ix;
@@ -52,6 +50,7 @@ gdImagePtr animation_writer_t::create_background_frame(const game_t &game) const
     int g = gdImageColorAllocate(result, 0x00, 0xFF, 0x00);    
     int b = gdImageColorAllocate(result, 0x00, 0x00, 0xFF);
     int t = gdImageColorAllocate(result, 0x01, 0x01, 0x01);
+    int w = gdImageColorAllocate(result, 0xFF, 0xFF, 0xFF);
 
     if (no_basemap) gdImageFill(result, 0, 0, t);
 
@@ -65,10 +64,11 @@ gdImagePtr animation_writer_t::create_frame(const game_t &game, gdImagePtr backg
 
     gdImagePaletteCopy(frame, background);
     gdImageCopy(frame, background, 0, 0, 0, 0, this->image_width, this->image_height);
-        
+
     int r = gdImageColorExact(frame, 0xFF, 0x00, 0x00);
     int g = gdImageColorExact(frame, 0x00, 0xFF, 0x00);        
     int b = gdImageColorExact(frame, 0x00, 0x00, 0xFF);
+    int w = gdImageColorExact(frame, 0xFF, 0xFF, 0xFF);
 
     int recorder_team = game.get_team_id(game.get_recorder_id());
     int recorder_id = game.get_recorder_id();
@@ -76,7 +76,18 @@ gdImagePtr animation_writer_t::create_frame(const game_t &game, gdImagePtr backg
     for (auto &track : tracks) {
         const auto &positions = track.second;
         int player_team = game.get_team_id(track.first);
-        int c = recorder_id == track.first ? b : (player_team == recorder_team ? g : r);
+
+        int c;
+
+        if (recorder_id == track.first) {
+            c = b;
+        } else if (player_team == -1) {
+            c = w;
+        } else if (player_team == recorder_team) {
+            c = g;
+        } else {
+            c = r;
+        }
 
         for (auto &pos : positions) {
             auto xy_pos = get_2d_coord(pos, this->arena.bounding_box, this->image_width, this->image_height);

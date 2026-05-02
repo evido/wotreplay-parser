@@ -5,7 +5,7 @@
 using namespace wotreplay;
 
 namespace wotreplay {
-    logger_t logger(std::cout);
+    logger_t logger(std::cerr);
 }
 
 logger_t::logger_t(std::ostream &os)

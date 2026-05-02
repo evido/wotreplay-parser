@@ -1,14 +1,18 @@
+#include "arena.h"
 #include "image_writer.h"
 #include "animation_writer.h"
 #include "heatmap_writer.h"
 #include "class_heatmap_writer.h"
 #include "json_writer.h"
 #include "logger.h"
+#include "packet.h"
+#include "packet_reader_80.h"
 #include "parser.h"
 #include "regex.h"
 #include "tank.h"
 #include "version.h"
 
+#include <algorithm>
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <boost/program_options.hpp>
@@ -32,6 +36,8 @@
 #include <unistd.h>
 #include <sysexits.h>
 #endif // ifdef _MSC_VER
+
+const int RAW_OFFSET_BLITZ = 80;
 
 using namespace wotreplay;
 using namespace boost::filesystem;
@@ -299,7 +305,7 @@ int process_replay_directory(const po::variables_map &vm, const std::string &inp
         return EX_USAGE;
     }
 
-    parser_t parser(load_data_mode_t::bulk);
+    parser_t parser(std::move(std::unique_ptr<packet_reader_t>(new packet_reader_80_t())), load_data_mode_t::bulk);
     parser.set_debug(debug);
 
     std::map<std::string, std::unique_ptr<writer_t>> writers;
@@ -317,7 +323,7 @@ int process_replay_directory(const po::variables_map &vm, const std::string &inp
         game_t game;
 
         try {
-            parser.parse(in, game);
+            parser.parse(in, game, false);
         }
         catch (std::exception &e) {
             logger.writef(log_level_t::error, "Failed to parse file (%1%): %2%\n", it->path().string(), e.what());
@@ -357,7 +363,7 @@ int process_replay_directory(const po::variables_map &vm, const std::string &inp
 }
 #endif
 
-int process_replay_file(const po::variables_map &vm, const std::string &input, const std::string &output, const std::string &type, bool debug, int raw_offset) {
+int process_replay_file(const po::variables_map &vm, const std::string &input, const std::string &output, const std::string &type, bool debug) {
     static std::map<std::string, std::string> suffixes = {
         {"png", ".png"},
         {"json", ".json"},
@@ -378,12 +384,20 @@ int process_replay_file(const po::variables_map &vm, const std::string &input, c
         return EX_SOFTWARE;
     }
 
-    parser_t parser(load_data_mode_t::on_demand);
+    
+    std::unique_ptr<packet_reader_t> packet_reader;
+
+    if (vm.count("blitz") > 0) {
+        packet_reader.reset(new packet_reader_80_t());
+        ((packet_reader_80_t*) packet_reader.get())->init_pos = 80;
+    } else {
+        packet_reader.reset(new packet_reader_80_t());
+    }
+
+    parser_t parser(std::move(packet_reader), load_data_mode_t::on_demand, debug);
     game_t game;
 
-    parser.set_debug(debug);
-    parser.set_raw_offset(raw_offset);
-    parser.parse(in, game);
+    parser.parse(in, game, vm.count("blitz") > 0);
 
     boost::char_separator<char> sep(",");
     boost::tokenizer<boost::char_separator<char>> tokens(type, sep);
@@ -395,7 +409,30 @@ int process_replay_file(const po::variables_map &vm, const std::string &input, c
             return EX_SOFTWARE;
         }
 
-        writer->init(game.get_arena(), game.get_game_mode());
+        if (vm.count("blitz") > 0) {
+            auto packet = std::find_if(
+                game.get_packets().begin(),
+                game.get_packets().end(),
+                [](const packet_t &packet) { return packet.has_property(property_t::map_name); }
+            );
+
+            assert(game.get_packets().end() != packet);
+
+            const arena_t arena = {
+                {},
+                packet->map_name(),
+                { { -500, -500 }, { 500, 500 } },
+                std::filesystem::path(vm["root"].as<std::string>())
+                    .append("blitz")
+                    // trim spaces/ from map name
+                    .append(packet->map_name().substr(7) + ".png"),
+            };
+
+            writer->init(arena, "");
+        } else {
+            writer->init(game.get_arena(), game.get_game_mode());
+        }
+
         writer->update(game);
         writer->finish();
 
@@ -430,7 +467,7 @@ int main(int argc, const char * argv []) {
 
     std::string type, output, input, root, rules;
     double skip, bounds_min, bounds_max;
-    int size, frame_rate, model_rate, raw_offset;
+    int size, frame_rate, model_rate;
 
 #ifdef ENABLE_TBB
     int tokens = 10;
@@ -458,7 +495,7 @@ int main(int argc, const char * argv []) {
         ("frame-rate", po::value(&frame_rate)->default_value(10), "set gif frame rate")
         ("model-update-rate", po::value(&model_rate)->default_value(100), "set model update rate")
         ("version", "display version")
-        ("raw-offset", po::value(&raw_offset)->default_value(-1), "raw offset")
+        ("blitz", "parse as world of tanks blitz")
 #ifdef ENABLE_TBB
         ("tokens", po::value(&tokens)->default_value(10), "number of pipeline tokens")
 #endif
@@ -511,7 +548,7 @@ int main(int argc, const char * argv []) {
         parse_draw_rules(vm["rules"].as<std::string>());
         std::exit(0);
     }
-
+    
     int exit_code;
     if (vm.count("parse") > 0) {
         // parse
@@ -519,7 +556,7 @@ int main(int argc, const char * argv []) {
             exit_code = process_replay_directory(vm, input, output, type, debug);
         }
         else {
-            exit_code = process_replay_file(vm, input, output, type, debug, raw_offset);
+            exit_code = process_replay_file(vm, input, output, type, debug);
         }
     }
     else if (vm.count("create-minimaps") > 0) {

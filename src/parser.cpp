@@ -6,19 +6,15 @@
 #include "packet_reader.h"
 #include "packet_reader_80.h"
 #include "parser.h"
-#include "regex.h"
 #include "tank.h"
 
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
-#include <fstream>
 #include <map>
 #include <memory>
-#include <ostream>
 #include <sstream>
 #include <stdexcept>
 #include <string>
-#include <type_traits>
 
 #include <zlib.h>
 
@@ -30,6 +26,10 @@ using namespace boost::filesystem;
 #endif
 
 #if DEBUG_REPLAY_FILE
+
+#include <fstream>
+#include <ostream>
+#include <type_traits>
 
 template <typename T>
 static void debug_stream_content(const std::string &file_name, T begin, T end) {
@@ -51,8 +51,8 @@ static std::map<game_title_t, std::array<unsigned char, 16>> encryption_keys =
 	{ game_title_t::world_of_warships,{ 0x29, 0xB7, 0xC9, 0x09, 0x38, 0x3F, 0x84, 0x88, 0xFA, 0x98, 0xEC, 0x4E, 0x13, 0x19, 0x79, 0xFB } }
 };
 
-parser_t::parser_t(load_data_mode_t load_data_mode, bool debug)
-    : debug(debug), load_data_mode(load_data_mode)
+parser_t::parser_t(std::unique_ptr<packet_reader_t> &&packet_reader, load_data_mode_t load_data_mode, bool debug)
+    : debug(debug), load_data_mode(load_data_mode), packet_reader(std::move(packet_reader))
 {
     // empty
     if (load_data_mode == load_data_mode_t::bulk) {
@@ -60,13 +60,13 @@ parser_t::parser_t(load_data_mode_t load_data_mode, bool debug)
     }
 }
 
-void parser_t::parse(std::istream &is, wotreplay::game_t &game) {
+void parser_t::parse(std::istream &is, wotreplay::game_t &game, bool raw) {
     buffer_t buffer((std::istreambuf_iterator<char>(is)), std::istreambuf_iterator<char>());
-    parse(buffer, game);
+    parse(buffer, game, raw);
 }
 
-void parser_t::parse(buffer_t &buffer, wotreplay::game_t &game) {
-    if (this->raw_offset < 0) {
+void parser_t::parse(buffer_t &buffer, wotreplay::game_t &game, bool raw) {
+    if (!raw) {
         // determine number of data blocks
         std::vector<slice_t> data_blocks;
         buffer_t raw_replay;
@@ -123,20 +123,11 @@ void parser_t::parse(buffer_t &buffer, wotreplay::game_t &game) {
         game.replay = buffer;
     }
 
-    if (!this->setup(game.version)) {
-        logger.writef(log_level_t::warning, "Warning: Replay version (%1%) not marked as compatible.\n", game.version.text);
-    }
-
     read_packets(game);
 
     if (debug) {
         show_packet_summary(game.get_packets());
     }
-}
-
-bool parser_t::setup(const version_t &version) {
-    this->packet_reader = std::unique_ptr<packet_reader_t>(new packet_reader_80_t());
-    return packet_reader->is_compatible(version);
 }
 
 void parser_t::set_raw_offset(int raw_offset) {
@@ -290,15 +281,10 @@ void parser_t::get_data_blocks(buffer_t &buffer, std::vector<slice_t> &data_bloc
 
 void parser_t::read_packets(game_t &game) {
     packet_reader->init(game.version, &game.replay, game.title);
-    ((packet_reader_80_t*) this->packet_reader.get())->pos = this->raw_offset;
+    logger.writef("%1%\n", ((packet_reader_80_t*) packet_reader.get())->init_pos);
     while (packet_reader->has_next()) {
-        game.packets.reserve(500000);
         game.packets.push_back(packet_reader->next());
     }
-
-#ifndef _DEBUG
-    game.packets.shrink_to_fit();
-#endif
 }
 
 void parser_t::read_arena_info(game_t& game) {
@@ -384,10 +370,10 @@ void wotreplay::show_packet_summary(const std::vector<packet_t>& packets) {
     }
 
     for (const auto &it : packet_type_count) {
-        printf("packet_type [0x%08x] = %d\n", it.first, it.second);
+        logger.writef(log_level_t::info,  "packet_type [%1$08X] = %2%\n", (int) it.first, it.second);
     }
 
-    printf("Total packets = %lu\n", packets.size());
+    logger.writef(log_level_t::info,  "Total packets = %1%\n", packets.size());
 }
 
 bool wotreplay::is_replayfile(const boost::filesystem::path &p) {

@@ -8,7 +8,7 @@ using namespace wotreplay;
 void packet_reader_80_t::init(const version_t &version, buffer_t *buffer, game_title_t title) {
     this->buffer = buffer;
     this->version = version;
-    this->pos = 0x00;
+    this->pos = init_pos;
 	this->title = title;
 }
 
@@ -25,10 +25,9 @@ packet_t packet_reader_80_t::next() {
     auto packet_begin = buffer->begin() + pos;
     auto packet_end = packet_begin + packet_size;
 
-    packet_t packet( boost::make_iterator_range(packet_begin, packet_end) );
-    logger.writef(wotreplay::log_level_t::debug,
-                    "[%2%] type=0x%1$02X size=%3%\n%4%\n",
-                    packet.type(), pos, packet_size, packet);
+    packet_t packet( boost::make_iterator_range(packet_begin, packet_end), this->init_pos != 0);
+
+    logger.writef(wotreplay::log_level_t::debug, "[%2%] type=0x%1$02X size=%3% data=%4%\n", packet.type(), pos, packet_size, packet);
     
     prev = pos;
     pos += packet_size;

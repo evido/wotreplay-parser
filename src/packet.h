@@ -33,7 +33,8 @@ namespace wotreplay {
         destroyed_track_id,
         alt_track_state,
         length,
-        property_nr_items
+        map_name,
+        property_nr_items,
     };
 
     /**
@@ -51,7 +52,7 @@ namespace wotreplay {
          * Constructor for a packet with defined content.
          * @param data The content of this packet.
          */
-        packet_t(const slice_t &data);
+        packet_t(const slice_t &data, bool blitz_packet);
         /** total packet payload length */
         uint32_t length() const;
         /** @return The packet type */
@@ -128,11 +129,13 @@ namespace wotreplay {
          * @return alt track state
          */
         uint8_t alt_track_state() const;
+        std::string map_name() const;
     private:
         /** An array containing the presence of each property. */
         std::array<bool, static_cast<size_t>(property_t::property_nr_items)> properties;
         /** The data content of this packet. */
         slice_t data;
+        bool blitz_packet;
     };
 
     /**

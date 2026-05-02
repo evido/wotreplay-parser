@@ -77,39 +77,42 @@ void image_writer_t::draw_grid(boost::multi_array<uint8_t, 3> &image) {
 }
 
 void image_writer_t::draw_elements() {
-    auto it = arena.configurations.find(game_mode);
-    if (it == arena.configurations.end()) {
-        wotreplay::logger.writef(log_level_t::warning, "Could not find configuration for game mode '%1%'\n", game_mode);
-        return;
-    }
-
-    const arena_configuration_t &configuration = arena.configurations[game_mode];
-    int reference_team_id = use_fixed_teamcolors ? 0 : recorder_team;
-
-    if (game_mode == "domination") {
-        auto neutral_base = get_element("neutral_base");
-        draw_element(neutral_base, configuration.control_point);
-    }
-
-    auto friendly_base = get_element("friendly_base");
-    auto enemy_base = get_element("enemy_base");
-    for (const auto &entry : configuration.team_base_positions) {
-        for (const auto &position : entry.second) {
-            draw_element((entry.first - 1) == reference_team_id ? friendly_base : enemy_base, position);
+    // blitz does not support game mode
+    if (game_mode != "") {
+        auto it = arena.configurations.find(game_mode);
+        if (it == arena.configurations.end()) {
+            wotreplay::logger.writef(log_level_t::warning, "Could not find configuration for game mode '%1%'\n", game_mode);
+            return;
         }
-    }
 
-    std::vector<boost::multi_array<uint8_t, 3>> spawns{
-        get_element("neutral_spawn1"),
-        get_element("neutral_spawn2"),
-        get_element("neutral_spawn3"),
-        get_element("neutral_spawn4")
-    };
+        const arena_configuration_t &configuration = arena.configurations[game_mode];
+        int reference_team_id = use_fixed_teamcolors ? 0 : recorder_team;
 
-    for (const auto &entry : configuration.team_spawn_points) {
-        for (int i = 0; i < entry.second.size(); ++i) {
-            int mask = (reference_team_id == (entry.first - 1)) ? 0x00FF00FF : 0xFF0000FF;
-            draw_element(spawns[i], entry.second[i], mask);
+        if (game_mode == "domination") {
+            auto neutral_base = get_element("neutral_base");
+            draw_element(neutral_base, configuration.control_point);
+        }
+
+        auto friendly_base = get_element("friendly_base");
+        auto enemy_base = get_element("enemy_base");
+        for (const auto &entry : configuration.team_base_positions) {
+            for (const auto &position : entry.second) {
+                draw_element((entry.first - 1) == reference_team_id ? friendly_base : enemy_base, position);
+            }
+        }
+
+        std::vector<boost::multi_array<uint8_t, 3>> spawns{
+            get_element("neutral_spawn1"),
+            get_element("neutral_spawn2"),
+            get_element("neutral_spawn3"),
+            get_element("neutral_spawn4")
+        };
+
+        for (const auto &entry : configuration.team_spawn_points) {
+            for (int i = 0; i < entry.second.size(); ++i) {
+                int mask = (reference_team_id == (entry.first - 1)) ? 0x00FF00FF : 0xFF0000FF;
+                draw_element(spawns[i], entry.second[i], mask);
+            }
         }
     }
 
