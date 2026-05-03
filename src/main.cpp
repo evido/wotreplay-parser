@@ -410,6 +410,8 @@ int process_replay_file(const po::variables_map &vm, const std::string &input, c
         }
 
         if (vm.count("blitz") > 0) {
+            int map_size = vm.at("map-size").as<int>();
+
             auto packet = std::find_if(
                 game.get_packets().begin(),
                 game.get_packets().end(),
@@ -421,7 +423,7 @@ int process_replay_file(const po::variables_map &vm, const std::string &input, c
             const arena_t arena = {
                 {},
                 packet->map_name(),
-                { { -500, -500 }, { 500, 500 } },
+                { { -map_size, -map_size }, { map_size, map_size } },
                 std::filesystem::path(vm["root"].as<std::string>())
                     .append("blitz")
                     // trim spaces/ from map name
@@ -465,9 +467,9 @@ int process_replay_file(const po::variables_map &vm, const std::string &input, c
 int main(int argc, const char * argv []) {
     po::options_description desc("Allowed options");
 
-    std::string type, output, input, root, rules;
+    std::string type, output, input, root, rules, meta;
     double skip, bounds_min, bounds_max;
-    int size, frame_rate, model_rate;
+    int size, frame_rate, model_rate, map_size;
 
 #ifdef ENABLE_TBB
     int tokens = 10;
@@ -496,6 +498,8 @@ int main(int argc, const char * argv []) {
         ("model-update-rate", po::value(&model_rate)->default_value(100), "set model update rate")
         ("version", "display version")
         ("blitz", "parse as world of tanks blitz")
+        ("meta", po::value(&meta)->default_value(""), "meta file for blitz")
+        ("map-size", po::value(&map_size)->default_value(500), "map size")
 #ifdef ENABLE_TBB
         ("tokens", po::value(&tokens)->default_value(10), "number of pipeline tokens")
 #endif
