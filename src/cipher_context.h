@@ -13,21 +13,23 @@
 
 class CipherContext {
 public:
-    CipherContext(const char* cipher_name, const unsigned char* key_data, int key_size, const unsigned char* iv);
-    int update(unsigned char* out, int* out_len, const unsigned char* in, int in_len);
-    int finalize(unsigned char* out, int* out_len);
-    ~CipherContext();
+  CipherContext(const char *cipher_name, const unsigned char *key_data,
+                int key_size, const unsigned char *iv);
+  int update(unsigned char *out, int *out_len, const unsigned char *in,
+             int in_len);
+  int finalize(unsigned char *out, int *out_len);
+  ~CipherContext();
+
 private:
 #if OPENSSL_VERSION_MAJOR >= 3
-    OSSL_PROVIDER *legacy_provider = nullptr;
-    OSSL_PROVIDER *default_provider = nullptr;
-    OSSL_LIB_CTX *ossl_ctx;
-    EVP_CIPHER *cipher;
+  OSSL_PROVIDER *legacy_provider = nullptr;
+  OSSL_PROVIDER *default_provider = nullptr;
+  OSSL_LIB_CTX *ossl_ctx;
+  EVP_CIPHER *cipher;
 #else
-    const EVP_CIPHER *cipher;
+  const EVP_CIPHER *cipher;
 #endif
-    EVP_CIPHER_CTX *ctx;
+  EVP_CIPHER_CTX *ctx;
 };
 
 #endif
-
