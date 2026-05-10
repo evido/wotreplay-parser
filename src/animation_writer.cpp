@@ -1,7 +1,10 @@
 #include "animation_writer.h"
 #include "gd.h"
+#include "gdfontl.h"
 #include "gdfontt.h"
 #include "logger.h"
+#include <cstddef>
+#include <cstdint>
 #include <numbers>
 
 using namespace wotreplay;
@@ -73,31 +76,40 @@ animation_writer_t::create_background_frame(const game_t &game) const {
   int r = gdImageColorAllocate(result, 0xFF, 0x00, 0x00);
   int g = gdImageColorAllocate(result, 0x00, 0xFF, 0x00);
   int b = gdImageColorAllocate(result, 0x00, 0x00, 0xFF);
-  int t = gdImageColorAllocate(result, 0x01, 0x01, 0x01);
   int w = gdImageColorAllocate(result, 0xFF, 0xFF, 0xFF);
   int cyan = gdImageColorAllocate(result, 0x00, 0xFF, 0xFF);
 
-  if (no_basemap)
+  if (no_basemap) {
+    int t = gdImageColorAllocate(result, 0x01, 0x01, 0x01);
     gdImageFill(result, 0, 0, t);
-
-  gdImageColorTransparent(result, t);
+    gdImageColorTransparent(result, t);
+  }
 
   return result;
 }
 
+void animation_writer_t::set_max_history(int max_history) {
+  this->max_history = max_history;
+}
+
 gdImagePtr animation_writer_t::create_frame(const game_t &game,
-                                            gdImagePtr background) const {
-  gdImagePtr frame = gdImageCreate(this->image_width, this->image_height);
+                                            gdImagePtr background,
+                                            float clock) const {
+  gdImagePtr frame =
+      gdImageCreate(gdImageSX(background), gdImageSY(background));
 
   gdImagePaletteCopy(frame, background);
-  gdImageCopy(frame, background, 0, 0, 0, 0, this->image_width,
-              this->image_height);
+  gdImageCopy(frame, background, 0, 0, 0, 0, gdImageSX(frame),
+              gdImageSY(frame));
 
   int r = gdImageColorExact(frame, 0xFF, 0x00, 0x00);
   int g = gdImageColorExact(frame, 0x00, 0xFF, 0x00);
   int b = gdImageColorExact(frame, 0x00, 0x00, 0xFF);
   int w = gdImageColorExact(frame, 0xFF, 0xFF, 0xFF);
   int cyan = gdImageColorExact(frame, 0x00, 0xFF, 0xFF);
+
+  gdImageString(frame, gdFontLarge, 10, 10,
+                (uint8_t *)std::format("{}", clock).c_str(), cyan);
 
   int recorder_team = game.get_team_id(game.get_recorder_id());
   int recorder_id = game.get_recorder_id();
@@ -122,11 +134,18 @@ gdImagePtr animation_writer_t::create_frame(const game_t &game,
       c = r;
     }
 
-    // for (auto &pos : positions) {
-    //     auto [x, y] = get_2d_coord(pos, this->arena.bounding_box,
-    //     this->image_width, this->image_height); gdImageSetPixel(frame, x, y,
-    //     c);
-    // }
+    int history_pos = 0;
+    for (auto it = positions.rbegin(); it != positions.rend(); it++) {
+      if (max_history != -1 && history_pos >= max_history) {
+        break;
+      }
+
+      auto [x, y] = get_2d_coord(*it, this->arena.bounding_box,
+                                 this->image_width, this->image_height);
+      gdImageSetPixel(frame, x, y, c);
+
+      history_pos += 1;
+    }
 
     auto [x, y] = get_2d_coord(positions.back(), this->arena.bounding_box,
                                this->image_width, this->image_height);
@@ -137,30 +156,6 @@ gdImagePtr animation_writer_t::create_frame(const game_t &game,
                   (uint8_t *)player_id_str.c_str(), c);
 
     if (packets.contains(track.first)) {
-      // gdImageLine(
-      //         frame,
-      //         x,
-      //         y,
-      //         x + TURRET_LINE_LENGTH *
-      //         std::cos(packets.at(track.first).back().get_data_field<float>(40)
-      //         - std::numbers::pi / 2), y + TURRET_LINE_LENGTH *
-      //         std::sin(packets.at(track.first).back().get_data_field<float>(40)
-      //         - std::numbers::pi / 2),
-      //         r
-      // );
-
-      // gdImageLine(
-      //         frame,
-      //         x,
-      //         y,
-      //         x + TURRET_LINE_LENGTH *
-      //         std::cos(packets.at(track.first).back().get_data_field<float>(44)
-      //         - std::numbers::pi / 2), y + TURRET_LINE_LENGTH *
-      //         std::sin(packets.at(track.first).back().get_data_field<float>(44)
-      //         - std::numbers::pi / 2),
-      //         g
-      // );
-
       gdImageLine(
           frame, x, y,
           x + TURRET_LINE_LENGTH *
@@ -185,7 +180,9 @@ gdImagePtr animation_writer_t::create_frame(const game_t &game,
     }
   }
 
-  gdImageColorTransparent(frame, gdImageGetTransparent(background));
+  if (no_basemap) {
+    gdImageColorTransparent(frame, gdImageGetTransparent(background));
+  }
 
   return frame;
 }
@@ -208,14 +205,11 @@ void animation_writer_t::update(const game_t &game) {
   draw_basemap();
 
   gdImagePtr previous = NULL, background = create_background_frame(game),
-             frame = create_frame(game, background);
+             frame = create_frame(game, background, 0.f);
 
   float window_start = 0.f;
 
   gdImageGifAnimBeginCtx(background, ctx, 1, 0);
-  gdImageGifAnimAddCtx(background, ctx, 0, 0, 0, 10, gdDisposalNone, NULL);
-
-  previous = frame;
 
   const auto &packets = game.get_packets();
 
@@ -226,15 +220,20 @@ void animation_writer_t::update(const game_t &game) {
   float df = 1.f / frame_rate;
   float dm = 1.f / model_update_rate;
 
+  int frame_nr = 0;
   while (ix < total_packets) {
+    frame_nr += 1;
+
     for (float ds = 0; ds < df && ix < total_packets; ds += dm) {
       window_start = packets[ix].clock();
       ix = this->update_model(game, window_start, dm, ix);
     }
 
-    frame = create_frame(game, background);
+    frame = create_frame(game, background, window_start);
 
-    gdImageGifAnimAddCtx(frame, ctx, 0, 0, 0, (int)100 * df, gdDisposalNone,
+    logger.writef(log_level_t::debug, "generating gif frame frame_nr=%1%\n",
+                  frame_nr);
+    gdImageGifAnimAddCtx(frame, ctx, 0, 0, 0, (int)(100 * df), gdDisposalNone,
                          previous);
 
     if (previous)
@@ -254,7 +253,7 @@ void animation_writer_t::update(const game_t &game) {
 void animation_writer_t::init(const arena_t &arena, const std::string &mode) {
   image_writer_t::init(arena, mode);
 
-  ctx = gdNewDynamicCtxEx(2048, NULL, 1);
+  ctx = gdNewDynamicCtx(100 * 1024 * 1024, NULL);
 }
 
 void animation_writer_t::finish() {}

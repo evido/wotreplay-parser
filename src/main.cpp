@@ -148,6 +148,7 @@ void apply_settings(animation_writer_t *const writer,
                     const po::variables_map &vm) {
   writer->set_model_update_rate(vm["model-update-rate"].as<int>());
   writer->set_frame_rate(vm["frame-rate"].as<int>());
+  writer->set_max_history(vm["max-history"].as<int>());
 }
 
 void apply_settings(json_writer_t *const writer, const po::variables_map &vm) {
@@ -499,49 +500,44 @@ int process_replay_file(const po::variables_map &vm, const std::string &input,
 int main(int argc, const char *argv[]) {
   po::options_description desc("Allowed options");
 
-  std::string type, output, input, root, rules, meta;
+  std::string type, output, input, root, rules;
   double skip, bounds_min, bounds_max;
-  int size, frame_rate, model_rate, map_size;
+  int size, frame_rate, model_rate, map_size, max_history;
 
 #ifdef ENABLE_TBB
   int tokens = 10;
 #endif
 
-  desc.add_options()("type", po::value(&type), "select output type")(
-      "output", po::value(&output), "output file or directory")(
-      "input", po::value(&input), "input file or directory")(
-      "root", po::value(&root), "set root directory")(
-      "help", "produce help message")("debug", "enable parser debugging")(
-      "supress-empty", "supress empty packets from json output")(
-      "create-minimaps", "create all empty minimaps in output directory")(
-      "parse", "parse a replay file")("quiet", "supress diagnostic messages")(
-      "skip", po::value(&skip)->default_value(60., "60"),
-      "for heatmaps, skip a certain number of seconds after the start of the "
-      "battle")("bounds-min",
-                po::value(&bounds_min)->default_value(0.02, "0.02"),
-                "for heatmaps, set min value to display")(
-      "bounds-max", po::value(&bounds_max)->default_value(0.98, "0.98"),
-      "for heatmaps, set max value to display")(
-      "size", po::value(&size)->default_value(512),
-      "output image size for image writers")(
-      "rules",
-      po::value(&rules)->default_value(
-          "#ff0000 := team = '1'; #00ff00 := team = '0'"),
-      "specify drawing rules, allowing the user to choose the colors used")(
-      "parse-rules", "parse rules only and print parsed expression")(
-      "overlay", "generate overlay, don't draw basemap in output image")(
-      "frame-rate", po::value(&frame_rate)->default_value(10),
-      "set gif frame rate")("model-update-rate",
-                            po::value(&model_rate)->default_value(100),
-                            "set model update rate")(
-      "version", "display version")("blitz", "parse as world of tanks blitz")(
-      "meta", po::value(&meta)->default_value(""), "meta file for blitz")(
-      "map-size", po::value(&map_size)->default_value(500), "map size")
+  // clang-format off
+  desc.add_options()
+      ("type", po::value(&type), "select output type")
+      ("output", po::value(&output), "output file or directory")
+      ("input", po::value(&input), "input file or directory")
+      ("root", po::value(&root), "set root directory")
+      ("help", "produce help message")
+      ("debug", "enable parser debugging")
+      ("supress-empty", "supress empty packets from json output")
+      ("create-minimaps", "create all empty minimaps in output directory")
+      ("parse", "parse a replay file")
+      ("quiet", "supress diagnostic messages")
+      ("skip", po::value(&skip)->default_value(60., "60"), "for heatmaps, skip a certain number of seconds after the start of the battle")
+      ("bounds-min", po::value(&bounds_min)->default_value(0.02, "0.02"), "for heatmaps, set min value to display")
+      ("bounds-max", po::value(&bounds_max)->default_value(0.98, "0.98"), "for heatmaps, set max value to display")
+      ("size", po::value(&size)->default_value(512), "output image size for image writers")
+      ("rules", po::value(&rules)->default_value( "#ff0000 := team = '1'; #00ff00 := team = '0'"), "specify drawing rules, allowing the user to choose the colors used")
+      ("parse-rules", "parse rules only and print parsed expression")
+      ("overlay", "generate overlay, don't draw basemap in output image") 
+      ("frame-rate", po::value(&frame_rate)->default_value(10), "set gif frame rate")
+      ("model-update-rate", po::value(&model_rate)->default_value(100), "set model update rate")
+      ("version", "display version")
+      ("blitz", "parse as world of tanks blitz")
+      ("map-size", po::value(&map_size)->default_value(500), "map size")
+      ("max-history", po::value(&map_size)->default_value(100), "max history")
 #ifdef ENABLE_TBB
-      ("tokens", po::value(&tokens)->default_value(10),
-       "number of pipeline tokens")
+      ("tokens", po::value(&tokens)->default_value(10), "number of pipeline tokens")
 #endif
       ;
+  // clang-format on
 
   po::variables_map vm;
 
