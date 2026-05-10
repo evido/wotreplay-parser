@@ -3,6 +3,7 @@
 #include "arena.h"
 #include "cipher_context.h"
 #include "logger.h"
+#include "packet.h"
 #include "packet_reader.h"
 #include "packet_reader_80.h"
 #include "parser.h"
@@ -62,7 +63,32 @@ parser_t::parser_t(std::unique_ptr<packet_reader_t> &&packet_reader, load_data_m
 
 void parser_t::parse(std::istream &is, wotreplay::game_t &game, bool raw) {
     buffer_t buffer((std::istreambuf_iterator<char>(is)), std::istreambuf_iterator<char>());
+
     parse(buffer, game, raw);
+
+    std::map<int, int> groups;
+    for (const auto &p : game.packets) {
+        if (p.type() == 0x01) {
+            groups[p.player_id()] = -1;
+            game.recorder_id = p.recorder_id();
+        } 
+
+        if (!p.has_property(property_t::position)) {
+            continue;
+        }
+
+        if (!groups.contains(p.player_id())) {
+            groups[p.player_id()] = (groups.size() < 8) ? 1 : 2;
+        }
+    }
+
+    for (const auto &p : groups) {
+        if (p.second < 0) {
+            continue;
+        }
+
+        game.teams[p.second - 1].emplace(p.first);
+    }
 }
 
 void parser_t::parse(buffer_t &buffer, wotreplay::game_t &game, bool raw) {

@@ -8,9 +8,26 @@
 #include <stdint.h>
 #include <tuple>
 
+#include "logger.h"
+
 /** @file packet.h */
 
 namespace wotreplay {
+
+    /**
+     * @fn template<typename U, typename T> const U & wot::get_field(T begin, T end, size_t offset)
+     * @brief Gets a field with the specified type from an iterator range.
+     * @param begin Start of the iterator range
+     * @param end End of the iterator range
+     * @param offset The offset of the value to return in the iterator range
+     * @return The requested value.
+     */
+    template <typename U, typename T>
+    const U &get_field(T begin, T end, size_t offset) {
+        assert((offset + sizeof(U)) <= std::distance(begin, end));
+        return *reinterpret_cast<const U*>(&*(begin + offset));
+    }
+
     
     /**
      * @enum wotreplay::property_t
@@ -34,6 +51,7 @@ namespace wotreplay {
         alt_track_state,
         length,
         map_name,
+        recorder_id,
         property_nr_items,
     };
 
@@ -61,12 +79,15 @@ namespace wotreplay {
         float clock() const;
         /** @return The player_id value of this packet. */
         uint32_t player_id() const;
+        uint32_t recorder_id() const;
         /** @return The position value of this packet. */
         std::tuple<float, float, float> position() const;
         /** @return The hull orentation value of this packet. */
-        std::tuple<float, float, float> hull_orientation() const;
+        std::tuple<float, float, float> rotation() const;
         /** @return The turret orentation value of this packet. */
         float turret_orientation() const;
+        float hull_orientation2() const;
+        float direction() const;
         /** @return The remaining health of a player. */
         uint16_t health() const;
         /** @return The remaining health update source of a player. */
@@ -130,6 +151,11 @@ namespace wotreplay {
          */
         uint8_t alt_track_state() const;
         std::string map_name() const;
+
+        template <typename T>
+        const T &get_data_field(size_t offset) const {
+            return wotreplay::get_field<T>(data.begin(), data.end(), offset);
+        }
     private:
         /** An array containing the presence of each property. */
         std::array<bool, static_cast<size_t>(property_t::property_nr_items)> properties;
@@ -137,20 +163,6 @@ namespace wotreplay {
         slice_t data;
         bool blitz_packet;
     };
-
-    /**
-     * @fn template<typename U, typename T> const U & wot::get_field(T begin, T end, size_t offset)
-     * @brief Gets a field with the specified type from an iterator range.
-     * @param begin Start of the iterator range
-     * @param end End of the iterator range
-     * @param offset The offset of the value to return in the iterator range
-     * @return The requested value.
-     */
-    template <typename U, typename T>
-    const U &get_field(T begin, T end, size_t offset) {
-        assert((offset + sizeof(U)) <= std::distance(begin, end));
-        return *reinterpret_cast<const U*>(&*(begin + offset));
-    }
 
     /**
      * @fn std::string to_string(const packet_t &packet)

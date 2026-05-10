@@ -1,7 +1,9 @@
 #include "logger.h"
+#include "packet.h"
 #include "packet_reader_80.h"
 
 #include <boost/format.hpp>
+#include <numbers>
 
 using namespace wotreplay;
 

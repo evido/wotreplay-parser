@@ -89,11 +89,16 @@ void json_writer_t::update(const game_t &game) {
             positionValue.append(std::get<0>(position));
             positionValue.append(std::get<1>(position));
             positionValue.append(std::get<2>(position));
+
+            auto &orientationValue = value["orientation"] = Json::Value(Json::arrayValue);
+            orientationValue.append(packet.get_data_field<float>(40));
+            orientationValue.append(packet.get_data_field<float>(44));
+            orientationValue.append(packet.get_data_field<float>(48));
         }
+
 
         if (packet.has_property(property_t::map_name)) {
             value["map_name"] = packet.map_name();
-            logger.writef("%1%\n", packet.map_name());
         }
 
         // if (packet.has_property(property_t::tank_destroyed)) {
@@ -146,6 +151,11 @@ void json_writer_t::update(const game_t &game) {
         // if (packet.has_property(property_t::alt_track_state)) {
         //     value["alt_track_state"] = packet.alt_track_state();
         // }
+        
+        if (packet.has_property(property_t::turret_orientation)) {
+            value["turret_orientation"] = packet.turret_orientation();
+        }
+
     }
 }
 

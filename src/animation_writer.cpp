@@ -1,25 +1,46 @@
 #include "animation_writer.h"
+#include "gd.h"
+#include "gdfontt.h"
 #include "logger.h"
+#include <numbers>
 
 using namespace wotreplay;
+
+const int TURRET_LINE_LENGTH = 10;
 
 int animation_writer_t::update_model(const game_t &game, float window_start, float window_size, int packet_start) {
     int ix = packet_start;
     const auto &packets = game.get_packets();
-    std::map<int, std::tuple<float, float, float>> positions;
+    std::map<int, std::tuple<float, float, float>> tracks;
+    std::map<int, float> turrets;
+    std::map<int, float> hulls;
 
     float window_end = window_start + window_size;
 
     while (ix < packets.size() && (!packets[ix].has_property(property_t::clock) || packets[ix].clock() <= window_end)) {
         if (packets[ix].has_property(property_t::position)) {
-            positions[packets[ix].player_id()] = packets[ix].position();
+            tracks[packets[ix].player_id()] = packets[ix].position();
+            hulls[packets[ix].player_id()] = std::get<2>(packets[ix].rotation());
+            this->packets[packets[ix].player_id()].emplace_back(packets[ix]);
+        }
+
+        if (packets[ix].has_property(property_t::turret_orientation)) {
+            turrets[packets[ix].player_id()] = packets[ix].turret_orientation();
         }
 
         ix += 1;
     }
 
-    for (auto &it: positions) {
-        tracks[it.first].emplace_back(it.second);
+    for (auto &it: tracks) {
+        this->tracks[it.first].emplace_back(it.second);
+    }
+
+    for (auto &it: turrets) {
+        this->turrets[it.first].emplace_back(it.second);
+    }
+
+    for (auto &it: hulls) {
+        this->hulls[it.first].emplace_back(it.second);
     }
 
     return ix;
@@ -51,6 +72,7 @@ gdImagePtr animation_writer_t::create_background_frame(const game_t &game) const
     int b = gdImageColorAllocate(result, 0x00, 0x00, 0xFF);
     int t = gdImageColorAllocate(result, 0x01, 0x01, 0x01);
     int w = gdImageColorAllocate(result, 0xFF, 0xFF, 0xFF);
+    int cyan = gdImageColorAllocate(result, 0x00, 0xFF, 0xFF);
 
     if (no_basemap) gdImageFill(result, 0, 0, t);
 
@@ -69,13 +91,18 @@ gdImagePtr animation_writer_t::create_frame(const game_t &game, gdImagePtr backg
     int g = gdImageColorExact(frame, 0x00, 0xFF, 0x00);        
     int b = gdImageColorExact(frame, 0x00, 0x00, 0xFF);
     int w = gdImageColorExact(frame, 0xFF, 0xFF, 0xFF);
+    int cyan = gdImageColorExact(frame, 0x00, 0xFF, 0xFF);
 
     int recorder_team = game.get_team_id(game.get_recorder_id());
     int recorder_id = game.get_recorder_id();
 
     for (auto &track : tracks) {
         const auto &positions = track.second;
+
         int player_team = game.get_team_id(track.first);
+        if (player_team == -1) {
+            continue;
+        }
 
         int c;
 
@@ -89,10 +116,58 @@ gdImagePtr animation_writer_t::create_frame(const game_t &game, gdImagePtr backg
             c = r;
         }
 
-        for (auto &pos : positions) {
-            auto xy_pos = get_2d_coord(pos, this->arena.bounding_box, this->image_width, this->image_height);
-            gdImageSetPixel(frame, std::get<0>(xy_pos), std::get<1>(xy_pos), c);
+
+        // for (auto &pos : positions) {
+        //     auto [x, y] = get_2d_coord(pos, this->arena.bounding_box, this->image_width, this->image_height);
+        //     gdImageSetPixel(frame, x, y, c);
+        // }
+
+        auto [x, y] = get_2d_coord(positions.back(), this->arena.bounding_box, this->image_width, this->image_height);
+        gdImageFilledRectangle(frame, x - 1, y - 1, x + 1, y + 1, c);
+
+        auto player_id_str = std::format("{}", track.first);
+        gdImageString(frame, gdFontTiny, x - 50, y, (uint8_t*) player_id_str.c_str(), c);
+
+        if (packets.contains(track.first)) {
+            // gdImageLine(
+            //         frame, 
+            //         x, 
+            //         y, 
+            //         x + TURRET_LINE_LENGTH * std::cos(packets.at(track.first).back().get_data_field<float>(40) - std::numbers::pi / 2),
+            //         y + TURRET_LINE_LENGTH * std::sin(packets.at(track.first).back().get_data_field<float>(40) - std::numbers::pi / 2),
+            //         r
+            // );
+
+            // gdImageLine(
+            //         frame, 
+            //         x, 
+            //         y, 
+            //         x + TURRET_LINE_LENGTH * std::cos(packets.at(track.first).back().get_data_field<float>(44) - std::numbers::pi / 2),
+            //         y + TURRET_LINE_LENGTH * std::sin(packets.at(track.first).back().get_data_field<float>(44) - std::numbers::pi / 2),
+            //         g
+            // );
+
+            gdImageLine(
+                    frame, 
+                    x, 
+                    y, 
+                    x + TURRET_LINE_LENGTH * std::cos(packets.at(track.first).back().get_data_field<float>(48) - std::numbers::pi / 2),
+                    y + TURRET_LINE_LENGTH * std::sin(packets.at(track.first).back().get_data_field<float>(48) - std::numbers::pi / 2),
+                    cyan
+            );
         }
+
+        if (turrets.contains(track.first)) {
+            gdImageLine(
+                    frame, 
+                    x, 
+                    y, 
+                    x + TURRET_LINE_LENGTH * std::cos(turrets.at(track.first).back() - std::numbers::pi / 2),
+                    y + TURRET_LINE_LENGTH * std::sin(turrets.at(track.first).back() - std::numbers::pi / 2),
+                    w
+            );
+        }
+
     }
 
     gdImageColorTransparent(frame, gdImageGetTransparent(background));
