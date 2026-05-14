@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cstdint>
 #include <stdint.h>
 #include <tuple>
 
@@ -51,6 +52,7 @@ enum property_t {
     length,
     map_name,
     recorder_id,
+    player_name,
     property_nr_items,
 };
 
@@ -87,6 +89,8 @@ class packet_t {
     float turret_orientation() const;
     float hull_orientation2() const;
     float direction() const;
+    std::string player_name() const;
+    int8_t team_id() const;
     /** @return The remaining health of a player. */
     uint16_t health() const;
     /** @return The remaining health update source of a player. */

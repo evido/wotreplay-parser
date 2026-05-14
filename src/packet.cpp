@@ -118,6 +118,7 @@ void packet_t::set_data(const slice_t &data) {
     case 0x05:
         properties[static_cast<size_t>(property_t::clock)] = true;
         properties[static_cast<size_t>(property_t::player_id)] = true;
+        properties[static_cast<size_t>(property_t::player_name)] = this->data.size() > 54 && this->get_data_field<uint8_t>(54) == 0x12;
         break;
     case 0x0a:
         properties[static_cast<size_t>(property_t::position)] = true;
@@ -273,6 +274,17 @@ std::tuple<uint32_t, uint32_t, uint8_t> packet_t::tank_destroyed() const {
 std::string packet_t::message() const {
     size_t field_size = get_field<uint32_t>(data.begin(), data.end(), 12);
     return std::string(data.begin() + 16, data.begin() + 16 + field_size);
+}
+
+std::string packet_t::player_name() const {
+    assert(has_property(property_t::player_name));
+    size_t field_size = this->get_data_field<uint8_t>(69);
+    return std::string(data.begin() + 70, data.begin() + 70 + field_size);
+}
+
+int8_t packet_t::team_id() const {
+    assert(has_property(property_t::player_name));
+    return this->get_data_field<uint8_t>(66) > 0 ? 2 : 1;
 }
 
 uint32_t packet_t::length() const {

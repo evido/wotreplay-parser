@@ -11,6 +11,7 @@
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
 #include <cstdint>
+#include <exception>
 #include <map>
 #include <memory>
 #include <sstream>
@@ -127,18 +128,22 @@ void parser_t::parse(buffer_t &buffer, wotreplay::game_t &game, bool raw) {
 
     if (raw) {
         std::map<int, int> groups;
+        std::map<int, packet_t> player_info;
+
         for (const auto &p : game.packets) {
-            if (p.type() == 0x01) {
+            if (p.has_property(property_t::recorder_id)) {
                 groups[p.player_id()] = -1;
                 game.recorder_id = p.recorder_id();
             }
 
-            if (!p.has_property(property_t::position)) {
-                continue;
+            if (p.has_property(property_t::player_name)) {
+                player_info[p.player_id()] = p;
             }
 
-            if (!groups.contains(p.player_id())) {
-                groups[p.player_id()] = (groups.size() <= BLITZ_TEAM_SIZE) ? 1 : 2;
+            if (p.has_property(property_t::position)) {
+                if (!groups.contains(p.player_id())) {
+                    groups[p.player_id()] = (groups.size() <= BLITZ_TEAM_SIZE) ? 1 : 2;
+                }
             }
         }
 
@@ -147,12 +152,25 @@ void parser_t::parse(buffer_t &buffer, wotreplay::game_t &game, bool raw) {
                 continue;
             }
 
-            game.players[p.first] = {
+            player_t player = {
                 .player_id = (uint32_t)p.first,
                 .vehicle_id = (uint32_t)p.first,
                 .team = p.second,
-                .name = std::format("{}", p.first),
             };
+
+            if (player_info.contains(p.first)) {
+                const auto &player_data = player_info[(uint32_t)p.first];
+                player.name = player_info[p.first].player_name();
+                if (player_data.team_id() != player.team) {
+                    logger.writef(log_level_t::warning, "player_id=%1% mismatch guessed_team_id=%2% != player_data_team_id=%3%\n", p.first, player.team,
+                                  player_data.team_id());
+                }
+            } else {
+                logger.writef(log_level_t::warning, "player_id=%1% in player data\n", p.first);
+                player.name = std::format("{}", p.first);
+            }
+
+            game.players[p.first] = player;
             game.teams[p.second - 1].emplace(p.first);
         }
 

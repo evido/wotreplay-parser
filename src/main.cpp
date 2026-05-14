@@ -514,7 +514,7 @@ int main(int argc, const char *argv[]) {
     } else if (vm.count("quiet") > 0) {
         logger.set_log_level(log_level_t::none);
     } else {
-        logger.set_log_level(log_level_t::warning);
+        logger.set_log_level(log_level_t::info);
     }
 
     if (vm.count("parse-rules") > 0) {

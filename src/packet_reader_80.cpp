@@ -33,7 +33,11 @@ packet_t packet_reader_80_t::next() {
         logger.writef(wotreplay::log_level_t::debug, "player_id=%1% ", packet.player_id());
     }
 
-    logger.writef(wotreplay::log_level_t::debug, "size=%2% data=%2%\n", packet_size, packet);
+    if (packet.has_property(property_t::player_name)) {
+        logger.writef(wotreplay::log_level_t::debug, "player_name=%1% team_id=%2% ", packet.player_name(), packet.team_id());
+    }
+
+    logger.writef(wotreplay::log_level_t::debug, "size=%1% data=%2%\n", packet_size, packet);
 
     prev = pos;
     pos += packet_size;
