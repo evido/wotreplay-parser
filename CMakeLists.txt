@@ -81,6 +81,8 @@ add_library(wotreplay STATIC
 			src/tank.h
 			src/animation_writer.h
             src/cipher_context.h
+            src/fstream_ioctx.h
+            src/fstream_ioctx.cpp
 			src/packet.cpp 
 			src/packet_reader_80.cpp 
 			src/parser.cpp 

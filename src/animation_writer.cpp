@@ -1,10 +1,13 @@
 #include "animation_writer.h"
+#include "fstream_ioctx.h"
 #include "gd.h"
+#include "gd_io.h"
 #include "gdfontl.h"
 #include "gdfontt.h"
 #include "logger.h"
 #include <cstddef>
 #include <cstdint>
+#include <fstream>
 #include <numbers>
 #include <string>
 
@@ -30,10 +33,8 @@ int animation_writer_t::update_model(const game_t &game, float window_start, flo
             this->packets[packets[ix].player_id()].emplace_back(packets[ix]);
         }
 
-        if (show_turrets) {
-            if (packets[ix].has_property(property_t::turret_orientation)) {
-                turrets[packets[ix].player_id()] = packets[ix].turret_orientation();
-            }
+        if (packets[ix].has_property(property_t::turret_orientation)) {
+            turrets[packets[ix].player_id()] = packets[ix].turret_orientation();
         }
 
         ix += 1;
@@ -43,10 +44,8 @@ int animation_writer_t::update_model(const game_t &game, float window_start, flo
         this->tracks[it.first].emplace_back(it.second);
     }
 
-    if (show_turrets) {
-        for (auto &it : turrets) {
-            this->turrets[it.first].emplace_back(it.second);
-        }
+    for (auto &it : turrets) {
+        this->turrets[it.first].emplace_back(it.second);
     }
 
     for (auto &it : hulls) {
@@ -196,22 +195,25 @@ void animation_writer_t::update(const game_t &game) {
         logger.writef(log_level_t::debug, "generating gif frame frame_nr=%1%\n", frame_nr);
 
         if (!raw_images_path.empty()) {
-            FILE *f = fopen(std::format("{}/{:010}.png", raw_images_path, frame_nr).c_str(), "wb");
-            gdImagePng(frame, f);
-            fclose(f);
+            const auto file_name = std::format("{}/{:010}.png", raw_images_path, frame_nr);
+            std::ofstream of(file_name, std::ios::binary | std::ios::out);
+            OfstreamIOCtx ctx(of);
+            gdImagePngCtx(frame, (gdIOCtxPtr)&ctx);
         }
 
         gdImageTrueColorToPalette(frame, 1, 255);
-        gdImageGifAnimAddCtx(frame, ctx, 1, 0, 0, (int)(100 * df), gdDisposalRestoreBackground, previous);
+        gdImageGifAnimAddCtx(frame, ctx, 1, 0, 0, (int)(100 * df), gdDisposalNone, previous);
 
-        if (previous)
+        if (previous) {
             gdImageDestroy(previous);
+        }
 
         previous = frame;
     }
 
-    if (!frame)
+    if (frame) {
         gdImageDestroy(frame);
+    }
 
     gdImageDestroy(background);
 
