@@ -1,6 +1,5 @@
 #include "class_heatmap_writer.h"
 #include "image_util.h"
-#include "logger.h"
 
 #include <boost/algorithm/clamp.hpp>
 

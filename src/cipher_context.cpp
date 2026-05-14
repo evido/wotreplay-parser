@@ -1,6 +1,5 @@
 #include <openssl/err.h>
 #include <openssl/opensslv.h>
-#include <string>
 
 #include "cipher_context.h"
 

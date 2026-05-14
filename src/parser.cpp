@@ -5,7 +5,6 @@
 #include "logger.h"
 #include "packet.h"
 #include "packet_reader.h"
-#include "packet_reader_80.h"
 #include "parser.h"
 #include "tank.h"
 
@@ -69,6 +68,7 @@ void parser_t::parse(std::istream &is, wotreplay::game_t &game, bool raw) {
 void parser_t::parse(buffer_t &buffer, wotreplay::game_t &game, bool raw) {
     if (raw) {
         game.replay = buffer;
+        game.title = game_title_t::world_of_tanks_blitz;
     } else {
         // determine number of data blocks
         std::vector<slice_t> data_blocks;

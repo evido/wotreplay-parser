@@ -155,6 +155,7 @@ void animation_writer_t::write(std::ostream &os) {
     int size;
     void *data = gdDPExtractData(ctx, &size);
     os.write((const char *)data, size);
+    os.flush();
 }
 
 void animation_writer_t::set_model_update_rate(int model_update_rate) { this->model_update_rate = model_update_rate; }
@@ -192,7 +193,7 @@ void animation_writer_t::update(const game_t &game) {
 
         frame = create_frame(game, background, window_start);
 
-        logger.writef(log_level_t::debug, "generating gif frame frame_nr=%1%\n", frame_nr);
+        logger.writef(log_level_t::info, "generating gif frame frame_nr=%1%\n", frame_nr);
 
         if (!raw_images_path.empty()) {
             const auto file_name = std::format("{}/{:010}.png", raw_images_path, frame_nr);
@@ -228,7 +229,7 @@ void animation_writer_t::init(const arena_t &arena, const std::string &mode) {
     ctx = gdNewDynamicCtx(100 * 1024 * 1024, NULL);
 
     if (!raw_images_path.empty() && !boost::filesystem::exists(raw_images_path)) {
-        logger.writef("create raw images directory: %1%\n", raw_images_path);
+        logger.writef(log_level_t::info, "create raw images directory: %1%\n", raw_images_path);
         boost::filesystem::create_directory(raw_images_path);
     }
 }
