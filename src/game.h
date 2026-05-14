@@ -12,7 +12,11 @@
 /** @file */
 
 namespace wotreplay {
-enum game_title_t { world_of_tanks, world_of_warships, world_of_tanks_blitz };
+enum game_title_t {
+    world_of_tanks,
+    world_of_warships,
+    world_of_tanks_blitz
+};
 
 /**
  * The game version of a replay file

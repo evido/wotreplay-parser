@@ -10,10 +10,28 @@
 
 namespace wotreplay {
 /** operator types */
-enum operator_t { NOT_EQUAL, EQUAL, GREATER_THAN_OR_EQUAL, GREATER_THAN, LESS_THAN_OR_EQUAL, LESS_THAN, AND, OR };
+enum operator_t {
+    NOT_EQUAL,
+    EQUAL,
+    GREATER_THAN_OR_EQUAL,
+    GREATER_THAN,
+    LESS_THAN_OR_EQUAL,
+    LESS_THAN,
+    AND,
+    OR
+};
 
 /** symbol types */
-enum symbol_t { PLAYER, CLOCK, TEAM, TANK_ICON, TANK_NAME, TANK_TIER, TANK_CLASS, TANK_COUNTRY };
+enum symbol_t {
+    PLAYER,
+    CLOCK,
+    TEAM,
+    TANK_ICON,
+    TANK_NAME,
+    TANK_TIER,
+    TANK_CLASS,
+    TANK_COUNTRY
+};
 
 struct operation_t;
 

@@ -6,7 +6,13 @@
 #include <string>
 
 namespace wotreplay {
-enum log_level_t { none, error, warning, info, debug };
+enum log_level_t {
+    none,
+    error,
+    warning,
+    info,
+    debug
+};
 
 /**
  * basic logger class

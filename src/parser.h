@@ -19,7 +19,11 @@ namespace wotreplay {
  * @enum wotreplay::load_data_mode_t
  * @brief Options to modify data loading behaviour of the parser
  */
-enum load_data_mode_t { manual, on_demand, bulk };
+enum load_data_mode_t {
+    manual,
+    on_demand,
+    bulk
+};
 
 /** wotreplay::parser_t is a class responsible for parsing a World of Tanks
  * replay file.  */

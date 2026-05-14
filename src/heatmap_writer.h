@@ -6,7 +6,11 @@
 /** @file */
 
 namespace wotreplay {
-enum heatmap_mode_t { combined, team, team_soft };
+enum heatmap_mode_t {
+    combined,
+    team,
+    team_soft
+};
 
 /**
  * wotreplay::heatmap_writer_t draws a heatmap from wotreplay::packet_t on a
