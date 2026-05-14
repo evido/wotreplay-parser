@@ -11,16 +11,16 @@ namespace wotreplay {
  * tank information
  */
 struct tank_t {
-  int country_id;
-  std::string country_name;
-  int tank_id;
-  std::string name;
-  int comp_desc;
-  std::string icon;
-  int class_id;
-  std::string class_name;
-  int tier;
-  int active;
+    int country_id;
+    std::string country_name;
+    int tank_id;
+    std::string name;
+    int comp_desc;
+    std::string icon;
+    int class_id;
+    std::string class_name;
+    int tier;
+    int active;
 };
 
 /**

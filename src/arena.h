@@ -22,10 +22,10 @@ namespace wotreplay {
  * and upper right corner
  */
 struct bounding_box_t {
-  /** bottom left corner of the bounding box */
-  std::tuple<float, float> bottom_left;
-  /** upper right corner of the bounding box */
-  std::tuple<float, float> upper_right;
+    /** bottom left corner of the bounding box */
+    std::tuple<float, float> bottom_left;
+    /** upper right corner of the bounding box */
+    std::tuple<float, float> upper_right;
 };
 
 /**
@@ -33,14 +33,14 @@ struct bounding_box_t {
  * spawn points, control poins and base points
  */
 struct arena_configuration_t {
-  /** control point in ctf mode */
-  std::tuple<float, float> control_point;
-  /** spawn points for the teams */
-  std::map<int, std::vector<std::tuple<float, float>>> team_spawn_points;
-  /** base position for the teams */
-  std::map<int, std::vector<std::tuple<float, float>>> team_base_positions;
-  /** game type */
-  std::string mode;
+    /** control point in ctf mode */
+    std::tuple<float, float> control_point;
+    /** spawn points for the teams */
+    std::map<int, std::vector<std::tuple<float, float>>> team_spawn_points;
+    /** base position for the teams */
+    std::map<int, std::vector<std::tuple<float, float>>> team_base_positions;
+    /** game type */
+    std::string mode;
 };
 
 /**
@@ -48,14 +48,14 @@ struct arena_configuration_t {
  * and its available game modes
  */
 struct arena_t {
-  /** maps available game modes to configuration */
-  std::map<std::string, arena_configuration_t> configurations;
-  /** arena name */
-  std::string name;
-  /** arena bounding box */
-  bounding_box_t bounding_box;
-  /** mini map path */
-  std::string mini_map;
+    /** maps available game modes to configuration */
+    std::map<std::string, arena_configuration_t> configurations;
+    /** arena name */
+    std::string name;
+    /** arena bounding box */
+    bounding_box_t bounding_box;
+    /** mini map path */
+    std::string mini_map;
 };
 
 /**

@@ -26,8 +26,7 @@ int mix(int v0, int v1, float a1, int v2, float a2);
  * @brief Extract row pointers from a boost::multi_array
  * @param row_pointers Out variable to store the row pointers.
  */
-void get_row_pointers(boost::multi_array<uint8_t, 3> &image,
-                      std::vector<png_bytep> &row_pointers);
+void get_row_pointers(boost::multi_array<uint8_t, 3> &image, std::vector<png_bytep> &row_pointers);
 
 /**
  * @fn void read_mini_map(const std::string &map_name, const std::string
@@ -37,8 +36,7 @@ void get_row_pointers(boost::multi_array<uint8_t, 3> &image,
  * @param game_mode The game mode.
  * @param base Output variable to store the contents of the image.
  */
-void read_mini_map(const std::string &map_name, const std::string &game_mode,
-                   boost::multi_array<uint8_t, 3> &base);
+void read_mini_map(const std::string &map_name, const std::string &game_mode, boost::multi_array<uint8_t, 3> &base);
 
 /**
  * @fn void read_png(std::istream &is, boost::multi_array<uint8_t, 3> &image)
@@ -63,8 +61,7 @@ bool write_png(std::ostream &os, boost::multi_array<uint8_t, 3> &image);
  * @param height the height of the new image
  * @param result the new image
  */
-void resize(boost::multi_array<uint8_t, 3> &original, int width, int height,
-            boost::multi_array<uint8_t, 3> &result);
+void resize(boost::multi_array<uint8_t, 3> &original, int width, int height, boost::multi_array<uint8_t, 3> &result);
 } // namespace wotreplay
 
 #endif /* defined(wotreplay__image_util) */
