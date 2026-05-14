@@ -17,6 +17,7 @@
 #include <boost/format.hpp>
 #include <boost/program_options.hpp>
 #include <boost/tokenizer.hpp>
+#include <memory>
 
 #ifdef ENABLE_TBB
 #include <tbb/flow_graph.h>
@@ -149,6 +150,12 @@ void apply_settings(animation_writer_t *const writer,
   writer->set_model_update_rate(vm["model-update-rate"].as<int>());
   writer->set_frame_rate(vm["frame-rate"].as<int>());
   writer->set_max_history(vm["max-history"].as<int>());
+  writer->set_show_turrets(vm.count("blitz") > 0);
+  writer->set_show_orientation(vm.count("blitz") > 0);
+
+  if (vm.count("raw-images-path") > 0) {
+    writer->set_raw_images_path(vm["raw-images-path"].as<std::string>());
+  }
 }
 
 void apply_settings(json_writer_t *const writer, const po::variables_map &vm) {
@@ -173,7 +180,7 @@ std::unique_ptr<writer_t> create_writer(const std::string &type,
     apply_settings(dynamic_cast<json_writer_t *>(writer.get()), vm);
   } else if (type == "heatmap" || type == "team-heatmap" ||
              type == "team-heatmap-soft") {
-    writer = std::unique_ptr<writer_t>(new heatmap_writer_t());
+    writer = std::make_unique<heatmap_writer_t>();
     auto &heatmap_writer = dynamic_cast<heatmap_writer_t &>(*writer);
 
     if (type == "heatmap") {
@@ -418,13 +425,11 @@ int process_replay_file(const po::variables_map &vm, const std::string &input,
     return EX_SOFTWARE;
   }
 
-  std::unique_ptr<packet_reader_t> packet_reader;
+  std::unique_ptr<packet_reader_80_t> packet_reader =
+      std::make_unique<packet_reader_80_t>();
 
   if (vm.count("blitz") > 0) {
-    packet_reader.reset(new packet_reader_80_t());
-    ((packet_reader_80_t *)packet_reader.get())->init_pos = 80;
-  } else {
-    packet_reader.reset(new packet_reader_80_t());
+    packet_reader->init_pos = 80;
   }
 
   parser_t parser(std::move(packet_reader), load_data_mode_t::on_demand, debug);
@@ -443,30 +448,16 @@ int process_replay_file(const po::variables_map &vm, const std::string &input,
     }
 
     if (vm.count("blitz") > 0) {
-      int map_size = vm.at("map-size").as<int>();
+      int map_size = vm["map-size"].as<int>();
+      auto &arena = const_cast<arena_t &>(game.get_arena());
 
-      auto packet =
-          std::find_if(game.get_packets().begin(), game.get_packets().end(),
-                       [](const packet_t &packet) {
-                         return packet.has_property(property_t::map_name);
-                       });
-
-      assert(game.get_packets().end() != packet);
-
-      const arena_t arena = {
-          {},
-          packet->map_name(),
-          {{-map_size, -map_size}, {map_size, map_size}},
-          std::filesystem::path(vm["root"].as<std::string>())
-              .append("blitz")
-              // trim spaces/ from map name
-              .append(packet->map_name().substr(7) + ".png"),
+      arena.bounding_box = {
+          {-map_size, -map_size},
+          {map_size, map_size},
       };
-
-      writer->init(arena, "");
-    } else {
-      writer->init(game.get_arena(), game.get_game_mode());
     }
+
+    writer->init(game.get_arena(), game.get_game_mode());
 
     writer->update(game);
     writer->finish();
@@ -501,8 +492,6 @@ int main(int argc, const char *argv[]) {
   po::options_description desc("Allowed options");
 
   std::string type, output, input, root, rules;
-  double skip, bounds_min, bounds_max;
-  int size, frame_rate, model_rate, map_size, max_history;
 
 #ifdef ENABLE_TBB
   int tokens = 10;
@@ -520,19 +509,20 @@ int main(int argc, const char *argv[]) {
       ("create-minimaps", "create all empty minimaps in output directory")
       ("parse", "parse a replay file")
       ("quiet", "supress diagnostic messages")
-      ("skip", po::value(&skip)->default_value(60., "60"), "for heatmaps, skip a certain number of seconds after the start of the battle")
-      ("bounds-min", po::value(&bounds_min)->default_value(0.02, "0.02"), "for heatmaps, set min value to display")
-      ("bounds-max", po::value(&bounds_max)->default_value(0.98, "0.98"), "for heatmaps, set max value to display")
-      ("size", po::value(&size)->default_value(512), "output image size for image writers")
+      ("skip", po::value<double>()->default_value(60., "60"), "for heatmaps, skip a certain number of seconds after the start of the battle")
+      ("bounds-min", po::value<double>()->default_value(0.02, "0.02"), "for heatmaps, set min value to display")
+      ("bounds-max", po::value<double>()->default_value(0.98, "0.98"), "for heatmaps, set max value to display")
+      ("size", po::value<int>()->default_value(512), "output image size for image writers")
       ("rules", po::value(&rules)->default_value( "#ff0000 := team = '1'; #00ff00 := team = '0'"), "specify drawing rules, allowing the user to choose the colors used")
       ("parse-rules", "parse rules only and print parsed expression")
       ("overlay", "generate overlay, don't draw basemap in output image") 
-      ("frame-rate", po::value(&frame_rate)->default_value(10), "set gif frame rate")
-      ("model-update-rate", po::value(&model_rate)->default_value(100), "set model update rate")
+      ("frame-rate", po::value<int>()->default_value(10), "set gif frame rate")
+      ("model-update-rate", po::value<int>()->default_value(100), "set model update rate")
       ("version", "display version")
       ("blitz", "parse as world of tanks blitz")
-      ("map-size", po::value(&map_size)->default_value(500), "map size")
-      ("max-history", po::value(&map_size)->default_value(100), "max history")
+      ("map-size", po::value<int>()->default_value(500), "map size")
+      ("max-history", po::value<int>()->default_value(100), "max history")
+      ("raw-images-path", po::value<std::string>(), "raw images path")
 #ifdef ENABLE_TBB
       ("tokens", po::value(&tokens)->default_value(10), "number of pipeline tokens")
 #endif

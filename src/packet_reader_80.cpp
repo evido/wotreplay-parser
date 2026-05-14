@@ -3,7 +3,6 @@
 #include "packet.h"
 
 #include <boost/format.hpp>
-#include <numbers>
 
 using namespace wotreplay;
 
@@ -30,8 +29,15 @@ packet_t packet_reader_80_t::next() {
   packet_t packet(boost::make_iterator_range(packet_begin, packet_end),
                   this->init_pos != 0);
 
-  logger.writef(wotreplay::log_level_t::debug,
-                "[%2%] type=0x%1$02X size=%3% data=%4%\n", packet.type(), pos,
+  logger.writef(wotreplay::log_level_t::debug, "[%1%] type=0x%2$02X ", pos,
+                packet.type());
+
+  if (packet.has_property(property_t::player_id)) {
+    logger.writef(wotreplay::log_level_t::debug, "player_id=%1% ",
+                  packet.player_id());
+  }
+
+  logger.writef(wotreplay::log_level_t::debug, "size=%2% data=%2%\n",
                 packet_size, packet);
 
   prev = pos;

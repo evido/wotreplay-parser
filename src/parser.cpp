@@ -11,6 +11,7 @@
 
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <sstream>
@@ -66,39 +67,19 @@ parser_t::parser_t(std::unique_ptr<packet_reader_t> &&packet_reader,
   }
 }
 
+const int BLITZ_TEAM_SIZE = 7;
+
 void parser_t::parse(std::istream &is, wotreplay::game_t &game, bool raw) {
   buffer_t buffer((std::istreambuf_iterator<char>(is)),
                   std::istreambuf_iterator<char>());
 
   parse(buffer, game, raw);
-
-  std::map<int, int> groups;
-  for (const auto &p : game.packets) {
-    if (p.type() == 0x01) {
-      groups[p.player_id()] = -1;
-      game.recorder_id = p.recorder_id();
-    }
-
-    if (!p.has_property(property_t::position)) {
-      continue;
-    }
-
-    if (!groups.contains(p.player_id())) {
-      groups[p.player_id()] = (groups.size() < 8) ? 1 : 2;
-    }
-  }
-
-  for (const auto &p : groups) {
-    if (p.second < 0) {
-      continue;
-    }
-
-    game.teams[p.second - 1].emplace(p.first);
-  }
 }
 
 void parser_t::parse(buffer_t &buffer, wotreplay::game_t &game, bool raw) {
-  if (!raw) {
+  if (raw) {
+    game.replay = buffer;
+  } else {
     // determine number of data blocks
     std::vector<slice_t> data_blocks;
     buffer_t raw_replay;
@@ -162,11 +143,55 @@ void parser_t::parse(buffer_t &buffer, wotreplay::game_t &game, bool raw) {
     std::string version(game.replay.begin() + 16,
                         game.replay.begin() + 16 + version_string_sz);
     game.version = version;
-  } else {
-    game.replay = buffer;
   }
 
   read_packets(game);
+
+  if (raw) {
+    std::map<int, int> groups;
+    for (const auto &p : game.packets) {
+      if (p.type() == 0x01) {
+        groups[p.player_id()] = -1;
+        game.recorder_id = p.recorder_id();
+      }
+
+      if (!p.has_property(property_t::position)) {
+        continue;
+      }
+
+      if (!groups.contains(p.player_id())) {
+        groups[p.player_id()] = (groups.size() <= BLITZ_TEAM_SIZE) ? 1 : 2;
+      }
+    }
+
+    for (const auto &p : groups) {
+      if (p.second < 0) {
+        continue;
+      }
+
+      game.players[p.first] = {
+          .player_id = (uint32_t)p.first,
+          .vehicle_id = (uint32_t)p.first,
+          .team = p.second,
+          .name = std::format("{}", p.first),
+      };
+      game.teams[p.second - 1].emplace(p.first);
+    }
+
+    auto packet =
+        std::find_if(game.get_packets().begin(), game.get_packets().end(),
+                     [](const packet_t &packet) {
+                       return packet.has_property(property_t::map_name);
+                     });
+
+    assert(game.get_packets().end() != packet);
+
+    game.arena = {.configurations = {},
+                  .name = packet->map_name(),
+                  .bounding_box = {},
+                  .mini_map = std::format("./blitz/{}.png",
+                                          packet->map_name().substr(7))};
+  }
 
   if (debug) {
     show_packet_summary(game.get_packets());
@@ -353,11 +378,11 @@ void parser_t::read_player_info(game_t &game) {
   std::string doc(game.player_info.begin(), game.player_info.end());
   reader.parse(doc, root);
 
-  auto player_account_id =
-      root[0]["personal"]["avatar"]["accountDBID"].asString();
-  auto player_name = root[0]["players"][player_account_id]["name"].asString();
+  const auto player_account_id =
+      root[0]["personal"]["avatar"]["accountDBID"].asUInt();
 
-  auto vehicles = root[1];
+  const auto players = root[0]["players"];
+  const auto vehicles = root[0]["vehicles"];
 
   // if (vehicles.isArray()) {
   // 	// world of warships
@@ -385,18 +410,21 @@ void parser_t::read_player_info(game_t &game) {
   for (auto it = vehicles.begin(); it != vehicles.end(); ++it) {
     player_t player;
 
-    player.player_id = boost::lexical_cast<int>(it.key().asString());
-    player.name = (*it)["name"].asString();
-    player.team = (*it)["team"].asInt();
-    player.tank = (*it)["vehicleType"].asString();
-    player.tank = player.tank.substr(player.tank.find(':') + 1);
+    player.vehicle_id = boost::lexical_cast<int>(it.key().asString());
+    player.player_id = (*it)[0]["accountDBID"].asUInt();
+    player.name =
+        players[boost::lexical_cast<std::string>(player.player_id)]["name"]
+            .asString();
+    player.team = (*it)[0]["team"].asUInt();
+    // player.tank = (*it)["vehicleType"].asString();
+    // player.tank = player.tank.substr(player.tank.find(':') + 1);
 
-    if (player.name == player_name) {
-      game.recorder_id = player.player_id;
+    if (player.player_id == player_account_id) {
+      game.recorder_id = player.vehicle_id;
     }
 
-    game.players[player.player_id] = player;
-    game.teams[player.team - 1].insert(player.player_id);
+    game.players[player.vehicle_id] = player;
+    game.teams[player.team - 1].insert(player.vehicle_id);
   }
 
   game.title = game_title_t::world_of_tanks;

@@ -23,7 +23,10 @@ public:
   gdImagePtr create_background_frame(const game_t &game) const;
   virtual void set_frame_rate(int frame_rate);
   virtual void set_model_update_rate(int model_update_rate);
-  virtual void set_max_history(int max_history);
+  void set_max_history(int max_history);
+  void set_raw_images_path(const std::string &raw_images_path);
+  void set_show_turrets(bool show_turrets);
+  void set_show_orientation(bool show_orientation);
 
 private:
   gdIOCtx *ctx;
@@ -33,6 +36,9 @@ private:
   std::map<int, std::deque<packet_t>> packets;
   int frame_rate, model_update_rate;
   int max_history;
+  std::string raw_images_path;
+  bool show_turrets;
+  bool show_orientation;
 };
 } // namespace wotreplay
 

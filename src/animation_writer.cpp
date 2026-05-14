@@ -6,6 +6,9 @@
 #include <cstddef>
 #include <cstdint>
 #include <numbers>
+#include <string>
+
+#include <boost/filesystem.hpp>
 
 using namespace wotreplay;
 
@@ -29,8 +32,10 @@ int animation_writer_t::update_model(const game_t &game, float window_start,
       this->packets[packets[ix].player_id()].emplace_back(packets[ix]);
     }
 
-    if (packets[ix].has_property(property_t::turret_orientation)) {
-      turrets[packets[ix].player_id()] = packets[ix].turret_orientation();
+    if (show_turrets) {
+      if (packets[ix].has_property(property_t::turret_orientation)) {
+        turrets[packets[ix].player_id()] = packets[ix].turret_orientation();
+      }
     }
 
     ix += 1;
@@ -40,8 +45,10 @@ int animation_writer_t::update_model(const game_t &game, float window_start,
     this->tracks[it.first].emplace_back(it.second);
   }
 
-  for (auto &it : turrets) {
-    this->turrets[it.first].emplace_back(it.second);
+  if (show_turrets) {
+    for (auto &it : turrets) {
+      this->turrets[it.first].emplace_back(it.second);
+    }
   }
 
   for (auto &it : hulls) {
@@ -53,36 +60,21 @@ int animation_writer_t::update_model(const game_t &game, float window_start,
 
 gdImagePtr
 animation_writer_t::create_background_frame(const game_t &game) const {
-  gdImagePtr result = NULL;
-
-  if (no_basemap) {
-    result = gdImageCreatePalette(this->image_width, this->image_height);
-  } else {
-    gdImagePtr frame =
-        gdImageCreateTrueColor(this->image_width, this->image_height);
-
-    auto shape = base.shape();
-    for (int i = 0; i < shape[0]; i += 1) {
-      for (int j = 0; j < shape[1]; j += 1) {
-        int c = gdTrueColor(base[i][j][0], base[i][j][1], base[i][j][2]);
-        gdImageSetPixel(frame, j, i, c);
-      }
-    }
-
-    result = gdImageCreatePaletteFromTrueColor(frame, 0, 150);
-    gdImageDestroy(frame);
-  }
-
-  int r = gdImageColorAllocate(result, 0xFF, 0x00, 0x00);
-  int g = gdImageColorAllocate(result, 0x00, 0xFF, 0x00);
-  int b = gdImageColorAllocate(result, 0x00, 0x00, 0xFF);
-  int w = gdImageColorAllocate(result, 0xFF, 0xFF, 0xFF);
-  int cyan = gdImageColorAllocate(result, 0x00, 0xFF, 0xFF);
+  gdImagePtr result =
+      gdImageCreateTrueColor(this->image_width, this->image_height);
 
   if (no_basemap) {
     int t = gdImageColorAllocate(result, 0x01, 0x01, 0x01);
     gdImageFill(result, 0, 0, t);
     gdImageColorTransparent(result, t);
+  } else {
+    auto shape = base.shape();
+    for (int i = 0; i < shape[0]; i += 1) {
+      for (int j = 0; j < shape[1]; j += 1) {
+        int c = gdTrueColor(base[i][j][0], base[i][j][1], base[i][j][2]);
+        gdImageSetPixel(result, j, i, c);
+      }
+    }
   }
 
   return result;
@@ -92,13 +84,16 @@ void animation_writer_t::set_max_history(int max_history) {
   this->max_history = max_history;
 }
 
+void animation_writer_t::set_show_orientation(bool show_orientation) {
+  this->show_orientation = show_orientation;
+}
+
 gdImagePtr animation_writer_t::create_frame(const game_t &game,
                                             gdImagePtr background,
                                             float clock) const {
   gdImagePtr frame =
-      gdImageCreate(gdImageSX(background), gdImageSY(background));
+      gdImageCreateTrueColor(gdImageSX(background), gdImageSY(background));
 
-  gdImagePaletteCopy(frame, background);
   gdImageCopy(frame, background, 0, 0, 0, 0, gdImageSX(frame),
               gdImageSY(frame));
 
@@ -151,11 +146,11 @@ gdImagePtr animation_writer_t::create_frame(const game_t &game,
                                this->image_width, this->image_height);
     gdImageFilledRectangle(frame, x - 1, y - 1, x + 1, y + 1, c);
 
-    auto player_id_str = std::format("{}", track.first);
+    const auto player_display_name = game.get_player(track.first).name;
     gdImageString(frame, gdFontTiny, x - 50, y,
-                  (uint8_t *)player_id_str.c_str(), c);
+                  (uint8_t *)player_display_name.c_str(), c);
 
-    if (packets.contains(track.first)) {
+    if (show_orientation && packets.contains(track.first)) {
       gdImageLine(
           frame, x, y,
           x + TURRET_LINE_LENGTH *
@@ -169,7 +164,7 @@ gdImagePtr animation_writer_t::create_frame(const game_t &game,
           cyan);
     }
 
-    if (turrets.contains(track.first)) {
+    if (show_turrets && turrets.contains(track.first)) {
       gdImageLine(
           frame, x, y,
           x + TURRET_LINE_LENGTH * std::cos(turrets.at(track.first).back() -
@@ -199,6 +194,10 @@ void animation_writer_t::set_model_update_rate(int model_update_rate) {
 
 void animation_writer_t::set_frame_rate(int frame_rate) {
   this->frame_rate = frame_rate;
+}
+
+void animation_writer_t::set_show_turrets(bool show_turrets) {
+  this->show_turrets = show_turrets;
 }
 
 void animation_writer_t::update(const game_t &game) {
@@ -233,8 +232,18 @@ void animation_writer_t::update(const game_t &game) {
 
     logger.writef(log_level_t::debug, "generating gif frame frame_nr=%1%\n",
                   frame_nr);
-    gdImageGifAnimAddCtx(frame, ctx, 0, 0, 0, (int)(100 * df), gdDisposalNone,
-                         previous);
+
+    if (!raw_images_path.empty()) {
+      FILE *f =
+          fopen(std::format("{}/{:010}.png", raw_images_path, frame_nr).c_str(),
+                "wb");
+      gdImagePng(frame, f);
+      fclose(f);
+    }
+
+    gdImageTrueColorToPalette(frame, 1, 255);
+    gdImageGifAnimAddCtx(frame, ctx, 1, 0, 0, (int)(100 * df),
+                         gdDisposalRestoreBackground, previous);
 
     if (previous)
       gdImageDestroy(previous);
@@ -250,10 +259,20 @@ void animation_writer_t::update(const game_t &game) {
   gdImageGifAnimEndCtx(ctx);
 }
 
+void animation_writer_t::set_raw_images_path(
+    const std::string &raw_images_path) {
+  this->raw_images_path = raw_images_path;
+}
+
 void animation_writer_t::init(const arena_t &arena, const std::string &mode) {
   image_writer_t::init(arena, mode);
 
   ctx = gdNewDynamicCtx(100 * 1024 * 1024, NULL);
+
+  if (!raw_images_path.empty() && !boost::filesystem::exists(raw_images_path)) {
+    logger.writef("create raw images directory: %1%\n", raw_images_path);
+    boost::filesystem::create_directory(raw_images_path);
+  }
 }
 
 void animation_writer_t::finish() {}

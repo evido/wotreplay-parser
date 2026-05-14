@@ -5,6 +5,7 @@
 #include "packet.h"
 #include "types.h"
 
+#include <cstdint>
 #include <set>
 #include <vector>
 
@@ -41,6 +42,7 @@ struct version_t {
  */
 struct player_t {
   uint32_t player_id;
+  uint32_t vehicle_id;
   int team;
   std::string name;
   std::string tank;
