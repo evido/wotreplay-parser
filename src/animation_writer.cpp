@@ -115,6 +115,7 @@ gdImagePtr animation_writer_t::create_frame(const game_t &game, gdImagePtr backg
             c = r;
         }
 
+        gdImageAlphaBlending(frame, gdEffectAlphaBlend);
         int history_pos = 0;
         for (auto it = positions.rbegin(); it != positions.rend(); it++) {
             if (max_history != -1 && history_pos >= max_history) {
@@ -122,10 +123,21 @@ gdImagePtr animation_writer_t::create_frame(const game_t &game, gdImagePtr backg
             }
 
             auto [x, y] = get_2d_coord(*it, this->arena.bounding_box, this->image_width, this->image_height);
-            gdImageSetPixel(frame, x, y, c);
+
+            float p = ((float) (history_pos) / (float) max_history);
+            int blend = gdImageColorAllocateAlpha(
+                    frame,
+                    gdTrueColorGetRed(c),
+                    gdTrueColorGetGreen(c),
+                    gdTrueColorGetBlue(c),
+                    128 * (p * p * p)
+                    );
+
+            gdImageSetPixel(frame, x, y, blend);
 
             history_pos += 1;
         }
+        gdImageAlphaBlending(frame, gdEffectReplace);
 
         auto [x, y] = get_2d_coord(positions.back(), this->arena.bounding_box, this->image_width, this->image_height);
         gdImageFilledRectangle(frame, x - 1, y - 1, x + 1, y + 1, c);
