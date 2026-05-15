@@ -107,9 +107,9 @@ void image_writer_t::draw_elements() {
                 draw_element(spawns[i], entry.second[i], mask);
             }
         }
-    }
 
-    draw_grid(base);
+        draw_grid(base);
+    }
 }
 
 void image_writer_t::draw_death(const packet_t &packet, const game_t &game) {

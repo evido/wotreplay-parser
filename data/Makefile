@@ -18,7 +18,7 @@ clean:
 	@rm -f convert-xml
 
 blitz/%.png:
-	@magick convert -size $(SIZE)x$(SIZE) $(BLITZ_INSTALL_PATH)/minimaps/$(notdir $(basename $@))/MiniMapSmall@2x.packed.webp -alpha on -resize $(SIZE)x$(SIZE) $@
+	@magick convert -crop 500x500+2+2 -size $(SIZE)x$(SIZE) $(BLITZ_INSTALL_PATH)/minimaps/$(notdir $(basename $@))/MiniMapSmall@2x.packed.webp -alpha on -resize $(SIZE)x$(SIZE) $@
 
 %.pkg:
 	@cp "$(WOT_INSTALL_PATH)/res/packages/$@" ./

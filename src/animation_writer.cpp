@@ -3,6 +3,8 @@
 #include "gd.h"
 #include "gd_io.h"
 #include "gdfontl.h"
+#include "gdfontmb.h"
+#include "gdfonts.h"
 #include "gdfontt.h"
 #include "logger.h"
 #include <cstddef>
@@ -95,6 +97,8 @@ gdImagePtr animation_writer_t::create_frame(const game_t &game, gdImagePtr backg
     int recorder_team = game.get_team_id(game.get_recorder_id());
     int recorder_id = game.get_recorder_id();
 
+    float f = image_width / (float)512;
+
     for (auto &track : tracks) {
         const auto &positions = track.second;
 
@@ -124,14 +128,8 @@ gdImagePtr animation_writer_t::create_frame(const game_t &game, gdImagePtr backg
 
             auto [x, y] = get_2d_coord(*it, this->arena.bounding_box, this->image_width, this->image_height);
 
-            float p = ((float) (history_pos) / (float) max_history);
-            int blend = gdImageColorAllocateAlpha(
-                    frame,
-                    gdTrueColorGetRed(c),
-                    gdTrueColorGetGreen(c),
-                    gdTrueColorGetBlue(c),
-                    128 * (p * p * p)
-                    );
+            float p = ((float)(history_pos) / (float)max_history);
+            int blend = gdImageColorAllocateAlpha(frame, gdTrueColorGetRed(c), gdTrueColorGetGreen(c), gdTrueColorGetBlue(c), 128 * (p * p * p));
 
             gdImageSetPixel(frame, x, y, blend);
 
@@ -140,19 +138,30 @@ gdImagePtr animation_writer_t::create_frame(const game_t &game, gdImagePtr backg
         gdImageAlphaBlending(frame, gdEffectReplace);
 
         auto [x, y] = get_2d_coord(positions.back(), this->arena.bounding_box, this->image_width, this->image_height);
-        gdImageFilledRectangle(frame, x - 1, y - 1, x + 1, y + 1, c);
+        gdImageFilledRectangle(frame, x - f * 1, y - f * 1, x + f * 1, y + f * 1, c);
 
         const auto player_display_name = game.get_player(track.first).name;
-        gdImageString(frame, gdFontTiny, x - 50, y, (uint8_t *)player_display_name.c_str(), c);
+
+        gdFontPtr nameFont;
+
+        if (image_width >= 1024) {
+            nameFont = gdFontMediumBold;
+        } else if (image_height >= 512) {
+            nameFont = gdFontSmall;
+        } else {
+            nameFont = gdFontTiny;
+        }
+
+        gdImageString(frame, nameFont, x - 50, y, (uint8_t *)player_display_name.c_str(), c);
 
         if (show_orientation && packets.contains(track.first)) {
-            gdImageLine(frame, x, y, x + TURRET_LINE_LENGTH * std::cos(packets.at(track.first).back().get_data_field<float>(48) - std::numbers::pi / 2),
-                        y + TURRET_LINE_LENGTH * std::sin(packets.at(track.first).back().get_data_field<float>(48) - std::numbers::pi / 2), cyan);
+            gdImageLine(frame, x, y, x + f * TURRET_LINE_LENGTH * std::cos(packets.at(track.first).back().get_data_field<float>(48) - std::numbers::pi / 2),
+                        y + f * TURRET_LINE_LENGTH * std::sin(packets.at(track.first).back().get_data_field<float>(48) - std::numbers::pi / 2), cyan);
         }
 
         if (show_turrets && turrets.contains(track.first)) {
-            gdImageLine(frame, x, y, x + TURRET_LINE_LENGTH * std::cos(turrets.at(track.first).back() - std::numbers::pi / 2),
-                        y + TURRET_LINE_LENGTH * std::sin(turrets.at(track.first).back() - std::numbers::pi / 2), w);
+            gdImageLine(frame, x, y, x + f * TURRET_LINE_LENGTH * std::cos(turrets.at(track.first).back() - std::numbers::pi / 2),
+                        y + f * TURRET_LINE_LENGTH * std::sin(turrets.at(track.first).back() - std::numbers::pi / 2), w);
         }
     }
 
