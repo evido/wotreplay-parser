@@ -155,13 +155,27 @@ gdImagePtr animation_writer_t::create_frame(const game_t &game, gdImagePtr backg
         gdImageString(frame, nameFont, x - 50, y, (uint8_t *)player_display_name.c_str(), c);
 
         if (show_orientation && packets.contains(track.first)) {
-            gdImageLine(frame, x, y, x + f * TURRET_LINE_LENGTH * std::cos(packets.at(track.first).back().get_data_field<float>(48) - std::numbers::pi / 2),
-                        y + f * TURRET_LINE_LENGTH * std::sin(packets.at(track.first).back().get_data_field<float>(48) - std::numbers::pi / 2), cyan);
+            const auto o = packets.at(track.first).back().hull_orientation2();
+
+            if (player_team == recorder_team) {
+                gdImageLine(frame, x, y, x + f * TURRET_LINE_LENGTH * std::cos(o - std::numbers::pi / 2),
+                            y + f * TURRET_LINE_LENGTH * std::sin(o - std::numbers::pi / 2), cyan);
+            } else {
+                gdImageLine(frame, x, y, x + f * TURRET_LINE_LENGTH * std::cos(o - std::numbers::pi / 2),
+                            y + f * TURRET_LINE_LENGTH * std::sin(o - std::numbers::pi / 2), cyan);
+            }
         }
 
         if (show_turrets && turrets.contains(track.first)) {
-            gdImageLine(frame, x, y, x + f * TURRET_LINE_LENGTH * std::cos(turrets.at(track.first).back() - std::numbers::pi / 2),
-                        y + f * TURRET_LINE_LENGTH * std::sin(turrets.at(track.first).back() - std::numbers::pi / 2), w);
+            const auto t = turrets.at(track.first).back();
+
+            if (player_team == recorder_team) {
+                gdImageLine(frame, x, y, x + f * TURRET_LINE_LENGTH * std::cos(t - std::numbers::pi / 2),
+                            y + f * TURRET_LINE_LENGTH * std::sin(t - std::numbers::pi / 2), w);
+            } else {
+                gdImageLine(frame, x, y, x + f * TURRET_LINE_LENGTH * std::cos(t - 3 * std::numbers::pi / 2),
+                            y + f * TURRET_LINE_LENGTH * std::sin(t - 3 * std::numbers::pi / 2), w);
+            }
         }
     }
 
@@ -185,6 +199,8 @@ void animation_writer_t::set_frame_rate(int frame_rate) { this->frame_rate = fra
 
 void animation_writer_t::set_show_turrets(bool show_turrets) { this->show_turrets = show_turrets; }
 
+void animation_writer_t::set_skip(double skip) { this->skip = skip; }
+
 void animation_writer_t::update(const game_t &game) {
     draw_basemap();
 
@@ -204,6 +220,7 @@ void animation_writer_t::update(const game_t &game) {
     float dm = 1.f / model_update_rate;
 
     int frame_nr = 0;
+    int rendered_frame_nr = 0;
     while (ix < total_packets) {
         frame_nr += 1;
 
@@ -212,9 +229,15 @@ void animation_writer_t::update(const game_t &game) {
             ix = this->update_model(game, window_start, dm, ix);
         }
 
+        if (window_start < skip) {
+            continue;
+        }
+
+        rendered_frame_nr += 1;
         frame = create_frame(game, background, window_start);
 
-        logger.writef(log_level_t::info, "generating gif frame frame_nr=%1%\n", frame_nr);
+        logger.writef(log_level_t::info, "generating gif frame frame_nr=%1% rendered_frame_nr=%2% window_start=%3%\n", frame_nr, rendered_frame_nr,
+                      window_start);
 
         if (!raw_images_path.empty()) {
             const auto file_name = std::format("{}/{:010}.png", raw_images_path, frame_nr);

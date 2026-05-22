@@ -25,6 +25,7 @@ class animation_writer_t : public image_writer_t {
     void set_raw_images_path(const std::string &raw_images_path);
     void set_show_turrets(bool show_turrets);
     void set_show_orientation(bool show_orientation);
+    void set_skip(double skip);
 
   private:
     gdIOCtx *ctx;
@@ -37,6 +38,7 @@ class animation_writer_t : public image_writer_t {
     std::string raw_images_path;
     bool show_turrets;
     bool show_orientation;
+    double skip;
 };
 } // namespace wotreplay
 
