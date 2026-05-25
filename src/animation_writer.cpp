@@ -7,6 +7,7 @@
 #include "gdfonts.h"
 #include "gdfontt.h"
 #include "logger.h"
+#include "packet.h"
 #include <cstddef>
 #include <cstdint>
 #include <fstream>
@@ -37,6 +38,14 @@ int animation_writer_t::update_model(const game_t &game, float window_start, flo
 
         if (packets[ix].has_property(property_t::turret_orientation)) {
             turrets[packets[ix].player_id()] = packets[ix].turret_orientation();
+        }
+
+        if (packets[ix].has_property(property_t::health)) {
+            current_health[packets[ix].player_id()] = packets[ix].health();
+        }
+
+        if (packets[ix].has_property(property_t::max_health)) {
+            max_health[packets[ix].player_id()] = packets[ix].max_health();
         }
 
         ix += 1;
@@ -152,7 +161,14 @@ gdImagePtr animation_writer_t::create_frame(const game_t &game, gdImagePtr backg
             nameFont = gdFontTiny;
         }
 
-        gdImageString(frame, nameFont, x - 50, y, (uint8_t *)player_display_name.c_str(), c);
+        int char_size = 6;
+        int left_offset = x - 10 - player_display_name.length() * char_size;
+
+        gdImageString(frame, nameFont, left_offset, y, (uint8_t *)player_display_name.c_str(), c);
+
+        float f = ((float)current_health.at(track.first)) / ((float)max_health.at(track.first));
+        gdImageFilledRectangle(frame, x - 42, y - 3, x - 12, y + 0, r);
+        gdImageFilledRectangle(frame, x - 42, y - 3, x - 42 + 30 * f, y + 0, g);
 
         if (show_orientation && packets.contains(track.first)) {
             const auto o = packets.at(track.first).back().hull_orientation2();

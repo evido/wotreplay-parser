@@ -33,6 +33,8 @@ class animation_writer_t : public image_writer_t {
     std::map<int, std::deque<float>> turrets;
     std::map<int, std::deque<float>> hulls;
     std::map<int, std::deque<packet_t>> packets;
+    std::map<int, int> current_health;
+    std::map<int, int> max_health;
     int frame_rate, model_update_rate;
     int max_history;
     std::string raw_images_path;

@@ -435,8 +435,6 @@ int process_replay_file(const po::variables_map &vm, const std::string &input, c
             dynamic_cast<std::ofstream *>(out)->close();
             delete out;
         }
-
-        logger.writef(log_level_t::error, "recorder_id=%1% recorder_name=%2%\n", game.get_recorder_id(), game.get_player(game.get_recorder_id()).name);
     }
 
     return EX_OK;
