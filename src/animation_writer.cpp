@@ -11,8 +11,10 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <deque>
 #include <fstream>
 #include <numbers>
+#include <optional>
 #include <string>
 
 #include <boost/filesystem.hpp>
@@ -97,6 +99,22 @@ void animation_writer_t::set_max_history(int max_history) { this->max_history = 
 
 void animation_writer_t::set_show_orientation(bool show_orientation) { this->show_orientation = show_orientation; }
 
+std::optional<packet_t> find_recent_position(const std::map<int, std::deque<packet_t>> &packets, int player_id, float clock) {
+    if (!packets.contains(player_id)) {
+        return std::nullopt;
+    }
+
+    const auto &player_packets = packets.at(player_id);
+
+    const auto result = std::find_if(player_packets.rbegin(), player_packets.rend(), [=](const packet_t &p) { return p.clock() + 1 > clock; });
+
+    if (result == player_packets.rend()) {
+        return std::nullopt;
+    }
+
+    return {*result};
+}
+
 gdImagePtr animation_writer_t::create_frame(const game_t &game, gdImagePtr background, float clock) const {
     gdImagePtr frame = gdImageCreateTrueColor(gdImageSX(background), gdImageSY(background));
 
@@ -173,13 +191,17 @@ gdImagePtr animation_writer_t::create_frame(const game_t &game, gdImagePtr backg
 
         gdImageString(frame, nameFont, left_offset, y, (uint8_t *)player_display_name.c_str(), c);
 
-        float f = ((float)current_health.at(track.first)) / ((float)max_health.at(track.first));
-        gdImageFilledRectangle(frame, x - 42, y - 3, x - 12, y + 0, r);
+        if (current_health.contains(track.first) && max_health.contains(track.first)) {
+            float f = ((float)current_health.at(track.first)) / ((float)max_health.at(track.first));
+            gdImageFilledRectangle(frame, x - 42, y - 3, x - 12, y + 0, r);
 
-        if (std::find_if(hits.begin(), hits.end(), [&](const packet_t &p) { return p.player_id() == track.first; }) != hits.end()) {
-            gdImageFilledRectangle(frame, x - 42, y - 3, x - 42 + 30 * f, y + 0, gdTrueColor(0xFF, 0xFF, 0x00));
-        } else if (f > 0) {
-            gdImageFilledRectangle(frame, x - 42, y - 3, x - 42 + 30 * f, y + 0, g);
+            if (std::find_if(hits.begin(), hits.end(), [&](const packet_t &p) { return p.player_id() == track.first; }) != hits.end()) {
+                gdImageFilledRectangle(frame, x - 42, y - 3, x - 42 + 30 * f, y + 0, gdTrueColor(0xFF, 0xFF, 0x00));
+            } else if (f > 0) {
+                gdImageFilledRectangle(frame, x - 42, y - 3, x - 42 + 30 * f, y + 0, g);
+            }
+        } else {
+            gdImageFilledRectangle(frame, x - 42, y - 3, x - 12, y + 0, w);
         }
 
         if (show_orientation && packets.contains(track.first)) {
@@ -197,29 +219,32 @@ gdImagePtr animation_writer_t::create_frame(const game_t &game, gdImagePtr backg
         if (show_turrets && turrets.contains(track.first)) {
             const auto t = turrets.at(track.first).back();
 
-            if (player_team == recorder_team) {
+            if (player_team == 0x01) {
+                gdImageLine(frame, x, y, x + f * TURRET_LINE_LENGTH * std::cos(t - 3 * std::numbers::pi / 2),
+                            y + f * TURRET_LINE_LENGTH * std::sin(t + std::numbers::pi / 2), w);
+            } else {
                 gdImageLine(frame, x, y, x + f * TURRET_LINE_LENGTH * std::cos(t - std::numbers::pi / 2),
                             y + f * TURRET_LINE_LENGTH * std::sin(t - std::numbers::pi / 2), w);
-            } else {
-                gdImageLine(frame, x, y, x + f * TURRET_LINE_LENGTH * std::cos(t - 3 * std::numbers::pi / 2),
-                            y + f * TURRET_LINE_LENGTH * std::sin(t - 3 * std::numbers::pi / 2), w);
             }
         }
 
         for (const auto &hit : hits) {
-            if (!tracks.contains(hit.player_id())) {
+            const auto &player_position = find_recent_position(packets, hit.player_id(), hit.clock());
+
+            if (!player_position.has_value()) {
                 logger.writef(log_level_t::warning, "[animation_writer] unable to locate player_id=%1% data=%2%\n", hit.player_id(), hit);
                 continue;
             }
 
-            if (!tracks.contains(hit.source())) {
+            const auto &source_position = find_recent_position(packets, hit.source(), hit.clock());
+            if (!source_position.has_value()) {
                 logger.writef(log_level_t::warning, "[animation_writer] unable to locate source=%1% data=%2%\n", hit.source(), hit);
                 continue;
             }
 
-            auto [target_x, target_y] = get_2d_coord(tracks.at(hit.player_id()).back(), this->arena.bounding_box, this->image_width, this->image_height);
+            auto [target_x, target_y] = get_2d_coord(player_position->position(), this->arena.bounding_box, this->image_width, this->image_height);
 
-            auto [source_x, source_y] = get_2d_coord(tracks.at(hit.source()).back(), this->arena.bounding_box, this->image_width, this->image_height);
+            auto [source_x, source_y] = get_2d_coord(source_position->position(), this->arena.bounding_box, this->image_width, this->image_height);
             gdImageLine(frame, target_x, target_y, source_x, source_y, gdTrueColor(0xFF, 0xFF, 0x00));
         }
     }
