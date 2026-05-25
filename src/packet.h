@@ -53,6 +53,7 @@ enum property_t {
     map_name,
     recorder_id,
     player_name,
+    max_health,
     property_nr_items,
 };
 
@@ -144,6 +145,7 @@ class packet_t {
      * @return get target player id
      */
     uint32_t target() const;
+    uint16_t max_health() const;
     /**
      * get the id of the destroyed track, 0x1D for left track, 0x1E for right
      * track
@@ -176,6 +178,13 @@ class packet_t {
 std::string to_string(const packet_t &packet);
 
 /**
+ * @fn std::string to_string(const slice_t &packet)
+ * @brief string representation of the packet
+ * @param packet target packet
+ */
+std::string to_string(const slice_t &packet);
+
+/**
  * @fn bool find_property(const std::vector<packet_t> &packets, uint32_t clock,
  * uint32_t player_id, property_t property, packet_t &out) Tries to find the
  * required property which is the closest (with respect to \c clock) to the
@@ -197,6 +206,13 @@ bool find_property(const std::vector<packet_t> &packets, uint32_t clock, uint32_
  * @param packet packet to write to the stream
  */
 std::ostream &operator<<(std::ostream &os, const packet_t &packet);
+
+/**
+ * serialize packet to given stream
+ * @param os target stream
+ * @param slice packet to write to the stream
+ */
+std::ostream &operator<<(std::ostream &os, const slice_t &slice);
 } // namespace wotreplay
 
 #endif /* defined(wotreplay_packet_h) */

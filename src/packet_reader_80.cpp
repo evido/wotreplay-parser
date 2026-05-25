@@ -1,8 +1,12 @@
 #include "packet_reader_80.h"
 #include "logger.h"
 #include "packet.h"
+#include "types.h"
 
 #include <boost/format.hpp>
+#include <cstdint>
+#include <format>
+#include <stdexcept>
 
 using namespace wotreplay;
 
@@ -27,17 +31,76 @@ packet_t packet_reader_80_t::next() {
 
     packet_t packet(boost::make_iterator_range(packet_begin, packet_end), this->init_pos != 0);
 
-    logger.writef(wotreplay::log_level_t::debug, "[%1%] type=0x%2$02X ", pos, packet.type());
+    logger.writef(log_level_t::debug, "[%1%] type=0x%2$02X ", pos, packet.type());
+
+    logger.writef(log_level_t::debug, "size=%1% data=%2% ", packet_size, packet);
 
     if (packet.has_property(property_t::player_id)) {
-        logger.writef(wotreplay::log_level_t::debug, "player_id=%1% ", packet.player_id());
+        logger.writef(log_level_t::debug, "player_id=%1% ", packet.player_id());
+    }
+
+    if (packet.has_property(property_t::sub_type)) {
+        logger.writef(log_level_t::debug, "sub_type=%1% ", (int)packet.sub_type());
     }
 
     if (packet.has_property(property_t::player_name)) {
-        logger.writef(wotreplay::log_level_t::debug, "player_name=%1% team_id=%2% ", packet.player_name(), packet.team_id());
+        logger.writef(log_level_t::debug, "player_name=%1% team_id=%2$02X ", packet.player_name(), (int)packet.team_id());
     }
 
-    logger.writef(wotreplay::log_level_t::debug, "size=%1% data=%2%\n", packet_size, packet);
+    if (packet.has_property(property_t::health)) {
+        logger.writef(log_level_t::debug, "health=%1% ", packet.health());
+    }
+
+    if (packet.has_property(property_t::source)) {
+        logger.writef(log_level_t::debug, "source=%1% ", (int)packet.source());
+    }
+
+    if (packet.has_property(property_t::max_health)) {
+        logger.writef(log_level_t::debug, "max_health=%1% ", (int)packet.max_health());
+    }
+
+    if (packet.type() == 0x05 && packet.sub_type() == 0x02) {
+        const uint32_t field_base = 55;
+
+        const int32_t field_sizes[] = {
+            2, 2, 3, 3, 3, -5, -6, 2, 2, 2, -10, 5, 2, 3, 3, 9, 2, 2,
+        };
+
+        uint32_t field_index = 0;
+        uint32_t field_offset = field_base;
+        for (int i = 0; i < sizeof(field_sizes) / sizeof(field_sizes[0]); i += 1) {
+            assert(packet.get_data_field<int8_t>(field_offset) == i);
+
+            int field_size = field_sizes[i];
+
+            switch (i) {
+            case 0x05:
+                field_size = 23 + packet.get_data_field<int8_t>(field_offset + 1);
+                break;
+            case 0x06:
+                field_size = 2 + packet.get_data_field<int8_t>(field_offset + 1) * 16;
+                break;
+            case 0x0A:
+                field_size = 2 + packet.get_data_field<int8_t>(field_offset + 1) * 14;
+                break;
+            case 0x0B:
+                field_size = 2 + packet.get_data_field<int8_t>(field_offset + 1);
+                break;
+            default:
+                field_size = field_sizes[i];
+                break;
+            };
+
+            const slice_t field_data = {packet.get_data().begin() + field_offset, packet.get_data().begin() + field_offset + field_size};
+
+            logger.writef(log_level_t::debug, "f%1%=%2% ", field_index, to_string(field_data));
+
+            field_offset += field_size;
+            field_index += 1;
+        }
+    }
+
+    logger.writef(log_level_t::debug, "\n");
 
     prev = pos;
     pos += packet_size;

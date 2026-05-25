@@ -1,9 +1,12 @@
 #include "packet.h"
+#include "types.h"
 
 #include <boost/format.hpp>
 #include <cassert>
+#include <cstdint>
 #include <numbers>
 #include <sstream>
+#include <stdexcept>
 
 using namespace wotreplay;
 
@@ -91,7 +94,14 @@ float packet_t::turret_orientation() const {
 
 uint16_t packet_t::health() const {
     assert(has_property(property_t::health));
-    return get_field<uint16_t>(data.begin(), data.end(), 24);
+
+    if (type() == 0x07 || type() == 0x08) {
+        return get_field<uint16_t>(data.begin(), data.end(), 24);
+    } else if (type() == 0x05) {
+        return get_field<uint16_t>(data.begin(), data.end(), 63);
+    } else {
+        throw std::runtime_error("unknown health position");
+    }
 }
 
 const std::array<bool, static_cast<size_t>(property_t::property_nr_items)> &packet_t::get_properties() const { return properties; }
@@ -118,7 +128,10 @@ void packet_t::set_data(const slice_t &data) {
     case 0x05:
         properties[static_cast<size_t>(property_t::clock)] = true;
         properties[static_cast<size_t>(property_t::player_id)] = true;
-        properties[static_cast<size_t>(property_t::player_name)] = this->data.size() > 54 && this->get_data_field<uint8_t>(54) == 0x12;
+        properties[static_cast<size_t>(property_t::sub_type)] = true;
+        properties[static_cast<size_t>(property_t::player_name)] = sub_type() == 0x02;
+        properties[static_cast<size_t>(property_t::health)] = sub_type() == 0x02;
+        properties[static_cast<size_t>(property_t::max_health)] = sub_type() == 0x02;
         break;
     case 0x0a:
         properties[static_cast<size_t>(property_t::position)] = true;
@@ -136,10 +149,8 @@ void packet_t::set_data(const slice_t &data) {
         properties[static_cast<size_t>(property_t::clock)] = true;
         properties[static_cast<size_t>(property_t::player_id)] = true;
         properties[static_cast<size_t>(property_t::sub_type)] = true;
-
-        if (get_field<uint32_t>(data.begin(), data.end(), 16) == 0x02) {
-            properties[static_cast<size_t>(property_t::turret_orientation)] = true;
-        }
+        properties[static_cast<size_t>(property_t::turret_orientation)] = sub_type() == 0x02;
+        properties[static_cast<size_t>(property_t::health)] = sub_type() == 0x03;
         // properties[static_cast<size_t>(property_t::health)] = sub_type() ==
         // 0x05; properties[static_cast<size_t>(property_t::destroyed_track_id)]
         // = sub_type() == 0x07;
@@ -164,7 +175,7 @@ void packet_t::set_data(const slice_t &data) {
             break;
         case 0x05:
             // hit
-            properties[static_cast<size_t>(property_t::source)] = true;
+            // properties[static_cast<size_t>(property_t::source)] = true;
             break;
         case 0x0B:
             // module damage
@@ -182,6 +193,11 @@ void packet_t::set_data(const slice_t &data) {
             // related to tank destroyed
             break;
         case 0x1d:
+            break;
+        case 0x30:
+            // < 8.5
+            properties[static_cast<size_t>(property_t::health)] = true;
+            properties[static_cast<size_t>(property_t::source)] = true;
             break;
         }
         break;
@@ -203,9 +219,59 @@ void packet_t::set_data(const slice_t &data) {
     }
 }
 
+std::tuple<uint32_t, uint32_t> find_field5_offset(const packet_t &packet, uint8_t sub_field_index) {
+    assert(packet.type() == 0x05 && packet.sub_type() == 0x02);
+
+    const uint32_t field_base = 55;
+
+    const int32_t field_sizes[] = {
+        2, 2, 3, 3, 3, -5, -6, 2, 2, 2, -10, 5, 2, 3, 3, 9, 2, 2,
+    };
+
+    uint32_t field_index = 0;
+    uint32_t field_offset = field_base;
+    for (int i = 0; i < sizeof(field_sizes) / sizeof(field_sizes[0]); i += 1) {
+        assert(packet.get_data_field<int8_t>(field_offset) == i);
+
+        int field_size = field_sizes[i];
+
+        switch (i) {
+        case 0x05:
+            field_size = 23 + packet.get_data_field<int8_t>(field_offset + 1);
+            break;
+        case 0x06:
+            field_size = 2 + packet.get_data_field<int8_t>(field_offset + 1) * 16;
+            break;
+        case 0x0A:
+            field_size = 2 + packet.get_data_field<int8_t>(field_offset + 1) * 14;
+            break;
+        case 0x0B:
+            field_size = 2 + packet.get_data_field<int8_t>(field_offset + 1);
+            break;
+        default:
+            field_size = field_sizes[i];
+            break;
+        };
+
+        if (field_index == sub_field_index) {
+            return std::make_tuple(field_offset, field_size);
+        }
+
+        field_offset += field_size;
+        field_index += 1;
+    }
+
+    throw std::runtime_error(std::format("unknown field {}", sub_field_index));
+}
+
+uint16_t packet_t::max_health() const {
+    assert(has_property(property_t::max_health));
+    return get_data_field<uint16_t>(get<0>(find_field5_offset(*this, 0x0D)) + 1);
+}
+
 uint32_t packet_t::sub_type() const {
     assert(has_property(property_t::sub_type));
-    return get_field<uint32_t>(data.begin(), data.end(), 16);
+    return get_field<uint8_t>(data.begin(), data.end(), 16);
 }
 
 uint8_t packet_t::destroyed_track_id() const {
@@ -294,11 +360,24 @@ uint32_t packet_t::length() const {
 
 std::ostream &wotreplay::operator<<(std::ostream &os, const packet_t &packet) { return os << to_string(packet); }
 
+std::ostream &wotreplay::operator<<(std::ostream &os, const slice_t &slice) { return os << to_string(slice); }
+
 std::string wotreplay::to_string(const packet_t &packet) {
     std::stringstream result;
 
     result << "[ ";
     for (auto val : packet.get_data()) {
+        result << (boost::format("%1$02X ") % (uint32_t)val).str();
+    }
+    result << "]";
+    return result.str();
+}
+
+std::string wotreplay::to_string(const slice_t &slice) {
+    std::stringstream result;
+
+    result << "[ ";
+    for (auto val : slice) {
         result << (boost::format("%1$02X ") % (uint32_t)val).str();
     }
     result << "]";
