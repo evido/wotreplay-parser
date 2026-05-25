@@ -8,6 +8,7 @@
 #include "gdfontt.h"
 #include "logger.h"
 #include "packet.h"
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <fstream>
@@ -48,8 +49,15 @@ int animation_writer_t::update_model(const game_t &game, float window_start, flo
             max_health[packets[ix].player_id()] = packets[ix].max_health();
         }
 
+        if (packets[ix].type() == 0x08 && packets[ix].sub_type() == 0x01) {
+            hits.emplace_back(packets[ix]);
+        }
+
         ix += 1;
     }
+
+    // TODO: should move before loop ?
+    std::erase_if(hits, [=](const packet_t &p) { return p.clock() + 1 <= window_start; });
 
     for (auto &it : tracks) {
         this->tracks[it.first].emplace_back(it.second);
@@ -192,6 +200,13 @@ gdImagePtr animation_writer_t::create_frame(const game_t &game, gdImagePtr backg
                 gdImageLine(frame, x, y, x + f * TURRET_LINE_LENGTH * std::cos(t - 3 * std::numbers::pi / 2),
                             y + f * TURRET_LINE_LENGTH * std::sin(t - 3 * std::numbers::pi / 2), w);
             }
+        }
+
+        for (const auto &hit : hits) {
+            auto [target_x, target_y] = get_2d_coord(tracks.at(hit.player_id()).back(), this->arena.bounding_box, this->image_width, this->image_height);
+
+            auto [source_x, source_y] = get_2d_coord(tracks.at(hit.source()).back(), this->arena.bounding_box, this->image_width, this->image_height);
+            gdImageLine(frame, target_x, target_y, source_x, source_y, gdTrueColor(0xFF, 0xFF, 0x00));
         }
     }
 

@@ -198,6 +198,7 @@ void packet_t::set_data(const slice_t &data) {
             // < 8.5
             properties[static_cast<size_t>(property_t::health)] = true;
             properties[static_cast<size_t>(property_t::source)] = true;
+            properties[static_cast<size_t>(property_t::target)] = true;
             break;
         }
         break;

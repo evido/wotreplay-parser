@@ -55,6 +55,14 @@ packet_t packet_reader_80_t::next() {
         logger.writef(log_level_t::debug, "source=%1% ", (int)packet.source());
     }
 
+    if (packet.has_property(property_t::clock)) {
+        logger.writef(log_level_t::debug, "clock=%1% ", packet.clock());
+    }
+
+    if (packet.has_property(property_t::target)) {
+        logger.writef(log_level_t::debug, "target=%1% ", (int)packet.target());
+    }
+
     if (packet.has_property(property_t::max_health)) {
         logger.writef(log_level_t::debug, "max_health=%1% ", (int)packet.max_health());
     }
