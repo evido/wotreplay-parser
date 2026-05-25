@@ -30,6 +30,8 @@ int animation_writer_t::update_model(const game_t &game, float window_start, flo
 
     float window_end = window_start + window_size;
 
+    std::erase_if(hits, [=](const packet_t &p) { return p.clock() + 1 <= window_start; });
+
     while (ix < packets.size() && (!packets[ix].has_property(property_t::clock) || packets[ix].clock() <= window_end)) {
         if (packets[ix].has_property(property_t::position)) {
             tracks[packets[ix].player_id()] = packets[ix].position();
@@ -55,9 +57,6 @@ int animation_writer_t::update_model(const game_t &game, float window_start, flo
 
         ix += 1;
     }
-
-    // TODO: should move before loop ?
-    std::erase_if(hits, [=](const packet_t &p) { return p.clock() + 1 <= window_start; });
 
     for (auto &it : tracks) {
         this->tracks[it.first].emplace_back(it.second);
@@ -176,7 +175,12 @@ gdImagePtr animation_writer_t::create_frame(const game_t &game, gdImagePtr backg
 
         float f = ((float)current_health.at(track.first)) / ((float)max_health.at(track.first));
         gdImageFilledRectangle(frame, x - 42, y - 3, x - 12, y + 0, r);
-        gdImageFilledRectangle(frame, x - 42, y - 3, x - 42 + 30 * f, y + 0, g);
+
+        if (std::find_if(hits.begin(), hits.end(), [&](const packet_t &p) { return p.player_id() == track.first; }) != hits.end()) {
+            gdImageFilledRectangle(frame, x - 42, y - 3, x - 42 + 30 * f, y + 0, gdTrueColor(0xFF, 0xFF, 0x00));
+        } else if (f > 0) {
+            gdImageFilledRectangle(frame, x - 42, y - 3, x - 42 + 30 * f, y + 0, g);
+        }
 
         if (show_orientation && packets.contains(track.first)) {
             const auto o = packets.at(track.first).back().hull_orientation2();
@@ -203,6 +207,16 @@ gdImagePtr animation_writer_t::create_frame(const game_t &game, gdImagePtr backg
         }
 
         for (const auto &hit : hits) {
+            if (!tracks.contains(hit.player_id())) {
+                logger.writef(log_level_t::warning, "[animation_writer] unable to locate player_id=%1% data=%2%\n", hit.player_id(), hit);
+                continue;
+            }
+
+            if (!tracks.contains(hit.source())) {
+                logger.writef(log_level_t::warning, "[animation_writer] unable to locate source=%1% data=%2%\n", hit.source(), hit);
+                continue;
+            }
+
             auto [target_x, target_y] = get_2d_coord(tracks.at(hit.player_id()).back(), this->arena.bounding_box, this->image_width, this->image_height);
 
             auto [source_x, source_y] = get_2d_coord(tracks.at(hit.source()).back(), this->arena.bounding_box, this->image_width, this->image_height);
