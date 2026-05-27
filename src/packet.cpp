@@ -246,7 +246,13 @@ std::tuple<uint32_t, uint32_t> find_field5_offset(const packet_t &packet, uint8_
         case 0x0A:
             field_size = 2 + packet.get_data_field<int8_t>(field_offset + 1) * 14;
             break;
+        case 0x07:
+        case 0x08:
+        case 0x09:
         case 0x0B:
+        case 0x0C:
+        case 0x10:
+        case 0x11:
             field_size = 2 + packet.get_data_field<int8_t>(field_offset + 1);
             break;
         default:

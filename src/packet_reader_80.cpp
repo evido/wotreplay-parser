@@ -5,7 +5,6 @@
 
 #include <boost/format.hpp>
 #include <cstdint>
-#include <format>
 #include <stdexcept>
 
 using namespace wotreplay;
@@ -77,7 +76,10 @@ packet_t packet_reader_80_t::next() {
         uint32_t field_index = 0;
         uint32_t field_offset = field_base;
         for (int i = 0; i < sizeof(field_sizes) / sizeof(field_sizes[0]); i += 1) {
-            assert(packet.get_data_field<int8_t>(field_offset) == i);
+            if (packet.get_data_field<int8_t>(field_offset) != i) {
+                logger.writef(log_level_t::debug, "f%1%=error ", field_index);
+                break;
+            }
 
             int field_size = field_sizes[i];
 
@@ -91,7 +93,13 @@ packet_t packet_reader_80_t::next() {
             case 0x0A:
                 field_size = 2 + packet.get_data_field<int8_t>(field_offset + 1) * 14;
                 break;
+            case 0x07:
+            case 0x08:
+            case 0x09:
             case 0x0B:
+            case 0x0C:
+            case 0x10:
+            case 0x11:
                 field_size = 2 + packet.get_data_field<int8_t>(field_offset + 1);
                 break;
             default:
