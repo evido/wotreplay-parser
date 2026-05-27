@@ -12,7 +12,10 @@ using namespace wotreplay;
 void packet_reader_80_t::init(const version_t &version, buffer_t *buffer, game_title_t title) {
     this->buffer = buffer;
     this->version = version;
-    this->pos = init_pos;
+    if (init_pos > 0) {
+        // 38 = 8 (header) + 4 (size) + (size) + 22 (unknown)
+        this->pos = ((int)(*buffer)[8]) + 38;
+    }
     this->title = title;
 }
 
