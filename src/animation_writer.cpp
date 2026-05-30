@@ -1,5 +1,6 @@
 #include "animation_writer.h"
 #include "fstream_ioctx.h"
+#include "game.h"
 #include "gd.h"
 #include "gd_io.h"
 #include "gdfontl.h"

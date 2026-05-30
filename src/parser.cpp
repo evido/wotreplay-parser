@@ -132,55 +132,29 @@ void parser_t::parse(buffer_t &buffer, wotreplay::game_t &game, bool raw) {
 
         for (const auto &p : game.packets) {
             if (p.has_property(property_t::recorder_id)) {
-                groups[p.player_id()] = -1;
                 game.recorder_id = p.recorder_id();
             }
 
             if (p.has_property(property_t::player_name)) {
-                player_info[p.player_id()] = p;
-            }
+                if (game.players.contains(p.player_id())) {
+                    // alread seen
+                } else {
+                    game.players[p.player_id()] = {
+                        .player_id = p.player_id(),
+                        .vehicle_id = p.player_id(),
+                        .team = p.team_id(),
+                        .name = p.player_name(),
+                    };
 
-            if (p.has_property(property_t::position)) {
-                if (!groups.contains(p.player_id())) {
-                    groups[p.player_id()] = (groups.size() <= BLITZ_TEAM_SIZE) ? 1 : 2;
+                    game.teams[p.team_id() - 1].emplace(p.player_id());
                 }
             }
-        }
 
-        for (const auto &p : groups) {
-            if (p.second < 0) {
-                continue;
+            if (p.has_property(property_t::map_name)) {
+                game.arena = {
+                    .configurations = {}, .name = p.map_name(), .bounding_box = {}, .mini_map = std::format("./blitz/{}.png", p.map_name().substr(7))};
             }
-
-            player_t player = {
-                .player_id = (uint32_t)p.first,
-                .vehicle_id = (uint32_t)p.first,
-                .team = p.second,
-            };
-
-            if (player_info.contains(p.first)) {
-                const auto &player_data = player_info[(uint32_t)p.first];
-                player.name = player_info[p.first].player_name();
-                if (player_data.team_id() != player.team) {
-                    logger.writef(log_level_t::warning, "player_id=%1% mismatch guessed_team_id=%2% != player_data_team_id=%3%\n", p.first, player.team,
-                                  player_data.team_id());
-                }
-            } else {
-                logger.writef(log_level_t::warning, "player_id=%1% in player data\n", p.first);
-                player.name = std::format("{}", p.first);
-            }
-
-            game.players[p.first] = player;
-            game.teams[p.second - 1].emplace(p.first);
         }
-
-        auto packet = std::find_if(game.get_packets().begin(), game.get_packets().end(),
-                                   [](const packet_t &packet) { return packet.has_property(property_t::map_name); });
-
-        assert(game.get_packets().end() != packet);
-
-        game.arena = {
-            .configurations = {}, .name = packet->map_name(), .bounding_box = {}, .mini_map = std::format("./blitz/{}.png", packet->map_name().substr(7))};
     }
 
     if (debug) {

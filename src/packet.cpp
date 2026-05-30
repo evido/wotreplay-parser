@@ -95,12 +95,20 @@ float packet_t::turret_orientation() const {
 uint16_t packet_t::health() const {
     assert(has_property(property_t::health));
 
+    int health;
+
     if (type() == 0x07 || type() == 0x08) {
-        return get_field<uint16_t>(data.begin(), data.end(), 24);
+        health = get_field<int16_t>(data.begin(), data.end(), 24);
     } else if (type() == 0x05) {
-        return get_field<uint16_t>(data.begin(), data.end(), 63);
+        health = get_field<int16_t>(data.begin(), data.end(), 63);
     } else {
         throw std::runtime_error("unknown health position");
+    }
+
+    if (health < 0) {
+        return 0;
+    } else {
+        return health;
     }
 }
 
@@ -196,9 +204,9 @@ void packet_t::set_data(const slice_t &data) {
             break;
         case 0x30:
             // < 8.5
-            properties[static_cast<size_t>(property_t::health)] = true;
-            properties[static_cast<size_t>(property_t::source)] = true;
-            properties[static_cast<size_t>(property_t::target)] = true;
+            // properties[static_cast<size_t>(property_t::health)] = true;
+            // properties[static_cast<size_t>(property_t::source)] = true;
+            // properties[static_cast<size_t>(property_t::target)] = true;
             break;
         }
         break;
