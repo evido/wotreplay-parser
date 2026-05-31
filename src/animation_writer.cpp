@@ -290,6 +290,16 @@ gdImagePtr animation_writer_t::create_frame(const game_t &game, gdImagePtr backg
                 continue;
             }
 
+            if (!packets.contains(hit.source())) {
+                logger.writef(log_level_t::warning, "[animation_writer] unable to locate source=%1% data=%2%\n", hit.source(), hit);
+                continue;
+            }
+
+            if (!turrets.contains(hit.source())) {
+                logger.writef(log_level_t::warning, "[animation_writer] unable to locate source=%1% data=%2%\n", hit.source(), hit);
+                continue;
+            }
+
             auto filtered = game.get_packets() | std::views::filter([=](const packet_t &p) { return p.has_property(property_t::turret_orientation); }) |
                             std::views::filter([=](const packet_t &p) { return p.player_id() == hit.source(); }) | std::views::common;
 
@@ -320,7 +330,7 @@ gdImagePtr animation_writer_t::create_frame(const game_t &game, gdImagePtr backg
                             std::round(source_y + f * TURRET_LINE_LENGTH * std::sin(t + r * std::numbers::pi / 2)), c);
             }
 
-            const auto file_name = std::format("debug_frame_{:010}.png", debug_frame_nr);
+            const auto file_name = std::format("{}/debug-{:010}.png", this->raw_images_path.length() == 0 ? "." : this->raw_images_path, debug_frame_nr);
             std::ofstream of(file_name, std::ios::binary | std::ios::out);
             OfstreamIOCtx ctx(of);
             gdImagePngCtx(debug_frame, (gdIOCtxPtr)&ctx);
@@ -390,7 +400,7 @@ void animation_writer_t::update(const game_t &game) {
                       window_start);
 
         if (!raw_images_path.empty()) {
-            const auto file_name = std::format("{}/{:010}.png", raw_images_path, frame_nr);
+            const auto file_name = std::format("{}/frame-{:010}.png", raw_images_path, frame_nr);
             std::ofstream of(file_name, std::ios::binary | std::ios::out);
             OfstreamIOCtx ctx(of);
             gdImagePngCtx(frame, (gdIOCtxPtr)&ctx);
