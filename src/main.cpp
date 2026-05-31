@@ -139,6 +139,7 @@ void apply_settings(animation_writer_t *const writer, const po::variables_map &v
     writer->set_show_turrets(vm.count("blitz") > 0);
     writer->set_show_orientation(vm.count("blitz") > 0);
     writer->set_skip(vm["skip"].as<double>());
+    writer->set_debug(vm.count("debug") > 0);
 
     if (vm.count("raw-images-path") > 0) {
         writer->set_raw_images_path(vm["raw-images-path"].as<std::string>());

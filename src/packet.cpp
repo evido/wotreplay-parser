@@ -89,7 +89,7 @@ float packet_t::hull_orientation2() const { return get_field<float>(data.begin()
 
 float packet_t::turret_orientation() const {
     assert(property_t::turret_orientation);
-    return get_field<uint16_t>(data.begin(), data.end(), 24) * std::numbers::pi / 32767;
+    return get_field<uint16_t>(data.begin(), data.end(), 24) * std::numbers::pi / 32767.f;
 }
 
 uint16_t packet_t::health() const {

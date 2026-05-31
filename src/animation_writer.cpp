@@ -10,12 +10,14 @@
 #include "logger.h"
 #include "packet.h"
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <deque>
 #include <fstream>
 #include <numbers>
 #include <optional>
+#include <ranges>
 #include <string>
 
 #include <boost/filesystem.hpp>
@@ -107,7 +109,7 @@ std::optional<packet_t> find_recent_position(const std::map<int, std::deque<pack
 
     const auto &player_packets = packets.at(player_id);
 
-    const auto result = std::find_if(player_packets.rbegin(), player_packets.rend(), [=](const packet_t &p) { return p.clock() + 1 > clock; });
+    const auto result = std::find_if(player_packets.rbegin(), player_packets.rend(), [=](const packet_t &p) { return std::abs(p.clock() - clock) < 1; });
 
     if (result == player_packets.rend()) {
         return std::nullopt;
@@ -218,14 +220,20 @@ gdImagePtr animation_writer_t::create_frame(const game_t &game, gdImagePtr backg
         }
 
         if (show_turrets && turrets.contains(track.first)) {
-            const auto t = turrets.at(track.first).back();
+            const auto t = turrets.at(track.first).back() + packets.at(track.first).back().hull_orientation2();
 
-            if (player_team == 0x01) {
-                gdImageLine(frame, x, y, x + f * TURRET_LINE_LENGTH * std::cos(t - 3 * std::numbers::pi / 2),
-                            y + f * TURRET_LINE_LENGTH * std::sin(t + std::numbers::pi / 2), w);
-            } else {
-                gdImageLine(frame, x, y, x + f * TURRET_LINE_LENGTH * std::cos(t - std::numbers::pi / 2),
-                            y + f * TURRET_LINE_LENGTH * std::sin(t - std::numbers::pi / 2), w);
+            const std::array<std::tuple<float, int>, 4> turret_lines = {
+                std::make_tuple(0.0f, r),
+                std::make_tuple(1.0f, w),
+                std::make_tuple(2.0f, g),
+                std::make_tuple(3.0f, b),
+            };
+
+            for (const auto [r, c] : turret_lines) {
+                if (debug || c == w) {
+                    gdImageLine(frame, x, y, std::round(x + f * TURRET_LINE_LENGTH * std::cos(t + r * std::numbers::pi / 2)),
+                                std::round(y + f * TURRET_LINE_LENGTH * std::sin(t + r * std::numbers::pi / 2)), c);
+                }
             }
         }
 
@@ -254,6 +262,75 @@ gdImagePtr animation_writer_t::create_frame(const game_t &game, gdImagePtr backg
         gdImageColorTransparent(frame, gdImageGetTransparent(background));
     }
 
+    if (debug) {
+        static int debug_frame_nr = 0;
+        static std::set<int> rendered_hits;
+
+        for (const auto &hit : hits) {
+            const int hit_id = (int)hit.clock() * 1000;
+            if (rendered_hits.contains(hit_id)) {
+                continue;
+            }
+
+            gdImagePtr debug_frame = gdImageCreateTrueColor(gdImageSX(background), gdImageSY(background));
+            gdImageCopy(debug_frame, background, 0, 0, 0, 0, gdImageSX(debug_frame), gdImageSY(debug_frame));
+
+            gdImageString(debug_frame, gdFontLarge, 10, 10, (uint8_t *)std::format("[{}] {}", debug_frame_nr, clock).c_str(), cyan);
+
+            const auto &player_position = find_recent_position(packets, hit.player_id(), hit.clock());
+
+            if (!player_position.has_value()) {
+                logger.writef(log_level_t::warning, "[animation_writer] unable to locate player_id=%1% data=%2%\n", hit.player_id(), hit);
+                continue;
+            }
+
+            const auto &source_position = find_recent_position(packets, hit.source(), hit.clock());
+            if (!source_position.has_value()) {
+                logger.writef(log_level_t::warning, "[animation_writer] unable to locate source=%1% data=%2%\n", hit.source(), hit);
+                continue;
+            }
+
+            auto filtered = game.get_packets() | std::views::filter([=](const packet_t &p) { return p.has_property(property_t::turret_orientation); }) |
+                            std::views::filter([=](const packet_t &p) { return p.player_id() == hit.source(); }) | std::views::common;
+
+            auto turret = std::min_element(filtered.begin(), filtered.end(), [=](const packet_t &left, const packet_t &right) {
+                return std::abs(left.clock() - hit.clock()) < std::abs(right.clock() - hit.clock());
+            });
+
+            auto [target_x, target_y] = get_2d_coord(player_position->position(), this->arena.bounding_box, this->image_width, this->image_height);
+
+            auto [source_x, source_y] = get_2d_coord(source_position->position(), this->arena.bounding_box, this->image_width, this->image_height);
+            gdImageLine(debug_frame, target_x, target_y, source_x, source_y, gdTrueColor(0xFF, 0xFF, 0x00));
+
+            const auto o = packets.at(hit.source()).back().hull_orientation2();
+            gdImageLine(debug_frame, source_x, source_y, source_x + f * TURRET_LINE_LENGTH * std::cos(o - std::numbers::pi / 2),
+                        source_y + f * TURRET_LINE_LENGTH * std::sin(o - std::numbers::pi / 2), cyan);
+
+            const auto t = turrets.at(hit.source()).back() + packets.at(hit.source()).back().hull_orientation2();
+
+            const std::array<std::tuple<float, int>, 4> turret_lines = {
+                std::make_tuple(1.0f, r),
+                std::make_tuple(0.0f, w),
+                std::make_tuple(2.0f, g),
+                std::make_tuple(3.0f, b),
+            };
+
+            for (const auto [r, c] : turret_lines) {
+                gdImageLine(debug_frame, source_x, source_y, std::round(source_x + f * TURRET_LINE_LENGTH * std::cos(t + r * std::numbers::pi / 2)),
+                            std::round(source_y + f * TURRET_LINE_LENGTH * std::sin(t + r * std::numbers::pi / 2)), c);
+            }
+
+            const auto file_name = std::format("debug_frame_{:010}.png", debug_frame_nr);
+            std::ofstream of(file_name, std::ios::binary | std::ios::out);
+            OfstreamIOCtx ctx(of);
+            gdImagePngCtx(debug_frame, (gdIOCtxPtr)&ctx);
+
+            debug_frame_nr += 1;
+            rendered_hits.emplace(hit_id);
+            gdImageDestroy(debug_frame);
+        }
+    }
+
     return frame;
 }
 
@@ -271,6 +348,8 @@ void animation_writer_t::set_frame_rate(int frame_rate) { this->frame_rate = fra
 void animation_writer_t::set_show_turrets(bool show_turrets) { this->show_turrets = show_turrets; }
 
 void animation_writer_t::set_skip(double skip) { this->skip = skip; }
+
+void animation_writer_t::set_debug(bool debug) { this->debug = debug; }
 
 void animation_writer_t::update(const game_t &game) {
     draw_basemap();

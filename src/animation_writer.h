@@ -27,6 +27,7 @@ class animation_writer_t : public image_writer_t {
     void set_show_turrets(bool show_turrets);
     void set_show_orientation(bool show_orientation);
     void set_skip(double skip);
+    void set_debug(bool debug);
 
   private:
     gdIOCtx *ctx;
@@ -43,6 +44,7 @@ class animation_writer_t : public image_writer_t {
     bool show_turrets;
     bool show_orientation;
     double skip;
+    bool debug;
 };
 } // namespace wotreplay
 

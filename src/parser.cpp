@@ -139,12 +139,21 @@ void parser_t::parse(buffer_t &buffer, wotreplay::game_t &game, bool raw) {
                 if (game.players.contains(p.player_id())) {
                     // alread seen
                 } else {
-                    game.players[p.player_id()] = {
-                        .player_id = p.player_id(),
-                        .vehicle_id = p.player_id(),
-                        .team = p.team_id(),
-                        .name = p.player_name(),
-                    };
+                    if (debug) {
+                        game.players[p.player_id()] = {
+                            .player_id = p.player_id(),
+                            .vehicle_id = p.player_id(),
+                            .team = p.team_id(),
+                            .name = std::format("{} ({}) [{}]", p.player_name(), p.player_id(), p.team_id()),
+                        };
+                    } else {
+                        game.players[p.player_id()] = {
+                            .player_id = p.player_id(),
+                            .vehicle_id = p.player_id(),
+                            .team = p.team_id(),
+                            .name = std::format("{}", p.player_name()),
+                        };
+                    }
 
                     game.teams[p.team_id() - 1].emplace(p.player_id());
                 }
