@@ -24,7 +24,7 @@
 
 using namespace wotreplay;
 
-const int TURRET_LINE_LENGTH = 10;
+const int TURRET_LINE_LENGTH = 20;
 
 int animation_writer_t::update_model(const game_t &game, float window_start, float window_size, int packet_start) {
     int ix = packet_start;
@@ -210,12 +210,14 @@ gdImagePtr animation_writer_t::create_frame(const game_t &game, gdImagePtr backg
         if (show_orientation && packets.contains(track.first)) {
             const auto o = packets.at(track.first).back().hull_orientation2();
 
-            if (player_team == recorder_team) {
+            if (debug) {
                 gdImageLine(frame, x, y, x + f * TURRET_LINE_LENGTH * std::cos(o - std::numbers::pi / 2),
                             y + f * TURRET_LINE_LENGTH * std::sin(o - std::numbers::pi / 2), cyan);
             } else {
-                gdImageLine(frame, x, y, x + f * TURRET_LINE_LENGTH * std::cos(o - std::numbers::pi / 2),
-                            y + f * TURRET_LINE_LENGTH * std::sin(o - std::numbers::pi / 2), cyan);
+                gdImageFilledArc(frame, x + f * TURRET_LINE_LENGTH / 4 * std::cos(o - std::numbers::pi / 2),
+                                 y + f * TURRET_LINE_LENGTH / 4 * std::sin(o - std::numbers::pi / 2), TURRET_LINE_LENGTH / 1.5, TURRET_LINE_LENGTH / 1.5,
+                                 (o - 3 * std::numbers::pi / 2) * 180.f / std::numbers::pi - 30.f,
+                                 (o - 3 * std::numbers::pi / 2) * 180.f / std::numbers::pi + 30.f, c, gdChord);
             }
         }
 
@@ -230,9 +232,18 @@ gdImagePtr animation_writer_t::create_frame(const game_t &game, gdImagePtr backg
             };
 
             for (const auto [r, c] : turret_lines) {
-                if (debug || c == w) {
+                if (debug) {
                     gdImageLine(frame, x, y, std::round(x + f * TURRET_LINE_LENGTH * std::cos(t + r * std::numbers::pi / 2)),
                                 std::round(y + f * TURRET_LINE_LENGTH * std::sin(t + r * std::numbers::pi / 2)), c);
+                } else if (c == w) {
+                    gdImageAlphaBlending(frame, gdEffectAlphaBlend);
+                    gdImageFilledArc(frame, x, y, TURRET_LINE_LENGTH * 2, TURRET_LINE_LENGTH * 2,
+                                     (t + r * std::numbers::pi / 2) * 180.f / std::numbers::pi - 30.f,
+                                     (t + r * std::numbers::pi / 2) * 180.f / std::numbers::pi + 30.f, gdTrueColorAlpha(0xFF, 0xFF, 0xFF, 0x40), gdArc);
+                    gdImageFilledArc(frame, x, y, TURRET_LINE_LENGTH * 2, TURRET_LINE_LENGTH * 2,
+                                     (t + r * std::numbers::pi / 2) * 180.f / std::numbers::pi - 30.f,
+                                     (t + r * std::numbers::pi / 2) * 180.f / std::numbers::pi + 30.f, gdTrueColor(0xFF, 0xFF, 0xFF), gdEdged | gdNoFill);
+                    gdImageAlphaBlending(frame, gdEffectReplace);
                 }
             }
         }
