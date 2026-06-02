@@ -88,7 +88,7 @@ class packet_t {
     std::tuple<float, float, float> rotation() const;
     /** @return The turret orentation value of this packet. */
     float turret_orientation() const;
-    float hull_orientation2() const;
+    float hull_orientation() const;
     float direction() const;
     std::string player_name() const;
     int8_t team_id() const;

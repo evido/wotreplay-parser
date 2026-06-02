@@ -9,7 +9,7 @@
 #ifndef wotreplay_arena_def_h
 #define wotreplay_arena_def_h
 
-#include <map>
+#include <flat_map>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -36,9 +36,9 @@ struct arena_configuration_t {
     /** control point in ctf mode */
     std::tuple<float, float> control_point;
     /** spawn points for the teams */
-    std::map<int, std::vector<std::tuple<float, float>>> team_spawn_points;
+    std::flat_map<int, std::vector<std::tuple<float, float>>> team_spawn_points;
     /** base position for the teams */
-    std::map<int, std::vector<std::tuple<float, float>>> team_base_positions;
+    std::flat_map<int, std::vector<std::tuple<float, float>>> team_base_positions;
     /** game type */
     std::string mode;
 };
@@ -49,7 +49,7 @@ struct arena_configuration_t {
  */
 struct arena_t {
     /** maps available game modes to configuration */
-    std::map<std::string, arena_configuration_t> configurations;
+    std::flat_map<std::string, arena_configuration_t> configurations;
     /** arena name */
     std::string name;
     /** arena bounding box */
@@ -71,7 +71,7 @@ bool get_arena(const std::string &name, arena_t &arena, bool force);
  * Get the complete list of available arena definitions
  * @return arena definition map
  */
-const std::map<std::string, arena_t> &get_arenas();
+const std::flat_map<std::string, arena_t> &get_arenas();
 
 /**
  * Init arena defintion.

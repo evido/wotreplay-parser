@@ -85,7 +85,7 @@ std::tuple<float, float, float> packet_t::rotation() const {
     return std::make_tuple(roll, pitch, yaw);
 }
 
-float packet_t::hull_orientation2() const { return get_field<float>(data.begin(), data.end(), 48); }
+float packet_t::hull_orientation() const { return get_field<float>(data.begin(), data.end(), 48); }
 
 float packet_t::turret_orientation() const {
     assert(property_t::turret_orientation);

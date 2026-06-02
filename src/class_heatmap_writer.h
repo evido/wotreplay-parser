@@ -27,7 +27,7 @@ class class_heatmap_writer_t : public heatmap_writer_t {
 
   protected:
     std::vector<draw_rule_t> rules;
-    std::map<uint32_t, int> classes;
+    std::flat_map<uint32_t, int> classes;
 };
 } // namespace wotreplay
 

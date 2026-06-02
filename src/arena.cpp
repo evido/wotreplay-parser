@@ -40,8 +40,8 @@ static std::tuple<float, float> getCoordinate(std::string value) {
     return std::make_tuple(x_value, y_value);
 }
 
-static std::map<int, std::vector<std::tuple<float, float>>> getTeamPositions(XMLElement *teamPointsNode) {
-    std::map<int, std::vector<std::tuple<float, float>>> team_positions;
+static std::flat_map<int, std::vector<std::tuple<float, float>>> getTeamPositions(XMLElement *teamPointsNode) {
+    std::flat_map<int, std::vector<std::tuple<float, float>>> team_positions;
     for (XMLElement *node = teamPointsNode->FirstChildElement(); node; node = node->NextSiblingElement()) {
         int team = boost::lexical_cast<int>(node->Name()[std::strlen((const char *)node->Name()) - 1]);
         std::vector<std::tuple<float, float>> positions;
@@ -88,8 +88,8 @@ static arena_configuration_t getArenaConfiguration(XMLElement *gameplayTypeNode)
     return configuration;
 }
 
-static std::map<std::string, arena_configuration_t> getArenaConfigurations(XMLElement *gameplayTypesNode) {
-    std::map<std::string, arena_configuration_t> configurations;
+static std::flat_map<std::string, arena_configuration_t> getArenaConfigurations(XMLElement *gameplayTypesNode) {
+    std::flat_map<std::string, arena_configuration_t> configurations;
     for (XMLElement *node = gameplayTypesNode->FirstChildElement(); node; node = node->NextSiblingElement()) {
         // if (node->type == XML_ELEMENT_NODE) {
         std::string nodeName((const char *)node->Name());
@@ -133,9 +133,9 @@ static arena_t get_arena_definition(const boost::filesystem::path &path) {
     return arena;
 }
 
-static std::map<std::string, arena_t> get_arena_definitions() {
+static std::flat_map<std::string, arena_t> get_arena_definitions() {
     // xmlInitParser();
-    std::map<std::string, arena_t> arenas;
+    std::flat_map<std::string, arena_t> arenas;
     boost::filesystem::directory_iterator end_itr; // Default ctor yields past-the-end
     for (boost::filesystem::directory_iterator it("maps/definitions"); it != end_itr; ++it) {
         // Skip if not a file
@@ -152,7 +152,7 @@ static std::map<std::string, arena_t> get_arena_definitions() {
     return arenas;
 }
 
-static std::map<std::string, arena_t> arenas;
+static std::flat_map<std::string, arena_t> arenas;
 static bool is_arenas_initalized = false;
 
 void wotreplay::init_arena_definition() {
@@ -162,7 +162,7 @@ void wotreplay::init_arena_definition() {
     }
 }
 
-const std::map<std::string, arena_t> &wotreplay::get_arenas() { return arenas; }
+const std::flat_map<std::string, arena_t> &wotreplay::get_arenas() { return arenas; }
 
 bool wotreplay::get_arena(const std::string &name, arena_t &arena, bool force) {
     bool has_result = false;

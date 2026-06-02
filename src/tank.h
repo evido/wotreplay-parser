@@ -1,7 +1,7 @@
 #ifndef wotreplay_tank_def_h
 #define wotreplay_tank_def_h
 
-#include <map>
+#include <flat_map>
 #include <string>
 
 /** @file */
@@ -27,7 +27,7 @@ struct tank_t {
  * Get the complete list of available tanks
  * @return tank definitions
  */
-const std::map<std::string, tank_t> &get_tanks();
+const std::flat_map<std::string, tank_t> &get_tanks();
 
 /**
  * Init tank defintion.

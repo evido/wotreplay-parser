@@ -151,7 +151,7 @@ class parser_t {
     /** The debug indicator */
     bool debug;
     /** Packet lengths */
-    std::map<uint8_t, int> packet_lengths;
+    std::flat_map<uint8_t, int> packet_lengths;
     /** Packet reader */
     std::unique_ptr<packet_reader_t> packet_reader;
     /** Load data mode */

@@ -1,7 +1,5 @@
 #include "tank.h"
 #include "logger.h"
-#include "regex.h"
-
 #include "tinyxml2.h"
 #include <boost/lexical_cast.hpp>
 
@@ -10,7 +8,7 @@
 using namespace wotreplay;
 using namespace tinyxml2;
 
-static std::map<std::string, tank_t> tanks;
+static std::flat_map<std::string, tank_t> tanks;
 static bool is_tanks_initialized = false;
 
 static std::string get_tanks_xml_content(const std::string &file_name) {
@@ -50,13 +48,13 @@ static tank_t get_tank_definition(XMLElement *node) {
     return tank;
 }
 
-static std::map<std::string, tank_t> get_tank_definitions() {
+static std::flat_map<std::string, tank_t> get_tank_definitions() {
     XMLDocument doc;
     doc.Parse(get_tanks_xml_content("tanks.xml").c_str());
 
     XMLElement *root = doc.RootElement();
 
-    std::map<std::string, tank_t> tanks;
+    std::flat_map<std::string, tank_t> tanks;
 
     if (!root) {
         logger.writef(log_level_t::error, "Failed to load tanks.xml\n");
@@ -80,4 +78,4 @@ void wotreplay::init_tank_definition() {
     }
 }
 
-const std::map<std::string, tank_t> &wotreplay::get_tanks() { return tanks; }
+const std::flat_map<std::string, tank_t> &wotreplay::get_tanks() { return tanks; }

@@ -6,6 +6,7 @@
 #include "types.h"
 
 #include <cstdint>
+#include <flat_map>
 #include <set>
 #include <vector>
 
@@ -140,6 +141,7 @@ class game_t {
      */
     const player_t &get_player(int player_id) const;
     game_title_t get_game_title() const;
+    std::flat_map<int, player_t> players;
 
   private:
     std::vector<packet_t> packets;
@@ -152,7 +154,6 @@ class game_t {
     buffer_t replay;
     uint32_t recorder_id;
     version_t version;
-    std::map<int, player_t> players;
     game_title_t title;
 };
 

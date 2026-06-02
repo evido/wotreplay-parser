@@ -13,7 +13,6 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
-#include <deque>
 #include <fstream>
 #include <numbers>
 #include <optional>
@@ -29,9 +28,8 @@ const int TURRET_LINE_LENGTH = 20;
 int animation_writer_t::update_model(const game_t &game, float window_start, float window_size, int packet_start) {
     int ix = packet_start;
     const auto &packets = game.get_packets();
-    std::map<int, std::tuple<float, float, float>> tracks;
-    std::map<int, float> turrets;
-    std::map<int, float> hulls;
+    std::flat_map<int, packet_t> tracks;
+    std::flat_map<int, packet_t> turrets;
 
     float window_end = window_start + window_size;
 
@@ -39,21 +37,19 @@ int animation_writer_t::update_model(const game_t &game, float window_start, flo
 
     while (ix < packets.size() && (!packets[ix].has_property(property_t::clock) || packets[ix].clock() <= window_end)) {
         if (packets[ix].has_property(property_t::position)) {
-            tracks[packets[ix].player_id()] = packets[ix].position();
-            hulls[packets[ix].player_id()] = std::get<2>(packets[ix].rotation());
-            this->packets[packets[ix].player_id()].emplace_back(packets[ix]);
+            tracks[packets[ix].player_id()] = packets[ix];
         }
 
         if (packets[ix].has_property(property_t::turret_orientation)) {
-            turrets[packets[ix].player_id()] = packets[ix].turret_orientation();
+            turrets[packets[ix].player_id()] = packets[ix];
         }
 
         if (packets[ix].has_property(property_t::health)) {
-            current_health[packets[ix].player_id()] = packets[ix].health();
+            current_health[packets[ix].player_id()] = packets[ix];
         }
 
         if (packets[ix].has_property(property_t::max_health)) {
-            max_health[packets[ix].player_id()] = packets[ix].max_health();
+            max_health[packets[ix].player_id()] = packets[ix];
         }
 
         if (packets[ix].type() == 0x08 && packets[ix].sub_type() == 0x01) {
@@ -63,16 +59,12 @@ int animation_writer_t::update_model(const game_t &game, float window_start, flo
         ix += 1;
     }
 
-    for (auto &it : tracks) {
+    for (const auto &it : tracks) {
         this->tracks[it.first].emplace_back(it.second);
     }
 
-    for (auto &it : turrets) {
+    for (const auto &it : turrets) {
         this->turrets[it.first].emplace_back(it.second);
-    }
-
-    for (auto &it : hulls) {
-        this->hulls[it.first].emplace_back(it.second);
     }
 
     return ix;
@@ -102,7 +94,7 @@ void animation_writer_t::set_max_history(int max_history) { this->max_history = 
 
 void animation_writer_t::set_show_orientation(bool show_orientation) { this->show_orientation = show_orientation; }
 
-std::optional<packet_t> find_recent_position(const std::map<int, std::deque<packet_t>> &packets, int player_id, float clock) {
+std::optional<packet_t> find_recent_position(const std::flat_map<int, std::vector<packet_t>> &packets, int player_id, float clock) {
     if (!packets.contains(player_id)) {
         return std::nullopt;
     }
@@ -125,30 +117,31 @@ gdImagePtr animation_writer_t::create_frame(const game_t &game, gdImagePtr backg
 
     int r = gdTrueColor(0xFF, 0x00, 0x00);
     int g = gdTrueColor(0x00, 0xFF, 0x00);
-    int b = gdTrueColor(0x1E, 0xCB, 0x1E);
     int w = gdTrueColor(0xFF, 0xFF, 0xFF);
-    int cyan = gdTrueColor(0x00, 0xFF, 0xFF);
+    int b = gdTrueColor(0x00, 0xFF, 0xFF);
 
-    b = cyan;
-
-    gdImageString(frame, gdFontLarge, 10, 10, (uint8_t *)std::format("{}", clock).c_str(), cyan);
+    gdImageString(frame, gdFontLarge, 10, 10, (uint8_t *)std::format("{}", clock).c_str(), b);
 
     int recorder_team = game.get_team_id(game.get_recorder_id());
     int recorder_id = game.get_recorder_id();
 
     float f = image_width / (float)512;
 
-    for (auto &track : tracks) {
-        const auto &positions = track.second;
+    for (const auto &[player_id, player_info] : game.players) {
+        if (!tracks.contains(player_id)) {
+            continue;
+        }
 
-        int player_team = game.get_team_id(track.first);
+        const auto &positions = tracks.at(player_id);
+
+        int player_team = game.get_team_id(player_id);
         if (player_team == -1) {
             continue;
         }
 
         int c;
 
-        if (recorder_id == track.first) {
+        if (recorder_id == player_id) {
             c = b;
         } else if (player_team == -1) {
             c = w;
@@ -158,65 +151,73 @@ gdImagePtr animation_writer_t::create_frame(const game_t &game, gdImagePtr backg
             c = r;
         }
 
-        gdImageAlphaBlending(frame, gdEffectAlphaBlend);
-        int history_pos = 0;
-        for (auto it = positions.rbegin(); it != positions.rend(); it++) {
-            if (max_history != -1 && history_pos >= max_history) {
-                break;
+        auto [player_x, player_y] = get_2d_coord(positions.back().position(), this->arena.bounding_box, this->image_width, this->image_height);
+
+        bool is_visible = positions.back().clock() - clock > -5.f;
+        bool is_alive = current_health.contains(player_id) && current_health.at(player_id).health() > 0;
+        bool is_hit = std::find_if(hits.begin(), hits.end(), [&](const packet_t &p) { return p.player_id() == player_id; }) != hits.end();
+
+        // tracks
+        if (is_alive) {
+            gdImageAlphaBlending(frame, gdEffectAlphaBlend);
+            int history_pos = 0;
+            for (const auto &packet : positions | std::views::reverse) {
+                if (max_history != -1 && history_pos >= max_history) {
+                    break;
+                }
+
+                auto [x, y] = get_2d_coord(packet.position(), this->arena.bounding_box, this->image_width, this->image_height);
+
+                float p = ((float)(history_pos) / (float)max_history);
+                int blend = gdTrueColorAlpha(gdTrueColorGetRed(c), gdTrueColorGetGreen(c), gdTrueColorGetBlue(c), (int)(128 * (p * p * p)));
+
+                gdImageSetPixel(frame, x, y, blend);
+
+                history_pos += 1;
+            }
+            gdImageAlphaBlending(frame, gdEffectReplace);
+        }
+
+        // render player name
+        if (is_alive) {
+            gdFontPtr nameFont;
+
+            if (image_width >= 1024) {
+                nameFont = gdFontMediumBold;
+            } else if (image_height >= 512) {
+                nameFont = gdFontSmall;
+            } else {
+                nameFont = gdFontTiny;
             }
 
-            auto [x, y] = get_2d_coord(*it, this->arena.bounding_box, this->image_width, this->image_height);
+            int char_size = 6;
+            const auto player_display_name = player_info.name;
+            int left_offset = player_x - 10 - player_display_name.length() * char_size;
 
-            float p = ((float)(history_pos) / (float)max_history);
-            int blend = gdTrueColorAlpha(gdTrueColorGetRed(c), gdTrueColorGetGreen(c), gdTrueColorGetBlue(c), (int)(128 * (p * p * p)));
-
-            gdImageSetPixel(frame, x, y, blend);
-
-            history_pos += 1;
-        }
-        gdImageAlphaBlending(frame, gdEffectReplace);
-
-        auto [x, y] = get_2d_coord(positions.back(), this->arena.bounding_box, this->image_width, this->image_height);
-        gdImageFilledRectangle(frame, x - f * 1, y - f * 1, x + f * 1, y + f * 1, c);
-
-        const auto player_display_name = game.get_player(track.first).name;
-
-        gdFontPtr nameFont;
-
-        if (image_width >= 1024) {
-            nameFont = gdFontMediumBold;
-        } else if (image_height >= 512) {
-            nameFont = gdFontSmall;
-        } else {
-            nameFont = gdFontTiny;
+            gdImageAlphaBlending(frame, gdEffectAlphaBlend);
+            gdImageFilledRectangle(frame, left_offset - 2, player_y + 2, player_x - 10, player_y + 12, gdTrueColorAlpha(0x00, 0x00, 0x00, 0x40));
+            gdImageAlphaBlending(frame, gdEffectReplace);
+            gdImageString(frame, nameFont, left_offset, player_y, (uint8_t *)player_display_name.c_str(), c);
         }
 
-        int char_size = 6;
-        int left_offset = x - 10 - player_display_name.length() * char_size;
+        // render player health bar
+        if (is_alive && current_health.contains(player_id) && max_health.contains(player_id)) {
+            float f = ((float)current_health.at(player_id).health()) / ((float)max_health.at(player_id).max_health());
 
-        gdImageAlphaBlending(frame, gdEffectAlphaBlend);
-        gdImageFilledRectangle(frame, left_offset - 2, y + 2, x - 10, y + 12, gdTrueColorAlpha(0x00, 0x00, 0x00, 0x40));
-        gdImageAlphaBlending(frame, gdEffectReplace);
-        gdImageString(frame, nameFont, left_offset, y, (uint8_t *)player_display_name.c_str(), c);
+            gdImageFilledRectangle(frame, player_x - 42, player_y - 3, player_x - 12, player_y + 0, r);
 
-        if (current_health.contains(track.first) && max_health.contains(track.first)) {
-            float f = ((float)current_health.at(track.first)) / ((float)max_health.at(track.first));
-
-            gdImageFilledRectangle(frame, x - 42, y - 3, x - 12, y + 0, r);
-
-            if (std::find_if(hits.begin(), hits.end(), [&](const packet_t &p) { return p.player_id() == track.first; }) != hits.end()) {
-                gdImageFilledRectangle(frame, x - 42, y - 3, x - 42 + 30 * f, y + 0, gdTrueColor(0xFF, 0xFF, 0x00));
+            if (is_hit) {
+                gdImageFilledRectangle(frame, player_x - 42, player_y - 3, player_x - 42 + 30 * f, player_y + 0, gdTrueColor(0xFF, 0xFF, 0x00));
             } else if (f > 0) {
-                gdImageFilledRectangle(frame, x - 42, y - 3, x - 42 + 30 * f, y + 0, g);
+                gdImageFilledRectangle(frame, player_x - 42, player_y - 3, player_x - 42 + 30 * f, player_y + 0, g);
             }
 
-            gdImageRectangle(frame, x - 42, y - 3, x - 12, y + 0, gdTrueColor(0x00, 0x00, 0x00));
-        } else {
-            gdImageFilledRectangle(frame, x - 42, y - 3, x - 12, y + 0, w);
+            gdImageRectangle(frame, player_x - 42, player_y - 3, player_x - 12, player_y + 0, gdTrueColor(0x00, 0x00, 0x00));
         }
 
-        if (show_turrets && turrets.contains(track.first)) {
-            const auto t = turrets.at(track.first).back() + packets.at(track.first).back().hull_orientation2();
+        // render turrets
+        if (is_alive && show_turrets && turrets.contains(player_id)) {
+            const auto t = turrets.at(player_id).back().turret_orientation() + tracks.at(player_id).back().hull_orientation();
 
             const std::array<std::tuple<float, int>, 4> turret_lines = {
                 std::make_tuple(0.0f, r),
@@ -227,16 +228,16 @@ gdImagePtr animation_writer_t::create_frame(const game_t &game, gdImagePtr backg
 
             for (const auto [r, c] : turret_lines) {
                 if (debug) {
-                    gdImageLine(frame, x, y, std::round(x + f * TURRET_LINE_LENGTH * std::cos(t + r * std::numbers::pi / 2)),
-                                std::round(y + f * TURRET_LINE_LENGTH * std::sin(t + r * std::numbers::pi / 2)), c);
+                    gdImageLine(frame, player_x, player_y, std::round(player_x + f * TURRET_LINE_LENGTH * std::cos(t + r * std::numbers::pi / 2)),
+                                std::round(player_y + f * TURRET_LINE_LENGTH * std::sin(t + r * std::numbers::pi / 2)), c);
                 } else if (c == w) {
                     gdImageAlphaBlending(frame, gdEffectAlphaBlend);
                     gdImageSetAntiAliased(frame, int gdTrueColorAlpha(0xFF, 0xFF, 0xFF, 0x40));
-                    gdImageFilledArc(frame, x, y, TURRET_LINE_LENGTH * 2, TURRET_LINE_LENGTH * 2,
+                    gdImageFilledArc(frame, player_x, player_y, TURRET_LINE_LENGTH * 2, TURRET_LINE_LENGTH * 2,
                                      (t + r * std::numbers::pi / 2) * 180.f / std::numbers::pi - 30.f,
                                      (t + r * std::numbers::pi / 2) * 180.f / std::numbers::pi + 30.f, gdAntiAliased, gdArc);
                     gdImageSetAntiAliased(frame, int gdTrueColor(0xFF, 0xFF, 0xFF));
-                    gdImageFilledArc(frame, x, y, TURRET_LINE_LENGTH * 2, TURRET_LINE_LENGTH * 2,
+                    gdImageFilledArc(frame, player_x, player_y, TURRET_LINE_LENGTH * 2, TURRET_LINE_LENGTH * 2,
                                      (t + r * std::numbers::pi / 2) * 180.f / std::numbers::pi - 30.f,
                                      (t + r * std::numbers::pi / 2) * 180.f / std::numbers::pi + 30.f, gdAntiAliased, gdEdged | gdNoFill);
                     gdImageAlphaBlending(frame, gdEffectReplace);
@@ -244,35 +245,37 @@ gdImagePtr animation_writer_t::create_frame(const game_t &game, gdImagePtr backg
             }
         }
 
-        if (show_orientation && packets.contains(track.first)) {
-            const auto o = packets.at(track.first).back().hull_orientation2();
+        // render tank
+        if (show_orientation && tracks.contains(player_id)) {
+            const auto o = tracks.at(player_id).back().hull_orientation();
 
             if (debug) {
-                gdImageLine(frame, x, y, x + f * TURRET_LINE_LENGTH * std::cos(o - std::numbers::pi / 2),
-                            y + f * TURRET_LINE_LENGTH * std::sin(o - std::numbers::pi / 2), cyan);
+                gdImageLine(frame, player_x, player_y, player_x + f * TURRET_LINE_LENGTH * std::cos(o - std::numbers::pi / 2),
+                            player_y + f * TURRET_LINE_LENGTH * std::sin(o - std::numbers::pi / 2), b);
             } else {
                 gdImageSetAntiAliased(frame, c);
-                gdImageFilledArc(frame, x + f * TURRET_LINE_LENGTH / 4 * std::cos(o - std::numbers::pi / 2),
-                                 y + f * TURRET_LINE_LENGTH / 4 * std::sin(o - std::numbers::pi / 2), TURRET_LINE_LENGTH / 1.5, TURRET_LINE_LENGTH / 1.5,
+                gdImageFilledArc(frame, player_x + f * TURRET_LINE_LENGTH / 4 * std::cos(o - std::numbers::pi / 2),
+                                 player_y + f * TURRET_LINE_LENGTH / 4 * std::sin(o - std::numbers::pi / 2), TURRET_LINE_LENGTH / 1.5, TURRET_LINE_LENGTH / 1.5,
                                  (o - 3 * std::numbers::pi / 2) * 180.f / std::numbers::pi - 22.5f,
                                  (o - 3 * std::numbers::pi / 2) * 180.f / std::numbers::pi + 22.5f, gdAntiAliased, gdChord);
                 gdImageSetAntiAliased(frame, gdTrueColor(0x00, 0x00, 0x00));
-                gdImageFilledArc(frame, x + f * TURRET_LINE_LENGTH / 4 * std::cos(o - std::numbers::pi / 2),
-                                 y + f * TURRET_LINE_LENGTH / 4 * std::sin(o - std::numbers::pi / 2), TURRET_LINE_LENGTH / 1.5, TURRET_LINE_LENGTH / 1.5,
+                gdImageFilledArc(frame, player_x + f * TURRET_LINE_LENGTH / 4 * std::cos(o - std::numbers::pi / 2),
+                                 player_y + f * TURRET_LINE_LENGTH / 4 * std::sin(o - std::numbers::pi / 2), TURRET_LINE_LENGTH / 1.5, TURRET_LINE_LENGTH / 1.5,
                                  (o - 3 * std::numbers::pi / 2) * 180.f / std::numbers::pi - 22.5f,
                                  (o - 3 * std::numbers::pi / 2) * 180.f / std::numbers::pi + 22.5f, gdAntiAliased, gdEdged | gdNoFill);
             }
         }
 
+        // render hits
         for (const auto &hit : hits) {
-            const auto &player_position = find_recent_position(packets, hit.player_id(), hit.clock());
+            const auto &player_position = find_recent_position(tracks, hit.player_id(), hit.clock());
 
             if (!player_position.has_value()) {
                 logger.writef(log_level_t::warning, "[animation_writer] unable to locate player_id=%1% data=%2%\n", hit.player_id(), hit);
                 continue;
             }
 
-            const auto &source_position = find_recent_position(packets, hit.source(), hit.clock());
+            const auto &source_position = find_recent_position(tracks, hit.source(), hit.clock());
             if (!source_position.has_value()) {
                 logger.writef(log_level_t::warning, "[animation_writer] unable to locate source=%1% data=%2%\n", hit.source(), hit);
                 continue;
@@ -302,22 +305,22 @@ gdImagePtr animation_writer_t::create_frame(const game_t &game, gdImagePtr backg
             gdImagePtr debug_frame = gdImageCreateTrueColor(gdImageSX(background), gdImageSY(background));
             gdImageCopy(debug_frame, background, 0, 0, 0, 0, gdImageSX(debug_frame), gdImageSY(debug_frame));
 
-            gdImageString(debug_frame, gdFontLarge, 10, 10, (uint8_t *)std::format("[{}] {}", debug_frame_nr, clock).c_str(), cyan);
+            gdImageString(debug_frame, gdFontLarge, 10, 10, (uint8_t *)std::format("[{}] {}", debug_frame_nr, clock).c_str(), b);
 
-            const auto &player_position = find_recent_position(packets, hit.player_id(), hit.clock());
+            const auto &player_position = find_recent_position(tracks, hit.player_id(), hit.clock());
 
             if (!player_position.has_value()) {
                 logger.writef(log_level_t::warning, "[animation_writer] unable to locate player_id=%1% data=%2%\n", hit.player_id(), hit);
                 continue;
             }
 
-            const auto &source_position = find_recent_position(packets, hit.source(), hit.clock());
+            const auto &source_position = find_recent_position(tracks, hit.source(), hit.clock());
             if (!source_position.has_value()) {
                 logger.writef(log_level_t::warning, "[animation_writer] unable to locate source=%1% data=%2%\n", hit.source(), hit);
                 continue;
             }
 
-            if (!packets.contains(hit.source())) {
+            if (!tracks.contains(hit.source())) {
                 logger.writef(log_level_t::warning, "[animation_writer] unable to locate source=%1% data=%2%\n", hit.source(), hit);
                 continue;
             }
@@ -339,11 +342,11 @@ gdImagePtr animation_writer_t::create_frame(const game_t &game, gdImagePtr backg
             auto [source_x, source_y] = get_2d_coord(source_position->position(), this->arena.bounding_box, this->image_width, this->image_height);
             gdImageLine(debug_frame, target_x, target_y, source_x, source_y, gdTrueColor(0xFF, 0xFF, 0x00));
 
-            const auto o = packets.at(hit.source()).back().hull_orientation2();
+            const auto o = tracks.at(hit.source()).back().hull_orientation();
             gdImageLine(debug_frame, source_x, source_y, source_x + f * TURRET_LINE_LENGTH * std::cos(o - std::numbers::pi / 2),
-                        source_y + f * TURRET_LINE_LENGTH * std::sin(o - std::numbers::pi / 2), cyan);
+                        source_y + f * TURRET_LINE_LENGTH * std::sin(o - std::numbers::pi / 2), b);
 
-            const auto t = turrets.at(hit.source()).back() + packets.at(hit.source()).back().hull_orientation2();
+            const auto t = turrets.at(hit.source()).back().turret_orientation() + tracks.at(hit.source()).back().hull_orientation();
 
             const std::array<std::tuple<float, int>, 4> turret_lines = {
                 std::make_tuple(1.0f, r),
