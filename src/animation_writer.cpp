@@ -123,11 +123,13 @@ gdImagePtr animation_writer_t::create_frame(const game_t &game, gdImagePtr backg
 
     gdImageCopy(frame, background, 0, 0, 0, 0, gdImageSX(frame), gdImageSY(frame));
 
-    int r = gdImageColorExact(frame, 0xFF, 0x00, 0x00);
-    int g = gdImageColorExact(frame, 0x00, 0xFF, 0x00);
-    int b = gdImageColorExact(frame, 0x00, 0x00, 0xFF);
-    int w = gdImageColorExact(frame, 0xFF, 0xFF, 0xFF);
-    int cyan = gdImageColorExact(frame, 0x00, 0xFF, 0xFF);
+    int r = gdTrueColor(0xFF, 0x00, 0x00);
+    int g = gdTrueColor(0x00, 0xFF, 0x00);
+    int b = gdTrueColor(0x1E, 0xCB, 0x1E);
+    int w = gdTrueColor(0xFF, 0xFF, 0xFF);
+    int cyan = gdTrueColor(0x00, 0xFF, 0xFF);
+
+    b = cyan;
 
     gdImageString(frame, gdFontLarge, 10, 10, (uint8_t *)std::format("{}", clock).c_str(), cyan);
 
@@ -166,7 +168,7 @@ gdImagePtr animation_writer_t::create_frame(const game_t &game, gdImagePtr backg
             auto [x, y] = get_2d_coord(*it, this->arena.bounding_box, this->image_width, this->image_height);
 
             float p = ((float)(history_pos) / (float)max_history);
-            int blend = gdImageColorAllocateAlpha(frame, gdTrueColorGetRed(c), gdTrueColorGetGreen(c), gdTrueColorGetBlue(c), 128 * (p * p * p));
+            int blend = gdTrueColorAlpha(gdTrueColorGetRed(c), gdTrueColorGetGreen(c), gdTrueColorGetBlue(c), (int)(128 * (p * p * p)));
 
             gdImageSetPixel(frame, x, y, blend);
 
@@ -192,10 +194,14 @@ gdImagePtr animation_writer_t::create_frame(const game_t &game, gdImagePtr backg
         int char_size = 6;
         int left_offset = x - 10 - player_display_name.length() * char_size;
 
+        gdImageAlphaBlending(frame, gdEffectAlphaBlend);
+        gdImageFilledRectangle(frame, left_offset - 2, y + 2, x - 10, y + 12, gdTrueColorAlpha(0x00, 0x00, 0x00, 0x40));
+        gdImageAlphaBlending(frame, gdEffectReplace);
         gdImageString(frame, nameFont, left_offset, y, (uint8_t *)player_display_name.c_str(), c);
 
         if (current_health.contains(track.first) && max_health.contains(track.first)) {
             float f = ((float)current_health.at(track.first)) / ((float)max_health.at(track.first));
+
             gdImageFilledRectangle(frame, x - 42, y - 3, x - 12, y + 0, r);
 
             if (std::find_if(hits.begin(), hits.end(), [&](const packet_t &p) { return p.player_id() == track.first; }) != hits.end()) {
@@ -203,22 +209,10 @@ gdImagePtr animation_writer_t::create_frame(const game_t &game, gdImagePtr backg
             } else if (f > 0) {
                 gdImageFilledRectangle(frame, x - 42, y - 3, x - 42 + 30 * f, y + 0, g);
             }
+
+            gdImageRectangle(frame, x - 42, y - 3, x - 12, y + 0, gdTrueColor(0x00, 0x00, 0x00));
         } else {
             gdImageFilledRectangle(frame, x - 42, y - 3, x - 12, y + 0, w);
-        }
-
-        if (show_orientation && packets.contains(track.first)) {
-            const auto o = packets.at(track.first).back().hull_orientation2();
-
-            if (debug) {
-                gdImageLine(frame, x, y, x + f * TURRET_LINE_LENGTH * std::cos(o - std::numbers::pi / 2),
-                            y + f * TURRET_LINE_LENGTH * std::sin(o - std::numbers::pi / 2), cyan);
-            } else {
-                gdImageFilledArc(frame, x + f * TURRET_LINE_LENGTH / 4 * std::cos(o - std::numbers::pi / 2),
-                                 y + f * TURRET_LINE_LENGTH / 4 * std::sin(o - std::numbers::pi / 2), TURRET_LINE_LENGTH / 1.5, TURRET_LINE_LENGTH / 1.5,
-                                 (o - 3 * std::numbers::pi / 2) * 180.f / std::numbers::pi - 30.f,
-                                 (o - 3 * std::numbers::pi / 2) * 180.f / std::numbers::pi + 30.f, c, gdChord);
-            }
         }
 
         if (show_turrets && turrets.contains(track.first)) {
@@ -237,14 +231,36 @@ gdImagePtr animation_writer_t::create_frame(const game_t &game, gdImagePtr backg
                                 std::round(y + f * TURRET_LINE_LENGTH * std::sin(t + r * std::numbers::pi / 2)), c);
                 } else if (c == w) {
                     gdImageAlphaBlending(frame, gdEffectAlphaBlend);
+                    gdImageSetAntiAliased(frame, int gdTrueColorAlpha(0xFF, 0xFF, 0xFF, 0x40));
                     gdImageFilledArc(frame, x, y, TURRET_LINE_LENGTH * 2, TURRET_LINE_LENGTH * 2,
                                      (t + r * std::numbers::pi / 2) * 180.f / std::numbers::pi - 30.f,
-                                     (t + r * std::numbers::pi / 2) * 180.f / std::numbers::pi + 30.f, gdTrueColorAlpha(0xFF, 0xFF, 0xFF, 0x40), gdArc);
+                                     (t + r * std::numbers::pi / 2) * 180.f / std::numbers::pi + 30.f, gdAntiAliased, gdArc);
+                    gdImageSetAntiAliased(frame, int gdTrueColor(0xFF, 0xFF, 0xFF));
                     gdImageFilledArc(frame, x, y, TURRET_LINE_LENGTH * 2, TURRET_LINE_LENGTH * 2,
                                      (t + r * std::numbers::pi / 2) * 180.f / std::numbers::pi - 30.f,
-                                     (t + r * std::numbers::pi / 2) * 180.f / std::numbers::pi + 30.f, gdTrueColor(0xFF, 0xFF, 0xFF), gdEdged | gdNoFill);
+                                     (t + r * std::numbers::pi / 2) * 180.f / std::numbers::pi + 30.f, gdAntiAliased, gdEdged | gdNoFill);
                     gdImageAlphaBlending(frame, gdEffectReplace);
                 }
+            }
+        }
+
+        if (show_orientation && packets.contains(track.first)) {
+            const auto o = packets.at(track.first).back().hull_orientation2();
+
+            if (debug) {
+                gdImageLine(frame, x, y, x + f * TURRET_LINE_LENGTH * std::cos(o - std::numbers::pi / 2),
+                            y + f * TURRET_LINE_LENGTH * std::sin(o - std::numbers::pi / 2), cyan);
+            } else {
+                gdImageSetAntiAliased(frame, c);
+                gdImageFilledArc(frame, x + f * TURRET_LINE_LENGTH / 4 * std::cos(o - std::numbers::pi / 2),
+                                 y + f * TURRET_LINE_LENGTH / 4 * std::sin(o - std::numbers::pi / 2), TURRET_LINE_LENGTH / 1.5, TURRET_LINE_LENGTH / 1.5,
+                                 (o - 3 * std::numbers::pi / 2) * 180.f / std::numbers::pi - 22.5f,
+                                 (o - 3 * std::numbers::pi / 2) * 180.f / std::numbers::pi + 22.5f, gdAntiAliased, gdChord);
+                gdImageSetAntiAliased(frame, gdTrueColor(0x00, 0x00, 0x00));
+                gdImageFilledArc(frame, x + f * TURRET_LINE_LENGTH / 4 * std::cos(o - std::numbers::pi / 2),
+                                 y + f * TURRET_LINE_LENGTH / 4 * std::sin(o - std::numbers::pi / 2), TURRET_LINE_LENGTH / 1.5, TURRET_LINE_LENGTH / 1.5,
+                                 (o - 3 * std::numbers::pi / 2) * 180.f / std::numbers::pi - 22.5f,
+                                 (o - 3 * std::numbers::pi / 2) * 180.f / std::numbers::pi + 22.5f, gdAntiAliased, gdEdged | gdNoFill);
             }
         }
 
