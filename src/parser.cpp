@@ -11,8 +11,6 @@
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
 #include <cstdint>
-#include <exception>
-#include <map>
 #include <memory>
 #include <sstream>
 #include <stdexcept>

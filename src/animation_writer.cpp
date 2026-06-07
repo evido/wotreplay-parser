@@ -24,20 +24,20 @@
 using namespace wotreplay;
 
 const int TURRET_LINE_LENGTH = 20;
+const float HIT_VISIBILITY_TIMEOUT = 2.5;
 
 int animation_writer_t::update_model(const game_t &game, float window_start, float window_size, int packet_start) {
     int ix = packet_start;
     const auto &packets = game.get_packets();
-    std::flat_map<int, packet_t> tracks;
     std::flat_map<int, packet_t> turrets;
 
     float window_end = window_start + window_size;
 
-    std::erase_if(hits, [=](const packet_t &p) { return p.clock() + 1 <= window_start; });
+    std::erase_if(hits, [=](const packet_t &p) { return p.clock() + HIT_VISIBILITY_TIMEOUT <= window_start; });
 
     while (ix < packets.size() && (!packets[ix].has_property(property_t::clock) || packets[ix].clock() <= window_end)) {
         if (packets[ix].has_property(property_t::position)) {
-            tracks[packets[ix].player_id()] = packets[ix];
+            tracks[packets[ix].player_id()].emplace_back(packets[ix]);
         }
 
         if (packets[ix].has_property(property_t::turret_orientation)) {
@@ -52,19 +52,15 @@ int animation_writer_t::update_model(const game_t &game, float window_start, flo
             max_health[packets[ix].player_id()] = packets[ix];
         }
 
-        if (packets[ix].type() == 0x08 && packets[ix].sub_type() == 0x01) {
+        if (packets[ix].type() == 0x08 && packets[ix].sub_type() == 0x01 && packets[ix].has_property(property_t::source)) {
             hits.emplace_back(packets[ix]);
         }
 
         ix += 1;
     }
 
-    for (const auto &it : tracks) {
-        this->tracks[it.first].emplace_back(it.second);
-    }
-
-    for (const auto &it : turrets) {
-        this->turrets[it.first].emplace_back(it.second);
+    for (const auto &[player_id, turret] : turrets) {
+        this->turrets[player_id].emplace_back(turret);
     }
 
     return ix;
@@ -93,6 +89,7 @@ gdImagePtr animation_writer_t::create_background_frame(const game_t &game) const
 void animation_writer_t::set_max_history(int max_history) { this->max_history = max_history; }
 
 void animation_writer_t::set_show_orientation(bool show_orientation) { this->show_orientation = show_orientation; }
+void animation_writer_t::set_use_player_health(bool use_player_health) { this->use_player_health = use_player_health; }
 
 std::optional<packet_t> find_recent_position(const std::flat_map<int, std::vector<packet_t>> &packets, int player_id, float clock) {
     if (!packets.contains(player_id)) {
@@ -158,7 +155,7 @@ gdImagePtr animation_writer_t::create_frame(const game_t &game, gdImagePtr backg
         bool is_hit = std::find_if(hits.begin(), hits.end(), [&](const packet_t &p) { return p.player_id() == player_id; }) != hits.end();
 
         // tracks
-        if (is_alive) {
+        if (!use_player_health || is_alive) {
             gdImageAlphaBlending(frame, gdEffectAlphaBlend);
             int history_pos = 0;
             for (const auto &packet : positions | std::views::reverse) {
@@ -179,7 +176,7 @@ gdImagePtr animation_writer_t::create_frame(const game_t &game, gdImagePtr backg
         }
 
         // render player name
-        if (is_alive) {
+        if (!use_player_health || is_alive) {
             gdFontPtr nameFont;
 
             if (image_width >= 1024) {
@@ -216,7 +213,7 @@ gdImagePtr animation_writer_t::create_frame(const game_t &game, gdImagePtr backg
         }
 
         // render turrets
-        if (is_alive && show_turrets && turrets.contains(player_id)) {
+        if ((!use_player_health || is_alive) && show_turrets && turrets.contains(player_id)) {
             const auto t = turrets.at(player_id).back().turret_orientation() + tracks.at(player_id).back().hull_orientation();
 
             const std::array<std::tuple<float, int>, 4> turret_lines = {
@@ -246,8 +243,8 @@ gdImagePtr animation_writer_t::create_frame(const game_t &game, gdImagePtr backg
         }
 
         // render tank
-        if (show_orientation && tracks.contains(player_id)) {
-            const auto o = tracks.at(player_id).back().hull_orientation();
+        if (show_orientation) {
+            const auto o = positions.back().hull_orientation();
 
             if (debug) {
                 gdImageLine(frame, player_x, player_y, player_x + f * TURRET_LINE_LENGTH * std::cos(o - std::numbers::pi / 2),
@@ -264,6 +261,9 @@ gdImagePtr animation_writer_t::create_frame(const game_t &game, gdImagePtr backg
                                  (o - 3 * std::numbers::pi / 2) * 180.f / std::numbers::pi - 22.5f,
                                  (o - 3 * std::numbers::pi / 2) * 180.f / std::numbers::pi + 22.5f, gdAntiAliased, gdEdged | gdNoFill);
             }
+        } else {
+            gdImageFilledRectangle(frame, player_x - 2, player_y - 2, player_x + 2, player_y + 2, c);
+            gdImageRectangle(frame, player_x - 2, player_y - 2, player_x + 2, player_y + 2, gdTrueColor(0x00, 0x00, 0x00));
         }
 
         // render hits
@@ -407,7 +407,7 @@ void animation_writer_t::update(const game_t &game) {
     int frame_count = 0;
 
     float df = 1.f / frame_rate;
-    float dm = 1.f / model_update_rate;
+    float dm = (float)model_update_rate / frame_rate;
 
     int frame_nr = 0;
     int rendered_frame_nr = 0;
@@ -437,7 +437,7 @@ void animation_writer_t::update(const game_t &game) {
         }
 
         gdImageTrueColorToPalette(frame, 1, 255);
-        gdImageGifAnimAddCtx(frame, ctx, 1, 0, 0, (int)(100 * df), gdDisposalNone, previous);
+        gdImageGifAnimAddCtx(frame, ctx, 1, 0, 0, (int)(df * 100), gdDisposalNone, previous);
 
         if (previous) {
             gdImageDestroy(previous);

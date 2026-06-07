@@ -174,8 +174,8 @@ void packet_t::set_data(const slice_t &data) {
         properties[static_cast<size_t>(property_t::sub_type)] = true;
         switch (this->sub_type()) {
         case 0x01:
-            properties[static_cast<size_t>(property_t::source)] = true;
-            properties[static_cast<size_t>(property_t::health)] = true;
+            properties[static_cast<size_t>(property_t::source)] = get_data_field<uint8_t>(20) >= 0x07;
+            properties[static_cast<size_t>(property_t::health)] = get_data_field<uint8_t>(20) >= 0x07;
         case 0x02:
             // < 8.5
             // properties[static_cast<size_t>(property_t::health)] = true;

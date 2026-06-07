@@ -138,6 +138,7 @@ void apply_settings(animation_writer_t *const writer, const po::variables_map &v
     writer->set_max_history(vm["max-history"].as<int>());
     writer->set_show_turrets(vm.count("blitz") > 0);
     writer->set_show_orientation(vm.count("blitz") > 0);
+    writer->set_use_player_health(vm.count("blitz") > 0);
     writer->set_skip(vm["skip"].as<double>());
     writer->set_debug(vm.count("debug") > 0);
 
@@ -470,7 +471,7 @@ int main(int argc, const char *argv[]) {
       ("parse-rules", "parse rules only and print parsed expression")
       ("overlay", "generate overlay, don't draw basemap in output image") 
       ("frame-rate", po::value<int>()->default_value(10), "set gif frame rate")
-      ("model-update-rate", po::value<int>()->default_value(100), "set model update rate")
+      ("model-update-rate", po::value<int>()->default_value(10), "set model update rate (accelerate game time)")
       ("version", "display version")
       ("blitz", "parse as world of tanks blitz")
       ("map-size", po::value<int>()->default_value(500), "map size")

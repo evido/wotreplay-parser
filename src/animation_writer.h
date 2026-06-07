@@ -27,6 +27,7 @@ class animation_writer_t : public image_writer_t {
     void set_raw_images_path(const std::string &raw_images_path);
     void set_show_turrets(bool show_turrets);
     void set_show_orientation(bool show_orientation);
+    void set_use_player_health(bool use_player_health);
     void set_skip(double skip);
     void set_debug(bool debug);
 
@@ -42,6 +43,7 @@ class animation_writer_t : public image_writer_t {
     std::string raw_images_path;
     bool show_turrets;
     bool show_orientation;
+    bool use_player_health;
     double skip;
     bool debug;
 };
