@@ -167,6 +167,7 @@ class packet_t {
     size_t pos;
     slice_t data;
     bool blitz_packet;
+
   private:
     /** An array containing the presence of each property. */
     std::array<bool, static_cast<size_t>(property_t::property_nr_items)> properties;

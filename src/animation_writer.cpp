@@ -112,6 +112,8 @@ std::optional<packet_t> find_recent_position(const std::flat_map<int, std::vecto
     return {*result};
 }
 
+void draw_cross(gdImagePtr frame, int target_x, int target_y, int line_size, int c);
+
 gdImagePtr animation_writer_t::create_frame(const game_t &game, gdImagePtr background, float clock) const {
     gdImagePtr frame = gdImageCreateTrueColor(gdImageSX(background), gdImageSY(background));
 
@@ -294,27 +296,7 @@ gdImagePtr animation_writer_t::create_frame(const game_t &game, gdImagePtr backg
 
         for (const auto &hit : hit_positions) {
             auto [target_x, target_y] = get_2d_coord(hit.hit_position(), this->arena.bounding_box, this->image_width, this->image_height);
-
-            // gdImageFilledRectangle(frame, (int) target_x - 5, (int) target_y - 5, (int) target_x + 5, (int) target_y + 5, r);
-            gdPoint l1[] = {
-                { (int) target_x - 5 - 1, (int) target_y - 5 + 1 },
-                { (int) target_x + 5 - 1, (int) target_y + 5 + 1 },
-                { (int) target_x + 5 + 1, (int) target_y + 5 - 1 },
-                { (int) target_x - 5 + 1, (int) target_y - 5 - 1 },
-                { (int) target_x - 5 - 1, (int) target_y - 5 + 1 }
-            };
-
-            gdImageFilledPolygon(frame, l1, 5, r);
-
-            gdPoint l2[] = {
-                { (int) target_x + 5 - 1, (int) target_y - 5 - 1 },
-                { (int) target_x + 5 + 1, (int) target_y - 5 + 1 },
-                { (int) target_x - 5 + 1, (int) target_y + 5 + 1 },
-                { (int) target_x - 5 - 1, (int) target_y + 5 - 1 },
-                { (int) target_x + 5 - 1, (int) target_y - 5 - 1 }
-            };
-
-            gdImageFilledPolygon(frame, l2, 5, r);
+            draw_cross(frame, target_x, target_y, 3, r);
         }
     }
 
@@ -402,6 +384,25 @@ gdImagePtr animation_writer_t::create_frame(const game_t &game, gdImagePtr backg
     }
 
     return frame;
+}
+
+void draw_cross(gdImagePtr frame, int target_x, int target_y, int line_size, int c) {
+
+    gdPoint l1[] = {{(int)target_x - line_size - 0, (int)target_y - line_size + 1},
+                    {(int)target_x + line_size - 0, (int)target_y + line_size + 1},
+                    {(int)target_x + line_size + 1, (int)target_y + line_size - 0},
+                    {(int)target_x - line_size + 1, (int)target_y - line_size - 0},
+                    {(int)target_x - line_size - 0, (int)target_y - line_size + 1}};
+
+    gdImageFilledPolygon(frame, l1, 5, c);
+
+    gdPoint l2[] = {{(int)target_x + line_size - 0, (int)target_y - line_size - 0},
+                    {(int)target_x + line_size + 1, (int)target_y - line_size + 1},
+                    {(int)target_x - line_size + 1, (int)target_y + line_size + 1},
+                    {(int)target_x - line_size - 0, (int)target_y + line_size - 0},
+                    {(int)target_x + line_size - 0, (int)target_y - line_size - 0}};
+
+    gdImageFilledPolygon(frame, l2, 5, c);
 }
 
 void animation_writer_t::write(std::ostream &os) {

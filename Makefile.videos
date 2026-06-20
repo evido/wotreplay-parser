@@ -22,7 +22,6 @@ default: videos
 all: videos videos-debug
 
 videos: $(VIDEOS)
-	echo $<
 
 videos-debug: $(VIDEOS_DEBUG)
 
