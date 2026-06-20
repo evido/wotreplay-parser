@@ -34,6 +34,7 @@ int animation_writer_t::update_model(const game_t &game, float window_start, flo
     float window_end = window_start + window_size;
 
     std::erase_if(hits, [=](const packet_t &p) { return p.clock() + HIT_VISIBILITY_TIMEOUT <= window_start; });
+    std::erase_if(hit_positions, [=](const packet_t &p) { return p.clock() + HIT_VISIBILITY_TIMEOUT <= window_start; });
 
     while (ix < packets.size() && (!packets[ix].has_property(property_t::clock) || packets[ix].clock() <= window_end)) {
         if (packets[ix].has_property(property_t::position)) {
@@ -54,6 +55,10 @@ int animation_writer_t::update_model(const game_t &game, float window_start, flo
 
         if (packets[ix].type() == 0x08 && packets[ix].sub_type() == 0x01 && packets[ix].has_property(property_t::source)) {
             hits.emplace_back(packets[ix]);
+        }
+
+        if (packets[ix].has_property(property_t::hit_position)) {
+            hit_positions.emplace_back(packets[ix]);
         }
 
         ix += 1;
@@ -285,6 +290,31 @@ gdImagePtr animation_writer_t::create_frame(const game_t &game, gdImagePtr backg
 
             auto [source_x, source_y] = get_2d_coord(source_position->position(), this->arena.bounding_box, this->image_width, this->image_height);
             gdImageLine(frame, target_x, target_y, source_x, source_y, gdTrueColor(0xFF, 0xFF, 0x00));
+        }
+
+        for (const auto &hit : hit_positions) {
+            auto [target_x, target_y] = get_2d_coord(hit.hit_position(), this->arena.bounding_box, this->image_width, this->image_height);
+
+            // gdImageFilledRectangle(frame, (int) target_x - 5, (int) target_y - 5, (int) target_x + 5, (int) target_y + 5, r);
+            gdPoint l1[] = {
+                { (int) target_x - 5 - 1, (int) target_y - 5 + 1 },
+                { (int) target_x + 5 - 1, (int) target_y + 5 + 1 },
+                { (int) target_x + 5 + 1, (int) target_y + 5 - 1 },
+                { (int) target_x - 5 + 1, (int) target_y - 5 - 1 },
+                { (int) target_x - 5 - 1, (int) target_y - 5 + 1 }
+            };
+
+            gdImageFilledPolygon(frame, l1, 5, r);
+
+            gdPoint l2[] = {
+                { (int) target_x + 5 - 1, (int) target_y - 5 - 1 },
+                { (int) target_x + 5 + 1, (int) target_y - 5 + 1 },
+                { (int) target_x - 5 + 1, (int) target_y + 5 + 1 },
+                { (int) target_x - 5 - 1, (int) target_y + 5 - 1 },
+                { (int) target_x + 5 - 1, (int) target_y - 5 - 1 }
+            };
+
+            gdImageFilledPolygon(frame, l2, 5, r);
         }
     }
 

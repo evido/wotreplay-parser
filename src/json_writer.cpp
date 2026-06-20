@@ -65,8 +65,14 @@ void json_writer_t::update(const game_t &game) {
 
         auto &value = packets.append(Json::objectValue);
 
+        value["offset"] = (uint32_t)packet.pos;
+
         if (packet.has_property(property_t::type)) {
             value["type"] = packet.type();
+        }
+
+        if (packet.has_property(property_t::sub_type)) {
+            value["sub_type"] = packet.sub_type();
         }
 
         if (packet.has_property(property_t::clock)) {
@@ -79,6 +85,14 @@ void json_writer_t::update(const game_t &game) {
             if (team_id != -1) {
                 value["team"] = team_id;
             }
+        }
+
+        if (packet.has_property(property_t::hit_position)) {
+            auto &positionValue = value["hit_position"] = Json::Value(Json::arrayValue);
+            const auto &position = packet.hit_position();
+            positionValue.append(std::get<0>(position));
+            positionValue.append(std::get<1>(position));
+            positionValue.append(std::get<2>(position));
         }
 
         if (packet.has_property(property_t::position)) {

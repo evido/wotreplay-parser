@@ -38,6 +38,7 @@ class animation_writer_t : public image_writer_t {
     std::flat_map<int, packet_t> current_health;
     std::flat_map<int, packet_t> max_health;
     std::vector<packet_t> hits;
+    std::vector<packet_t> hit_positions;
     int frame_rate, model_update_rate;
     int max_history;
     std::string raw_images_path;

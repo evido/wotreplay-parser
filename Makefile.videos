@@ -11,7 +11,7 @@ PARSER ?= ./bin/wotreplay-parser
 SKIP ?= 30
 MAP_SIZE ?= 300
 FRAME_RATE ?= 10
-MODEL_UPDATE_RATE ?= 20
+MODEL_UPDATE_RATE ?= 10
 
 .PRECIOUS: %.mp4
 .INTERMEDIATE: %-input

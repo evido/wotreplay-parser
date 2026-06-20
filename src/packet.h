@@ -54,6 +54,7 @@ enum property_t {
     recorder_id,
     player_name,
     max_health,
+    hit_position,
     property_nr_items,
 };
 
@@ -72,7 +73,7 @@ class packet_t {
      * Constructor for a packet with defined content.
      * @param data The content of this packet.
      */
-    packet_t(const slice_t &data, bool blitz_packet);
+    packet_t(size_t pos, const slice_t &data, bool blitz_packet);
     /** total packet payload length */
     uint32_t length() const;
     /** @return The packet type */
@@ -86,6 +87,7 @@ class packet_t {
     std::tuple<float, float, float> position() const;
     /** @return The hull orentation value of this packet. */
     std::tuple<float, float, float> rotation() const;
+    std::tuple<float, float, float> hit_position() const;
     /** @return The turret orentation value of this packet. */
     float turret_orientation() const;
     float hull_orientation() const;
@@ -162,12 +164,12 @@ class packet_t {
 
     template <typename T> const T &get_data_field(size_t offset) const { return wotreplay::get_field<T>(data.begin(), data.end(), offset); }
 
+    size_t pos;
+    slice_t data;
+    bool blitz_packet;
   private:
     /** An array containing the presence of each property. */
     std::array<bool, static_cast<size_t>(property_t::property_nr_items)> properties;
-    /** The data content of this packet. */
-    slice_t data;
-    bool blitz_packet;
 };
 
 /**

@@ -10,7 +10,7 @@
 
 using namespace wotreplay;
 
-packet_t::packet_t(const slice_t &data, bool blitz_packet) : blitz_packet(blitz_packet) { this->set_data(data); }
+packet_t::packet_t(size_t pos, const slice_t &data, bool blitz_packet) : data(data), pos(pos), blitz_packet(blitz_packet) { this->set_data(data); }
 
 uint32_t packet_t::type() const {
     assert(has_property(property_t::type));
@@ -43,6 +43,16 @@ uint32_t packet_t::player_id() const {
 float packet_t::clock() const {
     assert(has_property(property_t::clock));
     return get_field<float>(data.begin(), data.end(), 8);
+}
+
+std::tuple<float, float, float> packet_t::hit_position() const {
+    assert(has_property(property_t::hit_position));
+
+    float x = get_field<float>(data.begin(), data.end(), 28);
+    float y = get_field<float>(data.begin(), data.end(), 32);
+    float z = get_field<float>(data.begin(), data.end(), 36);
+
+    return std::make_tuple(x, y, z);
 }
 
 std::tuple<float, float, float> packet_t::position() const {
@@ -116,9 +126,7 @@ const std::array<bool, static_cast<size_t>(property_t::property_nr_items)> &pack
 
 bool packet_t::has_property(property_t p) const { return properties[static_cast<size_t>(p)]; }
 
-void packet_t::set_data(const slice_t &data) {
-    this->data = data;
-
+void packet_t::set_data(const slice_t &_data) {
     // reset all properties
     std::fill(properties.begin(), properties.end(), false);
 
@@ -199,6 +207,9 @@ void packet_t::set_data(const slice_t &data) {
             break;
         case 0x19:
             // related to tank destroyed
+            break;
+        case 0x14:
+            properties[static_cast<size_t>(property_t::hit_position)] = true;
             break;
         case 0x1d:
             break;

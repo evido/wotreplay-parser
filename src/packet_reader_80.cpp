@@ -31,7 +31,7 @@ packet_t packet_reader_80_t::next() {
     auto packet_begin = buffer->begin() + pos;
     auto packet_end = packet_begin + packet_size;
 
-    packet_t packet(boost::make_iterator_range(packet_begin, packet_end), this->init_pos != 0);
+    packet_t packet(pos, boost::make_iterator_range(packet_begin, packet_end), this->init_pos != 0);
 
     logger.writef(log_level_t::debug, "[%1%] type=0x%2$02X ", pos, packet.type());
 
@@ -67,6 +67,14 @@ packet_t packet_reader_80_t::next() {
 
     if (packet.has_property(property_t::max_health)) {
         logger.writef(log_level_t::debug, "max_health=%1% ", (int)packet.max_health());
+    }
+
+    if (packet.type() == 0x08 && packet.sub_type() == 20 && packet.blitz_packet) {
+        logger.writef(log_level_t::debug, "hit_position=[ %1%, %2%, %3% ] ",
+                      packet.get_data_field<float>(28),
+                      packet.get_data_field<float>(32),
+                      packet.get_data_field<float>(36)
+                      );
     }
 
     if (packet.type() == 0x05 && packet.sub_type() == 0x02) {
