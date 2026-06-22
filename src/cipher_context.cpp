@@ -1,23 +1,14 @@
-#include <openssl/opensslv.h>
 #include <openssl/err.h>
-#include <string>
+#include <openssl/opensslv.h>
 
 #include "cipher_context.h"
 
-CipherContext::CipherContext(
-        const char* cipher_name,
-        const unsigned char* key_data,
-        int key_size,
-        const unsigned char* iv
-    ) :
+CipherContext::CipherContext(const char *cipher_name, const unsigned char *key_data, int key_size, const unsigned char *iv)
+    :
 #if OPENSSL_VERSION_MAJOR >= 3
-        legacy_provider(nullptr),
-        default_provider(nullptr),
-        ossl_ctx(nullptr),
+      legacy_provider(nullptr), default_provider(nullptr), ossl_ctx(nullptr),
 #endif
-        cipher(nullptr),
-        ctx(nullptr)
-{
+      cipher(nullptr), ctx(nullptr) {
 
 #if OPENSSL_VERSION_MAJOR >= 3
     OPENSSL_assert(ossl_ctx = OSSL_LIB_CTX_new());
@@ -28,7 +19,6 @@ CipherContext::CipherContext(
     cipher = EVP_get_cipherbyname(cipher_name);
 #endif
 
-
     OPENSSL_assert(ctx = EVP_CIPHER_CTX_new());
     OPENSSL_assert(EVP_CipherInit_ex(ctx, cipher, nullptr, nullptr, nullptr, 0) == 1);
     OPENSSL_assert(EVP_CIPHER_CTX_set_key_length(ctx, key_size) == 1);
@@ -36,13 +26,13 @@ CipherContext::CipherContext(
     OPENSSL_assert(EVP_CIPHER_CTX_set_padding(ctx, 0) == 1);
 }
 
-int CipherContext::update(unsigned char* out, int* out_len, const unsigned char* in, int in_len) {
+int CipherContext::update(unsigned char *out, int *out_len, const unsigned char *in, int in_len) {
     int result = EVP_CipherUpdate(ctx, out, out_len, in, in_len) == 1;
     OPENSSL_assert(result);
     return result;
 }
 
-int CipherContext::finalize(unsigned char *out, int* out_len) {
+int CipherContext::finalize(unsigned char *out, int *out_len) {
     int result = EVP_CipherFinal_ex(ctx, out, out_len) == 1;
     OPENSSL_assert(result);
     return result;
@@ -61,4 +51,3 @@ CipherContext::~CipherContext() {
     OSSL_LIB_CTX_free(ossl_ctx);
 #endif
 }
-

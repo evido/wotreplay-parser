@@ -1,4 +1,6 @@
 #include "json_writer.h"
+#include "logger.h"
+#include "packet.h"
 
 #include <boost/format.hpp>
 
@@ -13,7 +15,7 @@ void json_writer_t::init(const arena_t &arena, const std::string &mode) {
     root["mode"] = modeValue;
     root["packets"] = Json::Value(Json::arrayValue);
     root["map_boundaries"] = Json::Value(Json::arrayValue);
-    
+
     this->initialized = true;
 }
 
@@ -22,9 +24,7 @@ void json_writer_t::write(std::ostream &os) {
     os << writer.write(root);
 }
 
-json_writer_t::json_writer_t()
-    : filter([](const packet_t &){ return true; })
-{}
+json_writer_t::json_writer_t() : filter([](const packet_t &) { return true; }) {}
 
 void write(Json::Value &root, const std::string &key, const buffer_t &buffer) {
     if (buffer.begin() != buffer.end()) {
@@ -50,9 +50,8 @@ void json_writer_t::update(const game_t &game) {
     coordinate.append(std::get<0>(bounding_box.upper_right));
     coordinate.append(std::get<1>(bounding_box.upper_right));
     root["map_boundaries"].append(coordinate);
-    
-    root["recorder_id"] = game.get_recorder_id();
 
+    root["recorder_id"] = game.get_recorder_id();
 
     ::write(root, "summary", game.get_game_begin());
     ::write(root, "score_card", game.get_game_end());
@@ -61,14 +60,21 @@ void json_writer_t::update(const game_t &game) {
 
     for (const auto &packet : game.get_packets()) {
         // skip empty packet
-        if (!filter(packet)) continue;
+        if (!filter(packet))
+            continue;
 
         auto &value = packets.append(Json::objectValue);
+
+        value["offset"] = (uint32_t)packet.pos;
 
         if (packet.has_property(property_t::type)) {
             value["type"] = packet.type();
         }
-        
+
+        if (packet.has_property(property_t::sub_type)) {
+            value["sub_type"] = packet.sub_type();
+        }
+
         if (packet.has_property(property_t::clock)) {
             value["clock"] = packet.clock();
         }
@@ -81,49 +87,67 @@ void json_writer_t::update(const game_t &game) {
             }
         }
 
+        if (packet.has_property(property_t::hit_position)) {
+            auto &positionValue = value["hit_position"] = Json::Value(Json::arrayValue);
+            const auto &position = packet.hit_position();
+            positionValue.append(std::get<0>(position));
+            positionValue.append(std::get<1>(position));
+            positionValue.append(std::get<2>(position));
+        }
+
         if (packet.has_property(property_t::position)) {
             auto &positionValue = value["position"] = Json::Value(Json::arrayValue);
             const auto &position = packet.position();
             positionValue.append(std::get<0>(position));
             positionValue.append(std::get<1>(position));
             positionValue.append(std::get<2>(position));
+
+            auto &orientationValue = value["orientation"] = Json::Value(Json::arrayValue);
+            orientationValue.append(packet.get_data_field<float>(40));
+            orientationValue.append(packet.get_data_field<float>(44));
+            orientationValue.append(packet.get_data_field<float>(48));
         }
 
-        if (packet.has_property(property_t::tank_destroyed)) {
-            uint32_t target, destroyed_by;
-            uint8_t type;
-            std::tie(target, destroyed_by, type) = packet.tank_destroyed();
-            value["target"] = target;
-            value["destroyed_by"] = destroyed_by;
-            if (type == 0) {
-                value["destruction_type"] = "shell";
-            }
-            else if (type == 1) {
-                value["destruction_type"] = "fire";
-            }
-            else if (type == 2) {
-                value["destruction_type"] = "ram";
-            }
-            else if (type == 3) {
-                value["destruction_type"] = "crash";
-            }
-            else  {
-                value["destruction_type"] = (boost::format("unknown (%1%)") % uint32_t(type)).str();
-            }
+        if (packet.has_property(property_t::map_name)) {
+            value["map_name"] = packet.map_name();
         }
 
-        if (packet.has_property(property_t::health)) {
-            value["health"] = packet.health();
-        }        
+        // if (packet.has_property(property_t::tank_destroyed)) {
+        //     uint32_t target, destroyed_by;
+        //     uint8_t type;
+        //     std::tie(target, destroyed_by, type) = packet.tank_destroyed();
+        //     value["target"] = target;
+        //     value["destroyed_by"] = destroyed_by;
+        //     if (type == 0) {
+        //         value["destruction_type"] = "shell";
+        //     }
+        //     else if (type == 1) {
+        //         value["destruction_type"] = "fire";
+        //     }
+        //     else if (type == 2) {
+        //         value["destruction_type"] = "ram";
+        //     }
+        //     else if (type == 3) {
+        //         value["destruction_type"] = "crash";
+        //     }
+        //     else  {
+        //         value["destruction_type"] = (boost::format("unknown (%1%)") %
+        //         uint32_t(type)).str();
+        //     }
+        // }
 
-        if (packet.has_property(property_t::message)) {
-            value["message"] = packet.message();
-        }
+        // if (packet.has_property(property_t::health)) {
+        //     value["health"] = packet.health();
+        // }
 
-        if (packet.has_property(property_t::sub_type)) {
-            value["sub_type"] = packet.sub_type();
-        }
-        
+        // if (packet.has_property(property_t::message)) {
+        //     value["message"] = packet.message();
+        // }
+
+        // if (packet.has_property(property_t::sub_type)) {
+        //     value["sub_type"] = packet.sub_type();
+        // }
+
         // if (packet.has_property(property_t::source)) {
         //     value["source"] = packet.source();
         // }
@@ -132,12 +156,16 @@ void json_writer_t::update(const game_t &game) {
         //     value["target"] = packet.target();
         // }
 
-        if (packet.has_property(property_t::destroyed_track_id)) {
-            value["destroyed_track_id"] = packet.destroyed_track_id();
-        }
+        // if (packet.has_property(property_t::destroyed_track_id)) {
+        //     value["destroyed_track_id"] = packet.destroyed_track_id();
+        // }
 
-        if (packet.has_property(property_t::alt_track_state)) {
-            value["alt_track_state"] = packet.alt_track_state();
+        // if (packet.has_property(property_t::alt_track_state)) {
+        //     value["alt_track_state"] = packet.alt_track_state();
+        // }
+
+        if (packet.has_property(property_t::turret_orientation)) {
+            value["turret_orientation"] = packet.turret_orientation();
         }
     }
 }
@@ -151,14 +179,8 @@ void json_writer_t::reset() {
     this->initialized = false;
 }
 
-bool json_writer_t::is_initialized() const {
-    return initialized;
-}
+bool json_writer_t::is_initialized() const { return initialized; }
 
-void json_writer_t::clear() {
-    root["packets"].clear();
-}
+void json_writer_t::clear() { root["packets"].clear(); }
 
-void json_writer_t::set_filter(filter_t filter) {
-    this->filter = filter;
-}
+void json_writer_t::set_filter(filter_t filter) { this->filter = filter; }

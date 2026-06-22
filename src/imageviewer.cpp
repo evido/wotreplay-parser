@@ -1,16 +1,9 @@
 #include "imageviewer.h"
-#include <QPainter>
 #include <QPaintEvent>
-ImageViewer::ImageViewer(QWidget *parent)
-    : QOpenGLWidget(parent)
-{
+#include <QPainter>
+ImageViewer::ImageViewer(QWidget *parent) : QOpenGLWidget(parent) {}
 
-}
-
-ImageViewer::~ImageViewer()
-{
-
-}
+ImageViewer::~ImageViewer() {}
 
 void ImageViewer::set_image(QImage image) {
     this->has_image = true;
@@ -18,8 +11,7 @@ void ImageViewer::set_image(QImage image) {
     this->update();
 }
 
-void ImageViewer::paintEvent(QPaintEvent *event)
-{
+void ImageViewer::paintEvent(QPaintEvent *event) {
     QPainter painter;
     painter.begin(this);
     painter.fillRect(event->rect(), Qt::black);

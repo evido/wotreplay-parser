@@ -6,35 +6,38 @@
 #include <map>
 
 namespace wotreplay {
+/**
+ * Contains parameter to read a packet
+ */
+struct packet_config_t {
     /**
-     * Contains parameter to read a packet
+     * The base packet size
      */
-    struct packet_config_t {
-        /**
-         * The base packet size
-         */
-        int size;
-        /**
-         * The position of the payload length indicator
-         */
-        int payload_length_offset;
-    };
+    int size;
+    /**
+     * The position of the payload length indicator
+     */
+    int payload_length_offset;
+};
 
-    /**
-     * Read WOT 8.0 type replays
-     */
-    class packet_reader_80_t : public packet_reader_t {
-    public:
-        virtual void init(const version_t &version, buffer_t *buffer, game_title_t title);
-        virtual packet_t next();
-        virtual bool has_next();
-        virtual bool is_compatible(const version_t &version);
-    private:
-        buffer_t *buffer;
-        version_t version;
-        int pos, prev;
-		game_title_t title;
-    };
-}
+/**
+ * Read WOT 8.0 type replays
+ */
+class packet_reader_80_t : public packet_reader_t {
+  public:
+    virtual void init(const version_t &version, buffer_t *buffer, game_title_t title);
+    virtual packet_t next();
+    virtual bool has_next();
+    virtual bool is_compatible(const version_t &version);
+    int init_pos;
+
+  private:
+    buffer_t *buffer;
+    version_t version;
+    int prev;
+    game_title_t title;
+    int pos;
+};
+} // namespace wotreplay
 
 #endif /* defined(wotreplay_packet_reader_80_h) */

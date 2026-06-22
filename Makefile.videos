@@ -1,0 +1,58 @@
+
+IN ?= in/
+BUILD ?= build/
+OUT ?= out/
+SOURCES = $(wildcard $(IN)*.wotbreplay $(IN)*.wotreplay)
+# VIDEOS = $(addprefix $(OUT),$(patsubst %.wotbreplay, %.mp4, $(notdir $(SOURCES))))
+# VIDEOS_DEBUG = $(addprefix $(OUT),$(patsubst %.wotbreplay, %-debug.mp4, $(notdir $(SOURCES))))
+VIDEOS = $(addprefix $(OUT),$(addsuffix .mp4,$(notdir $(SOURCES))))
+VIDEOS_DEBUG = $(addprefix $(OUT),$(addsuffix .debug.mp4,$(notdir $(SOURCES))))
+PARSER ?= ./bin/wotreplay-parser
+SKIP ?= 30
+MAP_SIZE ?= 300
+FRAME_RATE ?= 10
+MODEL_UPDATE_RATE ?= 10
+
+.PRECIOUS: %.mp4
+.INTERMEDIATE: %-input
+.phony: clean
+
+default: videos
+
+all: videos videos-debug
+
+videos: $(VIDEOS)
+
+videos-debug: $(VIDEOS_DEBUG)
+
+$(BUILD)%.wotbreplay : $(IN)%.wotbreplay | $(BUILD)
+	unzip -p $< data.wotreplay > $@
+
+$(BUILD)%.wotreplay : $(IN)%.wotreplay | $(BUILD)
+	cp $< $@
+
+$(BUILD)%.wotreplay.gif :  $(BUILD)%.wotreplay
+	$(PARSER) --parse --type gif --raw-images-path $(subst .gif,.raw,$@) --input $< --output $@ --skip $(SKIP) --frame-rate $(FRAME_RATE) --model-update-rate $(MODEL_UPDATE_RATE)
+
+$(BUILD)%.wotbreplay.gif :  $(BUILD)%.wotbreplay
+	$(PARSER) --parse --type gif --raw-images-path $(subst .gif,.raw,$@) --input $< --output $@ --skip $(SKIP) --blitz --map-size $(MAP_SIZE) --frame-rate $(FRAME_RATE) --model-update-rate $(MODEL_UPDATE_RATE)
+
+$(OUT)%.mp4 : $(BUILD)%.gif | $(OUT)
+	ffmpeg -f image2 -r $(FRAME_RATE) -pattern_type glob -i "$(subst .gif,.raw,$<)/frame-*.png" -vcodec libx264 -crf 22 -y $@
+	rm -rf "$(subst .mp4,.raw,$@)" $<
+
+$(BUILD)%.wotreplay.debug.gif :  $(BUILD)%.wotreplay | $(BUILD)
+	$(PARSER) --parse --type gif --raw-images-path $(subst .gif,.raw,$@) --input $< --output $@ --skip $(SKIP) --frame-rate $(FRAME_RATE) --model-update-rate $(MODEL_UPDATE_RATE) --debug
+
+$(BUILD)%.wotbreplay.debug.gif :  $(BUILD)%.wotbreplay | $(BUILD)
+	$(PARSER) --parse --type gif --raw-images-path $(subst .gif,.raw,$@) --input $< --output $@ --skip $(SKIP) --blitz --map-size $(MAP_SIZE) --frame-rate $(FRAME_RATE) --model-update-rate $(MODEL_UPDATE_RATE) --debug
+
+$(OUT)%.debug.mp4 : $(BUILD)%.debug.gif | $(OUT)
+	ffmpeg -f image2 -r $(FRAME_RATE) -pattern_type glob -i "$(subst .gif,.raw,$<)/frame-*.png" -vcodec libx264 -crf 22 -y $@
+	rm -rf "$(subst .mp4,.raw,$@)" $<
+
+clean:
+	rm -rf $(BUILD) $(OUT)
+
+$(BUILD) $(OUT):
+	mkdir -p $@

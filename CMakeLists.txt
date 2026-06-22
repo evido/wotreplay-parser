@@ -13,9 +13,11 @@ set(CMAKE_INCLUDE_CURRENT_DIR   ON)
 
 if(USE_BOOST_REGEX STREQUAL 1)
   add_definitions(-DUSE_BOOST_REGEX)
-  find_package(Boost 1.50.0 COMPONENTS filesystem program_options system regex REQUIRED)
+  find_package(Boost 1.50.0 COMPONENTS filesystem program_options regex REQUIRED)
+# find_package(Boost 1.50.0 COMPONENTS filesystem program_options system regex REQUIRED)
 else()
-  find_package(Boost 1.50.0 COMPONENTS filesystem program_options system REQUIRED)
+  find_package(Boost 1.50.0 COMPONENTS filesystem program_options REQUIRED)
+#  find_package(Boost 1.50.0 COMPONENTS filesystem program_options system REQUIRED)
 endif()
 
 find_package(PNG REQUIRED)
@@ -39,18 +41,19 @@ if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
 	add_definitions(-Dchdir=_chdir)
 	set(CMAKE_GENERATOR_TOOLSET "v140" CACHE STRING "Platform Toolset" FORCE) 
 else()
-	set (CMAKE_CXX_FLAGS "-Os -std=c++11")
+# set (CMAKE_CXX_FLAGS "-Os")
+# set (CMAKE_CXX_FLAGS "-Os -std=c++11")
 endif()
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD "c++11")
-set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++")
+# set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD "c++11")
+# set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++")
 
 if (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
-    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++ -fvisibility=hidden")
+# set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++ -fvisibility=hidden")
 endif()
 
 if(TBB_FOUND)
@@ -78,6 +81,8 @@ add_library(wotreplay STATIC
 			src/tank.h
 			src/animation_writer.h
             src/cipher_context.h
+            src/fstream_ioctx.h
+            src/fstream_ioctx.cpp
 			src/packet.cpp 
 			src/packet_reader_80.cpp 
 			src/parser.cpp 

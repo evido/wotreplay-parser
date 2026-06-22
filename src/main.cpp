@@ -1,27 +1,32 @@
-#include "image_writer.h"
 #include "animation_writer.h"
-#include "heatmap_writer.h"
+#include "arena.h"
 #include "class_heatmap_writer.h"
+#include "heatmap_writer.h"
+#include "image_writer.h"
 #include "json_writer.h"
 #include "logger.h"
+#include "packet.h"
+#include "packet_reader_80.h"
 #include "parser.h"
 #include "regex.h"
 #include "tank.h"
 #include "version.h"
 
+#include <algorithm>
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <boost/program_options.hpp>
 #include <boost/tokenizer.hpp>
+#include <memory>
 
 #ifdef ENABLE_TBB
-#include <tbb/tbb.h>
-#include <tbb/pipeline.h>
 #include <tbb/flow_graph.h>
+#include <tbb/pipeline.h>
+#include <tbb/tbb.h>
 #endif // ifdef ENABLE_TBB
 
-#include <fstream>
 #include <float.h>
+#include <fstream>
 
 #ifdef _MSC_VER
 #include <direct.h>
@@ -29,15 +34,17 @@
 #define EX_USAGE 64
 #define EX_SOFTWARE 70
 #else
-#include <unistd.h>
 #include <sysexits.h>
+#include <unistd.h>
 #endif // ifdef _MSC_VER
+
+const int RAW_OFFSET_BLITZ = 80;
 
 using namespace wotreplay;
 using namespace boost::filesystem;
 namespace po = boost::program_options;
 
-void show_help(int argc, const char *argv [], po::options_description &desc) {
+void show_help(int argc, const char *argv[], po::options_description &desc) {
     std::stringstream help_message;
     help_message << desc << "\n";
     logger.write(help_message.str());
@@ -46,21 +53,20 @@ void show_help(int argc, const char *argv [], po::options_description &desc) {
 void show_version() {
     std::stringstream version_message;
     version_message << "wotreplay-parser " << Version::BUILD_VERSION << "\n"
-        << "Commit SHA1: " << Version::GIT_SHA1 << "\n"
-        << "Commit date: " << Version::GIT_DATE << "\n"
-        << "Build date: " << Version::BUILD_DATE << "\n";
+                    << "Commit SHA1: " << Version::GIT_SHA1 << "\n"
+                    << "Commit date: " << Version::GIT_DATE << "\n"
+                    << "Build date: " << Version::BUILD_DATE << "\n";
     logger.write(version_message.str());
 }
 
 static bool is_not_empty(const packet_t &packet) {
     // list of default properties with no special meaning
-    std::set<property_t> standard_properties = { property_t::clock, property_t::player_id, property_t::type, property_t::sub_type, property_t::length };
+    std::set<property_t> standard_properties = {property_t::clock, property_t::player_id, property_t::type, property_t::sub_type, property_t::length};
     auto properties = packet.get_properties();
     for (int i = 0; i < properties.size(); ++i) {
         property_t property = static_cast<property_t>(i);
         // packet has property, but can not be found in default properties
-        if (properties[i] &&
-            standard_properties.find(property) == standard_properties.end()) {
+        if (properties[i] && standard_properties.find(property) == standard_properties.end()) {
             return true;
         }
     }
@@ -84,8 +90,7 @@ void generate_minimap(const arena_t &arena, const std::string &game_mode, int te
         std::ofstream os(file_name, std::ios::binary);
         writer.finish();
         writer.write(os);
-    }
-    catch (const std::exception &exc) {
+    } catch (const std::exception &exc) {
         logger.writef(log_level_t::error, "Failed to create %1%: %2%", file_name, exc.what());
     }
 }
@@ -102,7 +107,7 @@ int create_minimaps(const po::variables_map &vm, const std::string &output, bool
     for (const auto &arena_entry : get_arenas()) {
         const arena_t &arena = arena_entry.second;
         for (const auto &configuration_entry : arena.configurations) {
-            for (int team_id : { 0, 1 }) {
+            for (int team_id : {0, 1}) {
                 generate_minimap(arena, configuration_entry.first, team_id, output);
             }
         }
@@ -111,29 +116,38 @@ int create_minimaps(const po::variables_map &vm, const std::string &output, bool
     return EX_OK;
 }
 
-void apply_settings(image_writer_t * const writer, const po::variables_map &vm) {
+void apply_settings(image_writer_t *const writer, const po::variables_map &vm) {
     writer->set_image_width(vm["size"].as<int>());
     writer->set_image_height(vm["size"].as<int>());
     writer->set_no_basemap(vm.count("overlay") > 0);
 }
 
-void apply_settings(heatmap_writer_t * const writer, const po::variables_map &vm) {
+void apply_settings(heatmap_writer_t *const writer, const po::variables_map &vm) {
     writer->skip = vm["skip"].as<double>();
-    writer->bounds = std::make_pair(vm["bounds-min"].as<double>(),
-        vm["bounds-max"].as<double>());
+    writer->bounds = std::make_pair(vm["bounds-min"].as<double>(), vm["bounds-max"].as<double>());
 }
 
-void apply_settings(class_heatmap_writer_t * const writer, const po::variables_map &vm) {
+void apply_settings(class_heatmap_writer_t *const writer, const po::variables_map &vm) {
     std::vector<draw_rule_t> rules = parse_draw_rules(vm["rules"].as<std::string>());
     writer->set_draw_rules(rules);
 }
 
-void apply_settings(animation_writer_t * const writer, const po::variables_map &vm) {
+void apply_settings(animation_writer_t *const writer, const po::variables_map &vm) {
     writer->set_model_update_rate(vm["model-update-rate"].as<int>());
     writer->set_frame_rate(vm["frame-rate"].as<int>());
+    writer->set_max_history(vm["max-history"].as<int>());
+    writer->set_show_turrets(vm.count("blitz") > 0);
+    writer->set_show_orientation(vm.count("blitz") > 0);
+    writer->set_use_player_health(vm.count("blitz") > 0);
+    writer->set_skip(vm["skip"].as<double>());
+    writer->set_debug(vm.count("debug") > 0);
+
+    if (vm.count("raw-images-path") > 0) {
+        writer->set_raw_images_path(vm["raw-images-path"].as<std::string>());
+    }
 }
 
-void apply_settings(json_writer_t * const writer, const po::variables_map &vm) {
+void apply_settings(json_writer_t *const writer, const po::variables_map &vm) {
     if (vm.count("supress-empty")) {
         writer->set_filter(&is_not_empty);
     }
@@ -144,56 +158,52 @@ std::unique_ptr<writer_t> create_writer(const std::string &type, const po::varia
 
     if (type == "png") {
         writer = std::unique_ptr<writer_t>(new image_writer_t());
-        auto &image_writer = dynamic_cast<image_writer_t&>(*writer);
+        auto &image_writer = dynamic_cast<image_writer_t &>(*writer);
         image_writer.set_show_self(true);
         image_writer.set_use_fixed_teamcolors(false);
 
-        apply_settings(dynamic_cast<image_writer_t*>(writer.get()), vm);
-    }
-    else if (type == "json") {
+        apply_settings(dynamic_cast<image_writer_t *>(writer.get()), vm);
+    } else if (type == "json") {
         writer = std::unique_ptr<writer_t>(new json_writer_t());
-        apply_settings(dynamic_cast<json_writer_t*>(writer.get()), vm);
-    }
-    else if (type == "heatmap" || type == "team-heatmap" || type == "team-heatmap-soft") {
-        writer = std::unique_ptr<writer_t>(new heatmap_writer_t());
-        auto &heatmap_writer = dynamic_cast<heatmap_writer_t&>(*writer);
+        apply_settings(dynamic_cast<json_writer_t *>(writer.get()), vm);
+    } else if (type == "heatmap" || type == "team-heatmap" || type == "team-heatmap-soft") {
+        writer = std::make_unique<heatmap_writer_t>();
+        auto &heatmap_writer = dynamic_cast<heatmap_writer_t &>(*writer);
 
         if (type == "heatmap") {
             heatmap_writer.mode = heatmap_mode_t::combined;
-        }
-        else if (type == "team-heatmap") {
+        } else if (type == "team-heatmap") {
             heatmap_writer.mode = heatmap_mode_t::team;
-        }
-        else if (type == "team-heatmap-soft") {
+        } else if (type == "team-heatmap-soft") {
             heatmap_writer.mode = heatmap_mode_t::team_soft;
         }
 
-        apply_settings(dynamic_cast<heatmap_writer_t*>(writer.get()), vm);
-        apply_settings(dynamic_cast<image_writer_t*>(writer.get()), vm);
-    }
-    else if (type == "class-heatmap") {
+        apply_settings(dynamic_cast<heatmap_writer_t *>(writer.get()), vm);
+        apply_settings(dynamic_cast<image_writer_t *>(writer.get()), vm);
+    } else if (type == "class-heatmap") {
         writer = std::unique_ptr<writer_t>(new class_heatmap_writer_t());
 
-        apply_settings(dynamic_cast<class_heatmap_writer_t*>(writer.get()), vm);
-        apply_settings(dynamic_cast<heatmap_writer_t*>(writer.get()), vm);
-        apply_settings(dynamic_cast<image_writer_t*>(writer.get()), vm);
-    }
-    else if (type == "gif") {
+        apply_settings(dynamic_cast<class_heatmap_writer_t *>(writer.get()), vm);
+        apply_settings(dynamic_cast<heatmap_writer_t *>(writer.get()), vm);
+        apply_settings(dynamic_cast<image_writer_t *>(writer.get()), vm);
+    } else if (type == "gif") {
         writer.reset(new animation_writer_t());
 
-        apply_settings(dynamic_cast<image_writer_t*>(writer.get()), vm);
-        apply_settings(dynamic_cast<animation_writer_t*>(writer.get()), vm);
-    }
-    else {
-        logger.writef(log_level_t::error, "Invalid output type (%1%), supported types: png, gif, json, heatmap, team-heatmap, team-heatmap-soft or class-heatmap.\n", type);
+        apply_settings(dynamic_cast<image_writer_t *>(writer.get()), vm);
+        apply_settings(dynamic_cast<animation_writer_t *>(writer.get()), vm);
+    } else {
+        logger.writef(log_level_t::error,
+                      "Invalid output type (%1%), supported types: png, gif, "
+                      "json, heatmap, "
+                      "team-heatmap, team-heatmap-soft or class-heatmap.\n",
+                      type);
     }
 
     return writer;
 }
 
 #ifdef ENABLE_TBB
-int process_replay_directory(const po::variables_map &vm, const std::string &input, const std::string &output, const std::string &type, bool debug)
-{
+int process_replay_directory(const po::variables_map &vm, const std::string &input, const std::string &output, const std::string &type, bool debug) {
     // load all arena's so we can use manual load parser
     init_arena_definition();
     init_tank_definition();
@@ -215,7 +225,7 @@ int process_replay_directory(const po::variables_map &vm, const std::string &inp
         return "";
     };
 
-    auto f_parse_replay = [](std::string file_name) -> game_t* {
+    auto f_parse_replay = [](std::string file_name) -> game_t * {
         std::ifstream in(file_name, std::ios::binary);
 
         if (!in) {
@@ -227,8 +237,7 @@ int process_replay_directory(const po::variables_map &vm, const std::string &inp
         parser_t parser(load_data_mode_t::manual);
         try {
             parser.parse(in, *game);
-        }
-        catch (std::exception &e) {
+        } catch (std::exception &e) {
             logger.writef(log_level_t::error, "Failed to parse file (%1%): %2%\n", file_name, e.what());
             return nullptr;
         }
@@ -241,12 +250,13 @@ int process_replay_directory(const po::variables_map &vm, const std::string &inp
         return game.release();
     };
 
-    auto f_generate_image = [&type, &vm](game_t *game_) -> image_writer_t* {
-        if (game_ == nullptr) return nullptr;
+    auto f_generate_image = [&type, &vm](game_t *game_) -> image_writer_t * {
+        if (game_ == nullptr)
+            return nullptr;
         std::unique_ptr<game_t> game(game_);
         std::unique_ptr<writer_t> writer(create_writer(type, vm));
-        if (writer && dynamic_cast<image_writer_t*>(writer.get())) {
-            std::unique_ptr<image_writer_t> image_writer(static_cast<image_writer_t*>(writer.release()));
+        if (writer && dynamic_cast<image_writer_t *>(writer.get())) {
+            std::unique_ptr<image_writer_t> image_writer(static_cast<image_writer_t *>(writer.release()));
             image_writer->init(game->get_arena(), game->get_game_mode());
             image_writer->update(*game);
             return image_writer.release();
@@ -254,10 +264,11 @@ int process_replay_directory(const po::variables_map &vm, const std::string &inp
         return nullptr;
     };
 
-    std::map<std::tuple<std::string, std::string>, image_writer_t*> writers;
+    std::flat_map<std::tuple<std::string, std::string>, image_writer_t *> writers;
 
     auto f_merge_image = [&writers](image_writer_t *writer_) {
-        if (writer_ == nullptr) return;
+        if (writer_ == nullptr)
+            return;
         std::unique_ptr<image_writer_t> writer(writer_);
 
         auto key = std::make_tuple(writer->get_arena().name, writer->get_game_mode());
@@ -265,25 +276,20 @@ int process_replay_directory(const po::variables_map &vm, const std::string &inp
 
         if (it == writers.end()) {
             writers.insert(std::make_pair(key, writer.release()));
-        }
-        else {
+        } else {
             it->second->merge(*writer);
         }
     };
 
     int tokens = vm["tokens"].as<int>();
-    tbb::parallel_pipeline(tokens,
-        tbb::make_filter<void, std::string>(tbb::filter::serial_in_order, f_generate_replay_paths) &
-        tbb::make_filter<std::string, game_t*>(tbb::filter::parallel, f_parse_replay) &
-        tbb::make_filter<game_t*, image_writer_t*>(tbb::filter::parallel, f_generate_image) &
-        tbb::make_filter<image_writer_t*, void>(tbb::filter::serial_out_of_order, f_merge_image)
-        );
+    tbb::parallel_pipeline(tokens, tbb::make_filter<void, std::string>(tbb::filter::serial_in_order, f_generate_replay_paths) &
+                                       tbb::make_filter<std::string, game_t *>(tbb::filter::parallel, f_parse_replay) &
+                                       tbb::make_filter<game_t *, image_writer_t *>(tbb::filter::parallel, f_generate_image) &
+                                       tbb::make_filter<image_writer_t *, void>(tbb::filter::serial_out_of_order, f_merge_image));
 
-    typedef std::map<std::tuple<std::string, std::string>, image_writer_t*>::iterator::value_type item_t;
+    typedef std::flat_map<std::tuple<std::string, std::string>, image_writer_t *>::iterator::value_type item_t;
     tbb::parallel_do(writers.begin(), writers.end(), [&output](const item_t &it) {
-        path file_name = path(output) / (boost::format("%s_%s.png") %
-            std::get<0>(it.first) %
-            std::get<1>(it.first)).str();
+        path file_name = path(output) / (boost::format("%s_%s.png") % std::get<0>(it.first) % std::get<1>(it.first)).str();
         std::ofstream out(file_name.string(), std::ios::binary);
         it.second->finish();
         it.second->write(out);
@@ -299,10 +305,10 @@ int process_replay_directory(const po::variables_map &vm, const std::string &inp
         return EX_USAGE;
     }
 
-    parser_t parser(load_data_mode_t::bulk);
+    parser_t parser(std::move(std::unique_ptr<packet_reader_t>(new packet_reader_80_t())), load_data_mode_t::bulk);
     parser.set_debug(debug);
 
-    std::map<std::string, std::unique_ptr<writer_t>> writers;
+    std::flat_map<std::string, std::unique_ptr<writer_t>> writers;
     for (auto it = directory_iterator(input); it != directory_iterator(); ++it) {
         if (!is_regular_file(*it) || it->path().extension() != ".wotreplay") {
             continue;
@@ -317,9 +323,8 @@ int process_replay_directory(const po::variables_map &vm, const std::string &inp
         game_t game;
 
         try {
-            parser.parse(in, game);
-        }
-        catch (std::exception &e) {
+            parser.parse(in, game, false);
+        } catch (std::exception &e) {
             logger.writef(log_level_t::error, "Failed to parse file (%1%): %2%\n", it->path().string(), e.what());
             continue;
         }
@@ -358,14 +363,12 @@ int process_replay_directory(const po::variables_map &vm, const std::string &inp
 #endif
 
 int process_replay_file(const po::variables_map &vm, const std::string &input, const std::string &output, const std::string &type, bool debug) {
-    static std::map<std::string, std::string> suffixes = {
-        {"png", ".png"},
-        {"json", ".json"},
-        {"heatmap", "_heatmap.png"},
-        {"team-heatmap", "_team_heatmap.png"},
-        {"team-heatmap-soft", "_team_heatmap_soft.png"},
-        {"class-heatmap", "_class_heatmap.png"}
-    };
+    static std::flat_map<std::string, std::string> suffixes = {{"png", ".png"},
+                                                               {"json", ".json"},
+                                                               {"heatmap", "_heatmap.png"},
+                                                               {"team-heatmap", "_team_heatmap.png"},
+                                                               {"team-heatmap-soft", "_team_heatmap_soft.png"},
+                                                               {"class-heatmap", "_class_heatmap.png"}};
 
     if (!(vm.count("type") > 0 && vm.count("input") > 0)) {
         logger.write(wotreplay::log_level_t::error, "parameters type and input are required to use this mode\n");
@@ -378,11 +381,16 @@ int process_replay_file(const po::variables_map &vm, const std::string &input, c
         return EX_SOFTWARE;
     }
 
-    parser_t parser(load_data_mode_t::on_demand);
+    std::unique_ptr<packet_reader_80_t> packet_reader = std::make_unique<packet_reader_80_t>();
+
+    if (vm.count("blitz") > 0) {
+        packet_reader->init_pos = 80;
+    }
+
+    parser_t parser(std::move(packet_reader), load_data_mode_t::on_demand, debug);
     game_t game;
 
-    parser.set_debug(debug);
-    parser.parse(in, game);
+    parser.parse(in, game, vm.count("blitz") > 0);
 
     boost::char_separator<char> sep(",");
     boost::tokenizer<boost::char_separator<char>> tokens(type, sep);
@@ -394,7 +402,18 @@ int process_replay_file(const po::variables_map &vm, const std::string &input, c
             return EX_SOFTWARE;
         }
 
+        if (vm.count("blitz") > 0) {
+            int map_size = vm["map-size"].as<int>();
+            auto &arena = const_cast<arena_t &>(game.get_arena());
+
+            arena.bounding_box = {
+                {-map_size, -map_size},
+                {map_size, map_size},
+            };
+        }
+
         writer->init(game.get_arena(), game.get_game_mode());
+
         writer->update(game);
         writer->finish();
 
@@ -408,15 +427,14 @@ int process_replay_file(const po::variables_map &vm, const std::string &input, c
                 logger.writef(log_level_t::error, "Something went wrong with opening file: %1%\n", input);
                 return EX_SOFTWARE;
             }
-        }
-        else {
+        } else {
             out = &std::cout;
         }
 
         writer->write(*out);
 
-        if (dynamic_cast<std::ofstream*>(out)) {
-            dynamic_cast<std::ofstream*>(out)->close();
+        if (dynamic_cast<std::ofstream *>(out)) {
+            dynamic_cast<std::ofstream *>(out)->close();
             delete out;
         }
     }
@@ -424,55 +442,56 @@ int process_replay_file(const po::variables_map &vm, const std::string &input, c
     return EX_OK;
 }
 
-int main(int argc, const char * argv []) {
+int main(int argc, const char *argv[]) {
     po::options_description desc("Allowed options");
 
     std::string type, output, input, root, rules;
-    double skip, bounds_min, bounds_max;
-    int size, frame_rate, model_rate;
 
 #ifdef ENABLE_TBB
     int tokens = 10;
 #endif
 
-    desc.add_options()
-        ("type", po::value(&type), "select output type")
-        ("output", po::value(&output), "output file or directory")
-        ("input", po::value(&input), "input file or directory")
-        ("root", po::value(&root), "set root directory")
-        ("help", "produce help message")
-        ("debug", "enable parser debugging")
-        ("supress-empty", "supress empty packets from json output")
-        ("create-minimaps", "create all empty minimaps in output directory")
-        ("parse", "parse a replay file")
-        ("quiet", "supress diagnostic messages")
-        ("skip", po::value(&skip)->default_value(60., "60"), "for heatmaps, skip a certain number of seconds after the start of the battle")
-        ("bounds-min", po::value(&bounds_min)->default_value(0.02, "0.02"), "for heatmaps, set min value to display")
-        ("bounds-max", po::value(&bounds_max)->default_value(0.98, "0.98"), "for heatmaps, set max value to display")
-        ("size", po::value(&size)->default_value(512), "output image size for image writers")
-        ("rules", po::value(&rules)->default_value("#ff0000 := team = '1'; #00ff00 := team = '0'"),
-            "specify drawing rules, allowing the user to choose the colors used")
-        ("parse-rules", "parse rules only and print parsed expression")
-        ("overlay", "generate overlay, don't draw basemap in output image")
-        ("frame-rate", po::value(&frame_rate)->default_value(10), "set gif frame rate")
-        ("model-update-rate", po::value(&model_rate)->default_value(100), "set model update rate")
-        ("version", "display version")
+    // clang-format off
+  desc.add_options()
+      ("type", po::value(&type), "select output type")
+      ("output", po::value(&output), "output file or directory")
+      ("input", po::value(&input), "input file or directory")
+      ("root", po::value(&root), "set root directory")
+      ("help", "produce help message")
+      ("debug", "enable parser debugging")
+      ("supress-empty", "supress empty packets from json output")
+      ("create-minimaps", "create all empty minimaps in output directory")
+      ("parse", "parse a replay file")
+      ("quiet", "supress diagnostic messages")
+      ("skip", po::value<double>()->default_value(60., "60"), "for heatmaps, skip a certain number of seconds after the start of the battle")
+      ("bounds-min", po::value<double>()->default_value(0.02, "0.02"), "for heatmaps, set min value to display")
+      ("bounds-max", po::value<double>()->default_value(0.98, "0.98"), "for heatmaps, set max value to display")
+      ("size", po::value<int>()->default_value(512), "output image size for image writers")
+      ("rules", po::value(&rules)->default_value( "#ff0000 := team = '1'; #00ff00 := team = '0'"), "specify drawing rules, allowing the user to choose the colors used")
+      ("parse-rules", "parse rules only and print parsed expression")
+      ("overlay", "generate overlay, don't draw basemap in output image") 
+      ("frame-rate", po::value<int>()->default_value(10), "set gif frame rate")
+      ("model-update-rate", po::value<int>()->default_value(10), "set model update rate (accelerate game time)")
+      ("version", "display version")
+      ("blitz", "parse as world of tanks blitz")
+      ("map-size", po::value<int>()->default_value(500), "map size")
+      ("max-history", po::value<int>()->default_value(100), "max history")
+      ("raw-images-path", po::value<std::string>(), "raw images path")
 #ifdef ENABLE_TBB
-        ("tokens", po::value(&tokens)->default_value(10), "number of pipeline tokens")
+      ("tokens", po::value(&tokens)->default_value(10), "number of pipeline tokens")
 #endif
-        ;
+      ;
+    // clang-format on
 
     po::variables_map vm;
 
     try {
         po::store(po::parse_command_line(argc, argv, desc), vm);
         po::notify(vm);
-    }
-    catch (std::exception &e) {
+    } catch (std::exception &e) {
         show_help(argc, argv, desc);
         std::exit(-1);
-    }
-    catch (...) {
+    } catch (...) {
         logger.write(log_level_t::error, "Unknown error.\n");
         std::exit(-1);
     }
@@ -487,8 +506,7 @@ int main(int argc, const char * argv []) {
         std::exit(0);
     }
 
-    if (vm.count("root") > 0
-        && chdir(root.c_str()) != 0) {
+    if (vm.count("root") > 0 && chdir(root.c_str()) != 0) {
         logger.writef(log_level_t::error, "Cannot change working directory to: %1%\n", root);
         std::exit(0);
     }
@@ -496,12 +514,10 @@ int main(int argc, const char * argv []) {
     bool debug = vm.count("debug") > 0;
     if (debug) {
         logger.set_log_level(log_level_t::debug);
-    }
-    else if (vm.count("quiet") > 0) {
+    } else if (vm.count("quiet") > 0) {
         logger.set_log_level(log_level_t::none);
-    }
-    else {
-        logger.set_log_level(log_level_t::warning);
+    } else {
+        logger.set_log_level(log_level_t::info);
     }
 
     if (vm.count("parse-rules") > 0) {
@@ -515,16 +531,13 @@ int main(int argc, const char * argv []) {
         // parse
         if (is_directory(input)) {
             exit_code = process_replay_directory(vm, input, output, type, debug);
-        }
-        else {
+        } else {
             exit_code = process_replay_file(vm, input, output, type, debug);
         }
-    }
-    else if (vm.count("create-minimaps") > 0) {
+    } else if (vm.count("create-minimaps") > 0) {
         // create all minimaps
         exit_code = create_minimaps(vm, output, debug);
-    }
-    else {
+    } else {
         logger.write(wotreplay::log_level_t::error, "Error: no mode specified\n");
         exit_code = EX_USAGE;
     }

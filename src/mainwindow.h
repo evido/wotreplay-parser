@@ -10,19 +10,18 @@ class MainWindow;
 }
 
 namespace wotreplay {
-	class image_writer_t;
+class image_writer_t;
 }
 
-class MainWindow : public QMainWindow
-{
+class MainWindow : public QMainWindow {
     Q_OBJECT
 
-public:
+  public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
-	std::unique_ptr<wotreplay::image_writer_t> create_writer(const std::string &path) const;
+    std::unique_ptr<wotreplay::image_writer_t> create_writer(const std::string &path) const;
 
-private slots:
+  private slots:
     void on_showButton_clicked();
 
     void on_browseInputButton_clicked();
@@ -33,10 +32,10 @@ private slots:
 
     void on_typeComboBox_currentTextChanged(const QString &arg1);
 
-private:
+  private:
     Ui::MainWindow *ui;
     std::unique_ptr<uint32_t[]> image_data;
-	std::unique_ptr<wotreplay::image_writer_t> writer;
+    std::unique_ptr<wotreplay::image_writer_t> writer;
 };
 
 #endif // MAINWINDOW_H

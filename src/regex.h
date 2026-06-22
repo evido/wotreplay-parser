@@ -5,16 +5,16 @@
 #include <regex>
 
 using std::regex;
-using std::smatch;
 using std::regex_search;
+using std::smatch;
 
 #else
 
 // fallback to boost, implementation in gcc 4.7 seems incomplete
 #include <boost/regex.hpp>
 using boost::regex;
-using boost::smatch;
 using boost::regex_search;
+using boost::smatch;
 
 #endif
 

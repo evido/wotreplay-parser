@@ -1,20 +1,14 @@
 #include "class_heatmap_writer.h"
 #include "image_util.h"
-#include "logger.h"
 
 #include <boost/algorithm/clamp.hpp>
 
 using namespace wotreplay;
 using boost::algorithm::clamp;
 
-void class_heatmap_writer_t::set_draw_rules(const std::vector<draw_rule_t> &rules)
-{
-    this->rules = rules;
-}
+void class_heatmap_writer_t::set_draw_rules(const std::vector<draw_rule_t> &rules) { this->rules = rules; }
 
-const std::vector<draw_rule_t> &class_heatmap_writer_t::get_draw_rules() const {
-    return this->rules;
-}
+const std::vector<draw_rule_t> &class_heatmap_writer_t::get_draw_rules() const { return this->rules; }
 
 void class_heatmap_writer_t::init(const wotreplay::arena_t &arena, const std::string &mode) {
     this->arena = arena;
@@ -52,19 +46,16 @@ void class_heatmap_writer_t::finish() {
 
     const int class_count = classes.size();
 
-	std::unique_ptr<uint32_t[]> colors(new uint32_t[class_count]);
+    std::unique_ptr<uint32_t[]> colors(new uint32_t[class_count]);
     for (const auto &it : classes) {
         colors[it.second] = it.first;
     }
 
-	std::unique_ptr<double[]> min(new double[class_count]);
-	std::unique_ptr<double[]> max(new double[class_count]);
-
+    std::unique_ptr<double[]> min(new double[class_count]);
+    std::unique_ptr<double[]> max(new double[class_count]);
 
     for (int k = 0; k < class_count; k += 1) {
-        std::tie(min[k], max[k]) = get_bounds(positions[k],
-                                              std::get<0>(bounds),
-                                              std::get<1>(bounds));
+        std::tie(min[k], max[k]) = get_bounds(positions[k], std::get<0>(bounds), std::get<1>(bounds));
     }
 
     for (int i = 0; i < image_width; i += 1) {
@@ -84,12 +75,12 @@ void class_heatmap_writer_t::finish() {
                 a *= (c & 0xFF) / 255.;
                 result[i][j][0] = mix(result[i][j][0], result[i][j][0], 1. - a, (c >> 24) & 0xFF, a);
                 result[i][j][1] = mix(result[i][j][1], result[i][j][1], 1. - a, (c >> 16) & 0xFF, a);
-                result[i][j][2] = mix(result[i][j][2], result[i][j][2], 1. - a, (c >>  8) & 0xFF, a);
+                result[i][j][2] = mix(result[i][j][2], result[i][j][2], 1. - a, (c >> 8) & 0xFF, a);
             } else {
                 result[i][j][0] = (c >> 24) & 0xFF;
                 result[i][j][1] = (c >> 16) & 0xFF;
-                result[i][j][2] = (c >>  8) & 0xFF;
-                result[i][j][3] = (c & 0xFF)* a;
+                result[i][j][2] = (c >> 8) & 0xFF;
+                result[i][j][3] = (c & 0xFF) * a;
             }
         }
     }

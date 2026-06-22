@@ -1,9 +1,13 @@
 # ls /Volumes/World\ of\ Tanks/res/packages/*.pkg | sed -n 's/.*\/\([0-9][0-9]*_.*\).pkg$/maps\/images\/\1.png/p' | xargs
 WOT_INSTALL_PATH ?= /media/windows/Games/World_of_Tanks
+BLITZ_INSTALL_PATH ?= ../blitz
+
 MAPS = $(shell ls $(WOT_INSTALL_PATH)/res/packages/*.pkg | sed -n 's@.*/\([0-9][0-9]*_.*\).pkg$$@maps/images/\1.png  maps/definitions/\1.xml@p')
+BLITZ_MAPS = $(shell ls $(BLITZ_INSTALL_PATH)/minimaps/*/MiniMapSmall@2x.packed.webp | sed -n 's@.*/minimaps/\(.*\)/.*.webp$$@blitz/\1.png@gp')
+
 SIZE ?= 512
 
-.PRECIOUS: maps/definitions/%.xml map/images/%.png
+.PRECIOUS: maps/definitions/%.xml map/images/%.png blitz/images/%.png
 
 default: minimaps
 
@@ -12,6 +16,9 @@ all: minimaps
 clean:
 	@rm -rf maps
 	@rm -f convert-xml
+
+blitz/%.png:
+	@magick convert -crop 500x500+2+2 -size $(SIZE)x$(SIZE) $(BLITZ_INSTALL_PATH)/minimaps/$(notdir $(basename $@))/MiniMapSmall@2x.packed.webp -alpha on -resize $(SIZE)x$(SIZE) $@
 
 %.pkg:
 	@cp "$(WOT_INSTALL_PATH)/res/packages/$@" ./
@@ -33,6 +40,11 @@ maps/images/%.png: spaces/%/mmap.dds
 
 minimaps: $(MAPS)
 	@rm -rf gui spaces
+
+blitz:
+	@mkdir -p $@
+
+blitz-minimaps: blitz $(BLITZ_MAPS)
 
 convert-xml:
 	@mono-csc -out:convert-xml ../ext/wottools/src/*.cs
